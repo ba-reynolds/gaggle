@@ -1,0 +1,16 @@
+[x] Logging
+[x] User relationships
+[x] Feeds
+[x] Engagement
+[x] More detailed errors, with details (both in the response json and by formatting an id or string (e.g. username already exists))
+[ ] Testing
+[ ] In case of success, we return it inside of data which doesn't make sense, also update swagger docs
+[ ] Update updated_at in db (with sql query)
+
+
+Good job, now I need you to create the following feeds, also with pagination:
+ - list of users who liked a post
+ - list of users who retweeted a post
+
+Finally, I want the following feeds:
+ - list of quotes on a post, as in, the post themselves

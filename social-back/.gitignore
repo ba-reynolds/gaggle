@@ -1,0 +1,13 @@
+# Environment (template is tracked as .env.example)
+.env
+.env.local
+
+# Build artifacts
+/bin
+
+# Runtime data
+/logs
+/media
+coverage.out
+coverage.html
+build-errors.log
