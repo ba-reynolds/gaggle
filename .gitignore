@@ -1,0 +1,32 @@
+# Environment / secrets
+.env
+.env.local
+*.env
+!*.env.example
+
+# Backend
+social-back/bin/
+social-back/logs/
+social-back/media/
+social-back/coverage.out
+social-back/coverage.html
+social-back/build-errors.log
+
+# Frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.sw?
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*

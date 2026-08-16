@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS media (
+    "media_uuid" UUID PRIMARY KEY,
+    "mime_type" TEXT NOT NULL,
+    "filename" TEXT NOT NULL,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
