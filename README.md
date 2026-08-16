@@ -20,22 +20,22 @@ A Twitter-like social media app: **Go** (chi + PostgreSQL + Redis) backend and a
 ## Repository layout
 
 ```
-social-back/   Go API server (handlers -> services -> stores -> PostgreSQL)
-social-front/  React + Vite + shadcn/ui client
+server/   Go API server (handlers -> services -> stores -> PostgreSQL)
+web/  React + Vite + shadcn/ui client
 flake.nix      Nix dev environment (Go, Node, Postgres, Redis)
 ```
 
 ## Quick start (Docker)
 
 ```bash
-cd social-back
+cd server
 cp .env.example .env
 docker compose up -d          # PostgreSQL (6969) + Redis (6379)
 make migrate-up               # apply migrations
 make seed-db                  # seed demo users (alice@example.com / password123)
 make run                      # API on :2021
 
-cd ../social-front
+cd ../web
 npm install
 npm run dev                   # Vite dev server
 ```
@@ -46,12 +46,12 @@ Open http://localhost:5173 and sign in as `alice@example.com` / `password123`.
 
 ```bash
 nix develop                    # reproducible toolchain
-cd social-back
+cd server
 make dev-services              # local Postgres + Redis in /tmp
 make migrate-up && make seed-db
 make run
 
-cd ../social-front
+cd ../web
 npm install && npm run dev
 ```
 
@@ -59,10 +59,10 @@ npm install && npm run dev
 
 ```bash
 # Backend integration tests (needs a local Postgres; creates a throwaway `social_test` DB)
-cd social-back && make test
+cd server && make test
 
 # Frontend
-cd social-front && npm run build && npm run lint
+cd web && npm run build && npm run lint
 ```
 
 ## API contract
@@ -77,7 +77,7 @@ Every response is an envelope:
 Paginated feeds return `{ "items": [...], "next_cursor": ..., "has_more": bool }`.
 Post objects expose counts and the requesting user's state under `engagement`
 (`is_liked`, `is_reposted`, `is_bookmarked`, `like_count`, ...).
-See `social-back/docs/swagger.yaml` for the full spec.
+See `server/docs/swagger.yaml` for the full spec.
 
 ## Notes
 

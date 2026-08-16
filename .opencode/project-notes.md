@@ -39,7 +39,7 @@ Tricky things learned while working on this repo (newest on top).
   **Swag resolves `models.X` from the imports of the file containing the annotation** —
   if a handler's annotations reference `models.Foo`, that file must import `models`
   (settings_handler has a `var _ models.UserSettings` for this).
-- Local Postgres/Redis (no Docker): `cd social-back && make dev-services` /
+- Local Postgres/Redis (no Docker): `cd server && make dev-services` /
   `make dev-services-stop`. Data lives in `/tmp/gophersocial`.
 - Tests: `go test ./...` uses a throwaway DB `social_test` (see `internal/testutil`),
   created/dropped automatically against the local Postgres.
@@ -59,4 +59,4 @@ Tricky things learned while working on this repo (newest on top).
   `profile_picture_uuid` when none).
 - `POST /auth/refresh-token` is a POST with no body (reads cookie) — used in both the
   AuthContext bootstrap AND the 401 retry interceptor.
-- Build/lint: `nix develop --command bash -c 'cd social-front && npm run build'`.
+- Build/lint: `nix develop --command bash -c 'cd web && npm run build'`.

@@ -1,38 +1,38 @@
-.PHONY: dev-backend dev-frontend migrate-up seed test test-backend test-frontend build-backend build-frontend swag services services-stop
+.PHONY: dev-services dev-services-stop dev-services-status dev-backend dev-frontend migrate-up seed test test-backend test-frontend build-backend build-frontend swag services services-stop
 
 # Backend
 
 migrate-up:
-	$(MAKE) -C social-back migrate-up
+	$(MAKE) -C server migrate-up
 
 seed:
-	$(MAKE) -C social-back seed-db
+	$(MAKE) -C server seed-db
 
 dev-backend:
-	$(MAKE) -C social-back run
+	$(MAKE) -C server run
 
 swag:
-	$(MAKE) -C social-back swag
+	$(MAKE) -C server swag
 
 test-backend:
-	$(MAKE) -C social-back test
+	$(MAKE) -C server test
 
 build-backend:
-	cd social-back && go build ./...
+	cd server && go build ./...
 
 # Frontend
 
 dev-frontend:
-	cd social-front && npm run dev
+	cd web && npm run dev
 
 build-frontend:
-	cd social-front && npm run build
+	cd web && npm run build
 
 lint-frontend:
-	cd social-front && npm run lint
+	cd web && npm run lint
 
 test-frontend:
-	cd social-front && npm run build
+	cd web && npm run build
 
 # Everything
 
@@ -42,8 +42,16 @@ build: build-backend build-frontend
 
 # Local services without Docker (Nix)
 
-services:
-	$(MAKE) -C social-back dev-services
+dev-services:
+	$(MAKE) -C server dev-services
 
-services-stop:
-	$(MAKE) -C social-back dev-services-stop
+dev-services-stop:
+	$(MAKE) -C server dev-services-stop
+
+dev-services-status:
+	$(MAKE) -C server dev-services-status
+
+# Convenience aliases
+services: dev-services
+
+services-stop: dev-services-stop

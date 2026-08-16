@@ -5,12 +5,12 @@
 !*.env.example
 
 # Backend
-social-back/bin/
-social-back/logs/
-social-back/media/
-social-back/coverage.out
-social-back/coverage.html
-social-back/build-errors.log
+server/bin/
+server/logs/
+server/media/
+server/coverage.out
+server/coverage.html
+server/build-errors.log
 
 # Frontend
 node_modules/

@@ -41,9 +41,10 @@
 
             shellHook = ''
               echo "GopherSocial dev environment"
-              echo "  - backend:  cd social-back && make migrate-up && air"
-              echo "  - frontend: cd social-front && npm install && npm run dev"
-              echo "  - services: postgres  -> start-dev-db  |  redis  -> start-dev-redis"
+              echo "  - backend:  cd server && make migrate-up && air"
+              echo "  - frontend: cd web && npm install && npm run dev"
+              echo "  - services: make dev-services  (start Postgres + Redis, no Docker)"
+              echo "              make dev-services-stop"
             '';
           };
         });
