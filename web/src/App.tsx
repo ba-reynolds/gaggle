@@ -21,6 +21,8 @@ import AdminPage from './pages/AdminPage';
 import ExplorePage from './pages/ExplorePage';
 import ListsPage from './pages/ListsPage';
 import ListPage from './pages/ListPage';
+import MessagesPage from './pages/MessagesPage';
+import ConversationPage from './pages/ConversationPage';
 
 
 const queryClient = new QueryClient({
@@ -55,6 +57,8 @@ function App() {
                   <Route path="/settings" element={<SocialMediaLayout><SettingsPage /></SocialMediaLayout>} />
                   <Route path="/post/:id" element={<SocialMediaLayout><PostPage /></SocialMediaLayout>} />
                   <Route path="/notifications" element={<SocialMediaLayout><NotificationsPage /></SocialMediaLayout>} />
+                  <Route path="/messages" element={<SocialMediaLayout><MessagesPage /></SocialMediaLayout>} />
+                  <Route path="/messages/:conversationId" element={<SocialMediaLayout><ConversationPage /></SocialMediaLayout>} />
                   <Route path="/search" element={<SocialMediaLayout><SearchPage /></SocialMediaLayout>} />
                   <Route path="/hashtags/:tag" element={<SocialMediaLayout><HashtagPage /></SocialMediaLayout>} />
                   <Route path="/admin" element={<SocialMediaLayout><AdminPage /></SocialMediaLayout>} />

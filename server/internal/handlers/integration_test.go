@@ -940,3 +940,118 @@ func TestSuggestedUsers(t *testing.T) {
 		t.Fatalf("suggested item missing badges field")
 	}
 }
+
+func TestDMs(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+	aliceToken := app.RegisterUser(t, "dmalice", "dmalice@example.com")
+	bobToken := app.RegisterUser(t, "dmbob", "dmbob@example.com")
+	carolToken := app.RegisterUser(t, "dmcarol", "dmcarol@example.com")
+
+	// Self-messaging is rejected.
+	if rec := app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/dms/dmalice",
+		Token:  aliceToken,
+		Body:   map[string]string{"body": "hello self"},
+	}); rec.Code != http.StatusBadRequest {
+		t.Fatalf("self DM status = %d, want 400", rec.Code)
+	}
+
+	// Send. Conversation is created on first contact.
+	var conversationID int
+	{
+		sent, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{
+			Method: http.MethodPost,
+			Path:   "/api/v1/dms/dmbob",
+			Token:  aliceToken,
+			Body:   map[string]string{"body": "hey bob"},
+		}))
+		if sent["conversation_id"] == nil {
+			t.Fatalf("sent message missing conversation_id: %v", sent)
+		}
+		conversationID = int(sent["conversation_id"].(float64))
+	}
+
+	// Reusing the same pair must not create a second conversation.
+	{
+		sent, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{
+			Method: http.MethodPost,
+			Path:   "/api/v1/dms/dmalice",
+			Token:  bobToken,
+			Body:   map[string]string{"body": "hi alice"},
+		}))
+		if int(sent["conversation_id"].(float64)) != conversationID {
+			t.Fatalf("conversation id changed on reuse: %v", conversationID)
+		}
+	}
+
+	// Alice has an unread count of 1 (bob's message); her inbox should list it.
+	{
+		count, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/dms/unread-count", Token: aliceToken}))
+		if int(count["unread_count"].(float64)) != 1 {
+			t.Fatalf("alice unread = %v, want 1", count["unread_count"])
+		}
+		inbox, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/dms/conversations", Token: aliceToken}))
+		items := inbox["items"].([]any)
+		if len(items) != 1 {
+			t.Fatalf("alice inbox len = %d, want 1", len(items))
+		}
+		conv := items[0].(map[string]any)
+		if conv["other_participant"].(map[string]any)["username"] != "dmbob" {
+			t.Fatalf("inbox other_participant = %v", conv["other_participant"])
+		}
+	}
+
+	// Non-participant cannot read the conversation -> 404.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/dms/conversations/" + itoa(conversationID) + "/messages", Token: carolToken}); rec.Code != http.StatusNotFound {
+		t.Fatalf("non-participant messages status = %d, want 404", rec.Code)
+	}
+
+	// Carol is blocked by Alice (Alice -> Carol block); Alice cannot DM Carol.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/users/dmcarol/block", Token: aliceToken}); rec.Code != http.StatusOK {
+		t.Fatalf("block carol failed: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec := app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/dms/dmcarol",
+		Token:  aliceToken,
+		Body:   map[string]string{"body": "hey carol"},
+	}); rec.Code != http.StatusForbidden {
+		t.Fatalf("DM to blocked user status = %d, want 403", rec.Code)
+	}
+	// The reverse direction (Carol -> Alice) must also be suppressed.
+	if rec := app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/dms/dmalice",
+		Token:  carolToken,
+		Body:   map[string]string{"body": "hey alice"},
+	}); rec.Code != http.StatusForbidden {
+		t.Fatalf("DM from blocked user status = %d, want 403", rec.Code)
+	}
+
+	// Mark-read drops Alice's unread count to 0.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/dms/conversations/" + itoa(conversationID) + "/read", Token: aliceToken}); rec.Code != http.StatusOK {
+		t.Fatalf("mark read failed: %d %s", rec.Code, rec.Body.String())
+	}
+	count, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/dms/unread-count", Token: aliceToken}))
+	if int(count["unread_count"].(float64)) != 0 {
+		t.Fatalf("alice unread after mark-read = %v, want 0", count["unread_count"])
+	}
+
+	// Body validation: empty body -> 400.
+	if rec := app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/dms/dmbob",
+		Token:  aliceToken,
+		Body:   map[string]string{"body": "   "},
+	}); rec.Code != http.StatusBadRequest {
+		t.Fatalf("blank body status = %d, want 400", rec.Code)
+	}
+
+	// A single message list round-trip after several sends (pagination is covered
+	// by the cursor in older tests; here assert at least the messages are there).
+	messages, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/dms/conversations/" + itoa(conversationID) + "/messages", Token: aliceToken}))
+	if len(messages["items"].([]any)) != 2 {
+		t.Fatalf("alice message count = %d, want 2", len(messages["items"].([]any)))
+	}
+}

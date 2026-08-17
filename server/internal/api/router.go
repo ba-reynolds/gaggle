@@ -53,6 +53,7 @@ func NewRouter(
 	searchHandler := handlers.NewSearchHandler(service, logger)
 	adminHandler := handlers.NewAdminHandler(service, logger)
 	listHandler := handlers.NewListHandler(service, logger)
+	dmHandler := handlers.NewDmHandler(service, logger)
 
 	// API v1 routes
 	router.Route("/api/v1", func(r chi.Router) {
@@ -165,6 +166,17 @@ func NewRouter(
 					r.Get("/members", listHandler.ListMembers)
 					r.Post("/members/{username}", listHandler.AddMember)
 					r.Delete("/members/{username}", listHandler.RemoveMember)
+				})
+			})
+
+			protected.Route("/dms", func(r chi.Router) {
+				r.Get("/conversations", dmHandler.ListConversations)
+				r.Get("/unread-count", dmHandler.UnreadCount)
+				r.Post("/{username}", dmHandler.SendDm)
+				r.Route("/conversations/{conversationID}", func(r chi.Router) {
+					r.Get("/", dmHandler.GetConversation)
+					r.Get("/messages", dmHandler.ListMessages)
+					r.Post("/read", dmHandler.MarkRead)
 				})
 			})
 

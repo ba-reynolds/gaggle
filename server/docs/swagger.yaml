@@ -84,6 +84,28 @@ definitions:
       success:
         type: boolean
     type: object
+  github_com_ba-reynolds_gophersocial_internal_models.Conversation:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      last_message:
+        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Message'
+      last_message_at:
+        type: string
+      other_participant:
+        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserAPISummary'
+      unread_count:
+        type: integer
+    type: object
+  github_com_ba-reynolds_gophersocial_internal_models.ConversationFeed:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Conversation'
+        type: array
+    type: object
   github_com_ba-reynolds_gophersocial_internal_models.CreateBadgePayload:
     properties:
       description:
@@ -255,6 +277,43 @@ definitions:
         items:
           type: string
         type: array
+    type: object
+  github_com_ba-reynolds_gophersocial_internal_models.Message:
+    properties:
+      body:
+        type: string
+      conversation_id:
+        type: integer
+      created_at:
+        type: string
+      id:
+        type: integer
+      read_at:
+        type: string
+      sender:
+        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.MessageSender'
+      sender_id:
+        type: integer
+    type: object
+  github_com_ba-reynolds_gophersocial_internal_models.MessageFeed:
+    properties:
+      has_more:
+        type: boolean
+      items:
+        items:
+          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Message'
+        type: array
+      next_cursor:
+        type: string
+    type: object
+  github_com_ba-reynolds_gophersocial_internal_models.MessageSender:
+    properties:
+      display_name:
+        type: string
+      profile_picture_uuid:
+        type: string
+      username:
+        type: string
     type: object
   github_com_ba-reynolds_gophersocial_internal_models.NotificationSettings:
     properties:
@@ -486,6 +545,15 @@ definitions:
       success:
         type: boolean
     type: object
+  github_com_ba-reynolds_gophersocial_internal_models.SendMessagePayload:
+    properties:
+      body:
+        maxLength: 2000
+        minLength: 1
+        type: string
+    required:
+    - body
+    type: object
   github_com_ba-reynolds_gophersocial_internal_models.UpdatePostPayload:
     properties:
       content:
@@ -528,6 +596,15 @@ definitions:
         type: string
       id:
         type: integer
+      username:
+        type: string
+    type: object
+  github_com_ba-reynolds_gophersocial_internal_models.UserAPISummary:
+    properties:
+      display_name:
+        type: string
+      profile_picture_uuid:
+        type: string
       username:
         type: string
     type: object
@@ -1451,6 +1528,307 @@ paths:
       summary: Delete a bookmark category
       tags:
       - bookmarks
+  /dms/{username}:
+    post:
+      consumes:
+      - application/json
+      description: Sends a 1:1 direct message, creating the conversation on first
+        contact.
+      parameters:
+      - description: Recipient username
+        in: path
+        name: username
+        required: true
+        type: string
+      - description: Message body
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.SendMessagePayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Message'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "403":
+          description: Forbidden
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Send a direct message
+      tags:
+      - dms
+  /dms/conversations:
+    get:
+      description: Returns the authenticated user's inbox, newest activity first.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.ConversationFeed'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: List conversations
+      tags:
+      - dms
+  /dms/conversations/{conversationID}:
+    get:
+      description: Returns a single conversation (participants only).
+      parameters:
+      - description: Conversation ID
+        in: path
+        name: conversationID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Conversation'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get a conversation
+      tags:
+      - dms
+  /dms/conversations/{conversationID}/messages:
+    get:
+      description: Returns a conversation's message history (participants only), newest
+        first.
+      parameters:
+      - description: Conversation ID
+        in: path
+        name: conversationID
+        required: true
+        type: integer
+      - description: Maximum number of messages
+        in: query
+        name: limit
+        type: integer
+      - description: Cursor for pagination
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.MessageFeed'
+                error:
+                  type: object
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: List a conversation's messages
+      tags:
+      - dms
+  /dms/conversations/{conversationID}/read:
+    post:
+      description: Marks incoming messages in a conversation as read (participants
+        only).
+      parameters:
+      - description: Conversation ID
+        in: path
+        name: conversationID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: boolean
+                  type: object
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Mark a conversation read
+      tags:
+      - dms
+  /dms/unread-count:
+    get:
+      description: Returns the authenticated user's total unread direct message count.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: integer
+                  type: object
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get unread DM count
+      tags:
+      - dms
   /lists:
     get:
       description: Returns the lists owned by the authenticated user.

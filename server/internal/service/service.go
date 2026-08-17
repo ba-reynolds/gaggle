@@ -127,6 +127,14 @@ type Service struct {
 		GetMembers(ctx context.Context, listID, limit int, cursor string) (*models.ListMembersResponse, error)
 		GetListFeed(ctx context.Context, viewerID, listID, limit int, cursor string) (*models.PostFeed, error)
 	}
+	DMs interface {
+		Send(ctx context.Context, senderID int, recipientUsername, body string) (*models.Message, error)
+		ListConversations(ctx context.Context, viewerID int) (*models.ConversationFeed, error)
+		ListMessages(ctx context.Context, viewerID, conversationID, limit int, cursor string) (*models.MessageFeed, error)
+		GetConversation(ctx context.Context, viewerID, conversationID int) (*models.Conversation, error)
+		UnreadCount(ctx context.Context, viewerID int) (int, error)
+		MarkRead(ctx context.Context, viewerID, conversationID int) error
+	}
 }
 
 // NewService creates a new service with all required dependencies
@@ -146,5 +154,6 @@ func NewService(store *store.Store, logger *slog.Logger, authenticator *auth.JWT
 		Search:            NewSearchService(store, logger, config),
 		Badges:            NewBadgeService(store, logger),
 		Lists:             NewListService(store, logger),
+		DMs:               NewDmService(store, hub, logger),
 	}
 }

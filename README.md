@@ -28,6 +28,8 @@ repository, two apps, fully containerized with Docker Compose.
   ("Who to follow" in the sidebar is backed by the same suggested endpoint)
 - User-managed lists at `/lists`: public, owner-curated collections of users
   with their own aggregated feed
+- Direct messages at `/messages`: 1:1 private conversations delivered over the
+  SSE stream with unread badges; blocked users cannot message
 - Consistent `{data, error}` JSON envelope on every endpoint
 - Swagger UI at `/swagger` (regenerate with `make swag`)
 

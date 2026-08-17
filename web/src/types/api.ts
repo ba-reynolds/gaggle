@@ -94,6 +94,42 @@ export interface CreateListPayload {
   description: string;
 }
 
+// Direct messages
+export interface MessageSender {
+  username: string;
+  display_name: string;
+  profile_picture_uuid?: string;
+}
+
+export interface Message {
+  id: number;
+  conversation_id: number;
+  sender_id: number;
+  sender: MessageSender;
+  body: string;
+  read_at?: string;
+  created_at: string;
+}
+
+export interface ConversationOtherParticipant {
+  username: string;
+  display_name: string;
+  profile_picture_uuid?: string;
+}
+
+export interface Conversation {
+  id: number;
+  created_at: string;
+  last_message_at: string;
+  other_participant: ConversationOtherParticipant;
+  last_message?: Message;
+  unread_count: number;
+}
+
+export interface SendMessagePayload {
+  body: string;
+}
+
 export interface UpdateProfilePayload {
   display_name: string;
   bio: string;

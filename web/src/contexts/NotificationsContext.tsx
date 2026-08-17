@@ -33,11 +33,18 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     const refreshFeed = () => {
       void queryClient.invalidateQueries({ queryKey: ['feed'] });
     };
+    const refreshDms = () => {
+      void queryClient.invalidateQueries({ queryKey: ['dm-unread-count'] });
+      void queryClient.invalidateQueries({ queryKey: ['dm-conversations'] });
+    };
     source.addEventListener('notification.new', refreshNotifications);
     source.addEventListener('feed.post_created', refreshFeed);
+    source.addEventListener('dm.new', refreshDms);
+    source.addEventListener('dm.unread', refreshDms);
     source.addEventListener('stream.resync', () => {
       refreshNotifications();
       refreshFeed();
+      refreshDms();
     });
 
     return () => {

@@ -127,6 +127,16 @@ type Store struct {
 		RemoveMember(ctx context.Context, listID, memberID int) error
 		GetMembers(ctx context.Context, listID, limit int, cursor string) (*models.ListMembersResponse, error)
 	}
+	DMs interface {
+		GetOrCreateConversation(ctx context.Context, participantA, participantB int) (*models.Conversation, error)
+		GetConversation(ctx context.Context, conversationID, viewerID int) (*models.Conversation, error)
+		ListConversations(ctx context.Context, viewerID int) (*models.ConversationFeed, error)
+		AddMessage(ctx context.Context, conversationID, senderID int, body string) (*models.Message, error)
+		ListMessages(ctx context.Context, conversationID, limit int, cursor string) (*models.MessageFeed, error)
+		UnreadCount(ctx context.Context, viewerID int) (int, error)
+		MarkRead(ctx context.Context, conversationID, readerID int) (int, error)
+		IsParticipant(ctx context.Context, conversationID, userID int) (bool, error)
+	}
 }
 
 func NewStore(db *sql.DB, logger *slog.Logger, mediaDir string) *Store {
@@ -143,6 +153,7 @@ func NewStore(db *sql.DB, logger *slog.Logger, mediaDir string) *Store {
 		Polls:             &pollStore{db: db, logger: logger},
 		Badges:            &badgeStore{db: db, logger: logger},
 		Lists:             &listStore{db: db, logger: logger},
+		DMs:               &dmStore{db: db, logger: logger},
 	}
 }
 

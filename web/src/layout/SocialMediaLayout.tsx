@@ -19,6 +19,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificationsContext";
 import { useTrends, useSuggestedUsers } from "@/hooks/useSearch";
 import { useUser } from "@/contexts/UserContext";
+import { useDmUnreadCount } from "@/hooks/useDms";
 import { useLogoutMutation } from "@/hooks/useAuth";
 import { getMediaUrl } from "@/util/media";
 import { Dialog, DialogTitle } from "@radix-ui/react-dialog";
@@ -32,7 +33,8 @@ import {
   User,
   Shield,
   Compass,
-  List as ListIcon
+  List as ListIcon,
+  MessageSquare
 } from "lucide-react";
 import { useState } from "react";
 import { NavLink, Navigate, useNavigate } from 'react-router-dom';
@@ -54,6 +56,7 @@ export default function SocialMediaLayout({
   const [search, setSearch] = useState('');
   const trends = useTrends();
   const suggested = useSuggestedUsers(10);
+  const dmUnread = useDmUnreadCount();
 
   const handleNewPost = () => {
     setIsComposing(false);
@@ -128,6 +131,7 @@ export default function SocialMediaLayout({
                 <NavItem icon={Compass} label="Explore" to="/explore" />
                 <NavItem icon={Bookmark} label="Bookmarks" to="/bookmarks" />
                 <NavItem icon={ListIcon} label="Lists" to="/lists" />
+                <NavItem icon={MessageSquare} label="Messages" to="/messages" badge={dmUnread.data?.data?.unread_count ?? 0} />
                 <NavItem icon={Bell} label="Notifications" to="/notifications" badge={unreadCount} />
                 <NavItem icon={User} label="Profile" to={`/profile/${user.username}`} />
                 <NavItem icon={Settings} label="Settings" to="/settings" />

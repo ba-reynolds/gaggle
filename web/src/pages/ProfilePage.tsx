@@ -15,15 +15,16 @@ import { useUserLists } from "@/hooks/useLists";
 import UserBadges from "@/components/UserBadges";
 import { getMediaUrl } from "@/util/media";
 import { format, parseISO } from "date-fns";
-import { Calendar, Camera, Link as LinkIcon, Loader2, MapPin } from "lucide-react";
+import { Calendar, Camera, Link as LinkIcon, Loader2, MapPin, MessageSquare } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useInView } from "react-intersection-observer";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 const ProfilePage: React.FC = () => {
   const { username } = useParams<{ username: string }>();
   const safeUsername = username ?? "";
+  const navigate = useNavigate();
   const { user, setUser } = useUser();
   const { ref, inView } = useInView();
   const profileUpdateMutation = useUpdateProfile();
@@ -204,7 +205,17 @@ const ProfilePage: React.FC = () => {
         </div>
 
         {/* Edit profile button */}
-        <div className="flex justify-end mt-2">
+        <div className="flex justify-end items-center gap-2 mt-2">
+          {!isCurrentUser && (
+            <Button
+              variant="outline"
+              className="text-foreground"
+              onClick={() => navigate(`/messages?user=${encodeURIComponent(safeUsername)}`)}
+            >
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Message
+            </Button>
+          )}
           <Button
             variant="outline"
             className={`text-foreground ${isCurrentUser ? "visible" : "invisible "}`}

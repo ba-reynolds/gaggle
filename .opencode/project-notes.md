@@ -132,3 +132,18 @@ Tricky things learned while working on this repo (newest on top).
   gate owner-only UI; `GET /users/{username}/lists` lists a user's public lists.
 - The sidebar "Who to follow" and ExplorePage both call `GET /users/suggested`
   (`limit` default 5, max 20 for sidebar; 20 for the page).
+- Phase 6 DMs: migration `000015` adds `conversations` (canonical
+  `participant_a < participant_b`, `UNIQUE(a,b)`) and `messages` (`read_at`
+  partial index `messages_unread_idx (conversation_id, sender_id) WHERE read_at IS NULL`).
+- **chi route conflict pitfall:** you cannot register both `POST /dms/{username}`
+  and a sibling `Route("/{conversationID}", ...)` with *different* parameter
+  names at the same level — it shadows/misfires (405). Nest the second group
+  under a literal segment instead: `/dms/conversations/{conversationID}/*`.
+- `GET /dms/conversations/{id}` (single conversation) must take `viewerID` so the
+  store can attach `other_participant` — the raw pair doesn't tell the client who
+  to show. `ListConversations` uses a `LEFT JOIN LATERAL` for last-message.
+- DM send publishes `dm.new` + `dm.unread` to the recipient AND `dm.unread` to
+  the sender (their per-conversation read state changed) after DB writes. Frontend
+  invalidates `dm-conversations`/`dm-unread-count` on `dm.new`, `dm.unread`, and
+  `stream.resync` in NotificationsContext. Message query cache keys are
+  `dm-messages`/`dm-conversation`.
