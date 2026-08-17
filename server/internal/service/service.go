@@ -104,6 +104,18 @@ type Service struct {
 		HashtagPosts(ctx context.Context, viewerID int, name string, limit int, cursor string) (*models.PostFeed, error)
 		Trends(ctx context.Context, limit int) ([]models.Trend, error)
 	}
+	Badges interface {
+		GetBadgesForUsers(ctx context.Context, ids []int) (map[int][]models.UserBadge, error)
+		HydrateProfiles(ctx context.Context, profiles []models.UserProfileResponse) error
+		HydrateUserWithProfile(ctx context.Context, user *models.UserWithProfile) error
+		HydrateUserWithProfiles(ctx context.Context, users []models.UserWithProfile) error
+		ListCatalog(ctx context.Context) ([]models.Badge, error)
+		CreateBadge(ctx context.Context, payload models.CreateBadgePayload) (*models.Badge, error)
+		UpdateBadge(ctx context.Context, badgeID int, payload models.CreateBadgePayload) (*models.Badge, error)
+		DeleteBadge(ctx context.Context, badgeID int) error
+		GrantBadge(ctx context.Context, username string, badgeID, grantedBy int) error
+		RevokeBadge(ctx context.Context, username string, badgeID int) error
+	}
 }
 
 // NewService creates a new service with all required dependencies
@@ -121,5 +133,6 @@ func NewService(store *store.Store, logger *slog.Logger, authenticator *auth.JWT
 		UserRelationships: &UserRelationshipService{store, logger},
 		Notifications:     NewNotificationService(store, hub, logger),
 		Search:            NewSearchService(store, logger, config),
+		Badges:            NewBadgeService(store, logger),
 	}
 }

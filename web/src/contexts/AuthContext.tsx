@@ -69,7 +69,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
       try {
         const accessToken = await refreshAccessToken();
 
-        const meResponse = await api.get<Envelope<{ username: string; display_name: string; profile_picture_uuid?: string }>>('/users/me', {
+        const meResponse = await api.get<Envelope<{ username: string; display_name: string; profile_picture_uuid?: string; is_admin?: boolean }>>('/users/me', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
@@ -78,6 +78,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
           username: meResponse.data.data.username,
           displayName: meResponse.data.data.display_name,
           profilePictureUUID: meResponse.data.data.profile_picture_uuid ?? '',
+          isAdmin: meResponse.data.data.is_admin ?? false,
         });
       } catch {
         setToken(null);

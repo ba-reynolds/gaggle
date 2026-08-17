@@ -714,3 +714,111 @@ func TestPaginationShape(t *testing.T) {
 		t.Fatalf("page2 items = %d, want 2", len(page2["items"].([]any)))
 	}
 }
+
+func TestBadges(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+	adminToken := app.RegisterUser(t, "badgeadmin", "badgeadmin@example.com")
+	userToken := app.RegisterUser(t, "badgeuser", "badgeuser@example.com")
+
+	// Non-admins cannot use the admin API.
+	rec := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/admin/badges", Token: userToken})
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("non-admin catalog status = %d, want 403", rec.Code)
+	}
+
+	// Promote the admin user directly in the DB (register creates non-admins).
+	if _, err := app.DB.Exec(`UPDATE users SET is_admin = TRUE WHERE username = 'badgeadmin'`); err != nil {
+		t.Fatalf("promote admin: %v", err)
+	}
+
+	catalog, _ := testutil.Decode[[]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/admin/badges", Token: adminToken}))
+	if len(catalog) != 4 {
+		t.Fatalf("catalog len = %d, want 4 seeded earned badges", len(catalog))
+	}
+
+	// Create an assigned badge.
+	created, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/admin/badges",
+		Token:  adminToken,
+		Body: map[string]string{
+			"key":         "staff",
+			"label":       "Staff",
+			"description": "GopherSocial staff member",
+			"icon":        "ShieldCheck",
+		},
+	}))
+	createdData := created
+	badgeID := int(createdData["id"].(float64))
+
+	// Duplicate key -> 409.
+	rec = app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/admin/badges",
+		Token:  adminToken,
+		Body: map[string]string{
+			"key":         "staff",
+			"label":       "Staff 2",
+			"description": "dup",
+			"icon":        "ShieldCheck",
+		},
+	})
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("duplicate badge key status = %d, want 409", rec.Code)
+	}
+
+	// Grant to the regular user, then confirm it shows on their profile.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/admin/users/badgeuser/badges/" + itoa(badgeID), Token: adminToken}); rec.Code != http.StatusOK {
+		t.Fatalf("grant badge: %d %s", rec.Code, rec.Body.String())
+	}
+	profile, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/users/badgeuser", Token: userToken}))
+	badges := profile["badges"].([]any)
+	found := false
+	for _, b := range badges {
+		if b.(map[string]any)["key"] == "staff" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("granted badge missing from profile: %v", badges)
+	}
+
+	// Duplicate grant -> 409.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/admin/users/badgeuser/badges/" + itoa(badgeID), Token: adminToken}); rec.Code != http.StatusConflict {
+		t.Fatalf("duplicate badge grant status = %d, want 409", rec.Code)
+	}
+
+	// Badge still in use cannot be deleted -> 409.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodDelete, Path: "/api/v1/admin/badges/" + itoa(badgeID), Token: adminToken}); rec.Code != http.StatusConflict {
+		t.Fatalf("delete in-use badge status = %d, want 409", rec.Code)
+	}
+
+	// Revoke then delete succeeds.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodDelete, Path: "/api/v1/admin/users/badgeuser/badges/" + itoa(badgeID), Token: adminToken}); rec.Code != http.StatusOK {
+		t.Fatalf("revoke badge: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec := app.Do(t, testutil.Request{Method: http.MethodDelete, Path: "/api/v1/admin/badges/" + itoa(badgeID), Token: adminToken}); rec.Code != http.StatusOK {
+		t.Fatalf("delete badge: %d %s", rec.Code, rec.Body.String())
+	}
+
+	// Revoke again -> 404.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodDelete, Path: "/api/v1/admin/users/badgeuser/badges/" + itoa(badgeID), Token: adminToken}); rec.Code != http.StatusNotFound {
+		t.Fatalf("revoke removed badge status = %d, want 404", rec.Code)
+	}
+
+	// Earned badge: give the user >100 top-level posts and check prolific_poster.
+	for i := 0; i < 101; i++ {
+		app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/posts/", Token: userToken, Body: map[string]string{"content": "badge post"}})
+	}
+	profile, _ = testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/users/badgeuser", Token: userToken}))
+	badges = profile["badges"].([]any)
+	found = false
+	for _, b := range badges {
+		if b.(map[string]any)["key"] == "prolific_poster" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("earned prolific_poster missing from profile: %v", badges)
+	}
+}

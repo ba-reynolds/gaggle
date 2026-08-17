@@ -15,6 +15,793 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/admin/badges": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Returns every badge definition (earned + assigned). Admin only.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "List badge catalog",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Badge"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Registers a new admin-assigned badge definition. Admin only.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Create an assigned badge",
+                "parameters": [
+                    {
+                        "description": "Badge definition",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.CreateBadgePayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Badge"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/badges/{badgeID}": {
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Removes an admin-assigned badge definition not currently held by any user. Admin only.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Delete an assigned badge",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Badge ID",
+                        "name": "badgeID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": {
+                                                "type": "boolean"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Edits an admin-assigned badge definition. Earned badges are immutable. Admin only.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Update an assigned badge",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Badge ID",
+                        "name": "badgeID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Badge definition",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.CreateBadgePayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Badge"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/users/{username}/badges/{badgeID}": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Awards an admin-assigned badge to a user. Admin only.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Grant a badge to a user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Username",
+                        "name": "username",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Badge ID",
+                        "name": "badgeID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": {
+                                                "type": "boolean"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Removes an admin-assigned badge from a user. Admin only.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Revoke a badge from a user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Username",
+                        "name": "username",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Badge ID",
+                        "name": "badgeID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": {
+                                                "type": "boolean"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "description": "Login",
@@ -4172,6 +4959,57 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_ba-reynolds_gophersocial_internal_models.Badge": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "criteria": {
+                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.BadgeCriteria"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "kind": {
+                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.BadgeKind"
+                },
+                "label": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_ba-reynolds_gophersocial_internal_models.BadgeCriteria": {
+            "type": "object",
+            "properties": {
+                "metric": {
+                    "type": "string"
+                },
+                "min": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_ba-reynolds_gophersocial_internal_models.BadgeKind": {
+            "type": "string",
+            "enum": [
+                "earned",
+                "assigned"
+            ],
+            "x-enum-varnames": [
+                "BadgeKindEarned",
+                "BadgeKindAssigned"
+            ]
+        },
         "github_com_ba-reynolds_gophersocial_internal_models.BookmarkCategory": {
             "type": "object",
             "properties": {
@@ -4222,6 +5060,37 @@ const docTemplate = `{
             "properties": {
                 "success": {
                     "type": "boolean"
+                }
+            }
+        },
+        "github_com_ba-reynolds_gophersocial_internal_models.CreateBadgePayload": {
+            "type": "object",
+            "required": [
+                "description",
+                "icon",
+                "key",
+                "label"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 1
+                },
+                "icon": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 1
+                },
+                "key": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 2
+                },
+                "label": {
+                    "type": "string",
+                    "maxLength": 60,
+                    "minLength": 1
                 }
             }
         },
@@ -4807,6 +5676,38 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_ba-reynolds_gophersocial_internal_models.UserBadge": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "criteria": {
+                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.BadgeCriteria"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "granted_at": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "kind": {
+                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.BadgeKind"
+                },
+                "label": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_ba-reynolds_gophersocial_internal_models.UserFollowersResponse": {
             "type": "object",
             "properties": {
@@ -4904,6 +5805,12 @@ const docTemplate = `{
         "github_com_ba-reynolds_gophersocial_internal_models.UserProfileResponse": {
             "type": "object",
             "properties": {
+                "badges": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserBadge"
+                    }
+                },
                 "banner_uuid": {
                     "type": "string"
                 },
@@ -4924,6 +5831,9 @@ const docTemplate = `{
                 },
                 "following_count": {
                     "type": "integer"
+                },
+                "is_admin": {
+                    "type": "boolean"
                 },
                 "location": {
                     "type": "string"
@@ -4967,6 +5877,12 @@ const docTemplate = `{
         "github_com_ba-reynolds_gophersocial_internal_models.UserWithProfile": {
             "type": "object",
             "properties": {
+                "badges": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserBadge"
+                    }
+                },
                 "created_at": {
                     "type": "string"
                 },

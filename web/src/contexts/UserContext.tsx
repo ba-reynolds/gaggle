@@ -6,6 +6,7 @@ export interface User {
   username: string;
   displayName: string;
   profilePictureUUID: string;
+  isAdmin: boolean;
 }
 
 interface UserContextType {
@@ -24,7 +25,8 @@ export function UserProvider({ children }: UserProviderProps) {
   const [user, setUser] = useState<User>({
     displayName: "",
     username: "",
-    profilePictureUUID: ""
+    profilePictureUUID: "",
+    isAdmin: false
   });
 
   const updateUser = (userData: Partial<User>) => {

@@ -21,7 +21,7 @@ type userStore struct {
 
 func (store *userStore) GetByID(ctx context.Context, id int) (*models.User, error) {
 	query := `
-		SELECT user_id, username, email, password, soft_deleted, soft_deleted_at, created_at, updated_at
+		SELECT user_id, username, email, password, soft_deleted, soft_deleted_at, created_at, updated_at, is_admin
 		FROM users
 		WHERE user_id = $1
 	`
@@ -36,6 +36,7 @@ func (store *userStore) GetByID(ctx context.Context, id int) (*models.User, erro
 		&user.SoftDeletedAt,
 		&user.CreatedAt,
 		&user.UpdatedAt,
+		&user.IsAdmin,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -55,7 +56,7 @@ func (store *userStore) GetByID(ctx context.Context, id int) (*models.User, erro
 
 func (store *userStore) GetByEmail(ctx context.Context, email string) (*models.User, error) {
 	query := `
-		SELECT user_id, username, email, password, soft_deleted, soft_deleted_at, created_at, updated_at
+		SELECT user_id, username, email, password, soft_deleted, soft_deleted_at, created_at, updated_at, is_admin
 		FROM users
 		WHERE email = $1
 	`
@@ -70,6 +71,7 @@ func (store *userStore) GetByEmail(ctx context.Context, email string) (*models.U
 		&user.SoftDeletedAt,
 		&user.CreatedAt,
 		&user.UpdatedAt,
+		&user.IsAdmin,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -89,7 +91,7 @@ func (store *userStore) GetByEmail(ctx context.Context, email string) (*models.U
 
 func (store *userStore) GetByUsername(ctx context.Context, username string) (*models.User, error) {
 	query := `
-		SELECT user_id, username, email, password, soft_deleted, soft_deleted_at, created_at, updated_at
+		SELECT user_id, username, email, password, soft_deleted, soft_deleted_at, created_at, updated_at, is_admin
 		FROM users
 		WHERE username = $1
 	`
@@ -104,6 +106,7 @@ func (store *userStore) GetByUsername(ctx context.Context, username string) (*mo
 		&user.SoftDeletedAt,
 		&user.CreatedAt,
 		&user.UpdatedAt,
+		&user.IsAdmin,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -185,7 +188,7 @@ func (store *userStore) Create(ctx context.Context, tx *sql.Tx, user *models.Use
 
 func (store *userStore) GetUserProfileByUsername(ctx context.Context, username string) (*models.UserWithProfile, error) {
 	query := `
-		SELECT u.user_id, u.username, u.email, u.password, u.soft_deleted, u.soft_deleted_at, u.created_at, u.updated_at,
+		SELECT u.user_id, u.username, u.email, u.password, u.soft_deleted, u.soft_deleted_at, u.created_at, u.updated_at, u.is_admin,
 			   up.display_name, up.bio, up.profile_picture_uuid, up.banner_uuid, up.birth_date, up.location, up.website,
 			   up.followers_count, up.following_count
 		FROM users u
@@ -203,6 +206,7 @@ func (store *userStore) GetUserProfileByUsername(ctx context.Context, username s
 		&user.SoftDeletedAt,
 		&user.CreatedAt,
 		&user.UpdatedAt,
+		&user.IsAdmin,
 		&user.Profile.DisplayName,
 		&user.Profile.Bio,
 		&user.Profile.ProfilePictureUUID,
@@ -232,7 +236,7 @@ func (store *userStore) GetUserProfileByUsername(ctx context.Context, username s
 func (store *userStore) Search(ctx context.Context, query string, limit int) (*models.UserList, error) {
 	query = strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(query)
 	rows, err := store.db.QueryContext(ctx, `
-		SELECT u.username, up.display_name, up.bio, up.profile_picture_uuid, up.banner_uuid,
+		SELECT u.user_id, u.username, up.display_name, up.bio, up.profile_picture_uuid, up.banner_uuid,
 		       up.birth_date, up.location, up.website, up.followers_count, up.following_count, u.created_at
 		FROM users u
 		JOIN user_profiles up ON up.user_id = u.user_id
@@ -248,7 +252,7 @@ func (store *userStore) Search(ctx context.Context, query string, limit int) (*m
 	users := make([]models.UserProfileResponse, 0, limit+1)
 	for rows.Next() {
 		var profile models.UserProfileResponse
-		if err := rows.Scan(&profile.Username, &profile.DisplayName, &profile.Bio,
+		if err := rows.Scan(&profile.UserID, &profile.Username, &profile.DisplayName, &profile.Bio,
 			&profile.ProfilePictureUUID, &profile.BannerUUID, &profile.BirthDate,
 			&profile.Location, &profile.Website, &profile.FollowersCount,
 			&profile.FollowingCount, &profile.CreatedAt); err != nil {

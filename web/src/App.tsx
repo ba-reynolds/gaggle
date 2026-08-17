@@ -17,6 +17,7 @@ import { NotificationsProvider } from './contexts/NotificationsContext';
 import NotificationsPage from './pages/NotificationsPage';
 import SearchPage from './pages/SearchPage';
 import HashtagPage from './pages/HashtagPage';
+import AdminPage from './pages/AdminPage';
 
 
 const queryClient = new QueryClient({
@@ -50,6 +51,7 @@ function App() {
                   <Route path="/notifications" element={<SocialMediaLayout><NotificationsPage /></SocialMediaLayout>} />
                   <Route path="/search" element={<SocialMediaLayout><SearchPage /></SocialMediaLayout>} />
                   <Route path="/hashtags/:tag" element={<SocialMediaLayout><HashtagPage /></SocialMediaLayout>} />
+                  <Route path="/admin" element={<SocialMediaLayout><AdminPage /></SocialMediaLayout>} />
                 </Routes>
               </Router>
             </NotificationsProvider>

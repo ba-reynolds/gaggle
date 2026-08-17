@@ -34,6 +34,11 @@ func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 			h.respondError(w, err)
 			return
 		}
+		if err := h.service.Badges.HydrateProfiles(r.Context(), users.Items); err != nil {
+			h.logger.Error("failed to hydrate badges", "error", err)
+			h.respondError(w, err)
+			return
+		}
 		util.RespondWithJson(w, http.StatusOK, users)
 		return
 	}

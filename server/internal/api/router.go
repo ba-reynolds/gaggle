@@ -51,6 +51,7 @@ func NewRouter(
 	notificationHandler := handlers.NewNotificationHandler(service, logger)
 	realtimeHandler := handlers.NewRealtimeHandler(service, logger)
 	searchHandler := handlers.NewSearchHandler(service, logger)
+	adminHandler := handlers.NewAdminHandler(service, logger)
 
 	// API v1 routes
 	router.Route("/api/v1", func(r chi.Router) {
@@ -149,6 +150,16 @@ func NewRouter(
 				r.Post("/category", postEngagementHandler.CreateBookmarkCategory)
 				r.Get("/category", postEngagementHandler.ListBookmarkCategories)
 				r.Delete("/category/{categoryID}", postEngagementHandler.DeleteBookmarkCategory)
+			})
+
+			protected.Route("/admin", func(r chi.Router) {
+				r.Use(mid.AdminOnlyMiddleware)
+				r.Get("/badges", adminHandler.ListBadges)
+				r.Post("/badges", adminHandler.CreateBadge)
+				r.Patch("/badges/{badgeID}", adminHandler.UpdateBadge)
+				r.Delete("/badges/{badgeID}", adminHandler.DeleteBadge)
+				r.Post("/users/{username}/badges/{badgeID}", adminHandler.GrantBadge)
+				r.Delete("/users/{username}/badges/{badgeID}", adminHandler.RevokeBadge)
 			})
 		})
 	})

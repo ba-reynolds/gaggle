@@ -372,6 +372,11 @@ func (h *UserRelationshipHandler) GetFollowers(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	if err := h.service.Badges.HydrateUserWithProfiles(r.Context(), followers.Followers); err != nil {
+		h.logger.Error("failed to hydrate badges", "error", err, "username", username)
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
 	if err := util.RespondWithJson(w, http.StatusOK, followers); err != nil {
 		h.logger.Error("failed to write HTTP response",
 			"error", err,
@@ -438,6 +443,11 @@ func (h *UserRelationshipHandler) GetFollowing(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	if err := h.service.Badges.HydrateUserWithProfiles(r.Context(), following.Following); err != nil {
+		h.logger.Error("failed to hydrate badges", "error", err, "username", username)
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
 	if err := util.RespondWithJson(w, http.StatusOK, following); err != nil {
 		h.logger.Error("failed to write HTTP response",
 			"error", err,

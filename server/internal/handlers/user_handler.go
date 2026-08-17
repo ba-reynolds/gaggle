@@ -98,6 +98,11 @@ func (h *UserHandler) UpdateUserProfile(w http.ResponseWriter, r *http.Request) 
 	// Log successful operations
 	h.logger.Info("user profile updated successfully", "userID", user.ID)
 
+	if err := h.service.Badges.HydrateUserWithProfile(r.Context(), user); err != nil {
+		h.logger.Error("failed to hydrate badges", "error", err, "userID", user.ID)
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
 	if err := util.RespondWithJson(w, http.StatusOK, user.ToProfileResponse()); err != nil {
 		// Log HTTP response errors - these are HTTP layer concerns
 		h.logger.Error("failed to write HTTP response",
@@ -150,6 +155,11 @@ func (h *UserHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := h.service.Badges.HydrateUserWithProfile(r.Context(), userWithProfile); err != nil {
+		h.logger.Error("failed to hydrate badges", "error", err, "userID", userWithProfile.ID)
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
 	if err := util.RespondWithJson(w, http.StatusOK, userWithProfile.ToProfileResponse()); err != nil {
 		// Log HTTP response errors - these are HTTP layer concerns
 		h.logger.Error("failed to write HTTP response",
@@ -193,6 +203,11 @@ func (h *UserHandler) GetUserProfileByUsername(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	if err := h.service.Badges.HydrateUserWithProfile(r.Context(), user); err != nil {
+		h.logger.Error("failed to hydrate badges", "error", err, "username", username)
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
 	if err := util.RespondWithJson(w, http.StatusOK, user.ToProfileResponse()); err != nil {
 		// Log HTTP response errors - these are HTTP layer concerns
 		h.logger.Error("failed to write HTTP response",

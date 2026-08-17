@@ -102,3 +102,21 @@ Tricky things learned while working on this repo (newest on top).
   or the endpoint won't appear in `server/docs` after `make swag`.
 - Edit flow: `PostService.Update` is a no-op when content unchanged (no history row);
   `Store.Posts.Update` guards `soft_deleted=FALSE`, `PostService` enforces ownership.
+- Phase 4 badges: migration `000013` adds `users.is_admin`, `badges` (catalog with
+  `kind earned|assigned` + `criteria` JSONB), and `user_badges` (admin grants only).
+  Earned badges are COMPUTED on read, never stored: `badgeStore.getMetrics` batches
+  account age / top-level post count / followers / likes-received, then
+  `GetBadgesForUsers` merges earned + assigned. Hydration happens in handlers via
+  `service.Badges.HydrateProfiles` / `HydrateUserWithProfiles` — every profile path
+  (single user, search, followers/following, likers/reposters) must remember to
+  hydrate or badges silently disappear.
+- `UserProfileResponse` carries an internal `UserID json:"-"` so flat-profile
+  responses can be batch-badged without a username→id lookup. Keep it populated
+  when constructing responses in stores.
+- `users.is_admin` must be selected in every query scanning into `models.User`
+  (GetByID/GetByEmail/GetByUsername/GetUserProfileByUsername/followers/following).
+  `admin_handler` routes live under `/admin` behind `AdminOnlyMiddleware`, which
+  must be mounted AFTER `AuthTokenMiddleware`.
+- Badge icons are stored as lucide-react component names; the `UserBadges` component
+  falls back to `Award` when a name no longer exists. `deleteBadge` refuses (409)
+  earned badges and assigned badges still held by a user.

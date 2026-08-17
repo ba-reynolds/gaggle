@@ -11,6 +11,7 @@ import { useUser } from "@/contexts/UserContext";
 import { useMediaUpload } from "@/hooks/useMediaUpload";
 import { useGetUserPosts } from "@/hooks/usePost";
 import { useFetchProfile, usePinnedPost, useUpdateProfile } from "@/hooks/useUser";
+import UserBadges from "@/components/UserBadges";
 import { getMediaUrl } from "@/util/media";
 import { format, parseISO } from "date-fns";
 import { Calendar, Camera, Link as LinkIcon, Loader2, MapPin } from "lucide-react";
@@ -216,6 +217,7 @@ const ProfilePage: React.FC = () => {
         <div className="mt-16">
           <h1 className="text-2xl font-bold text-primary">{profile?.display_name || displayName}</h1>
           <p className="text-muted-foreground">@{profile?.username || username}</p>
+          <UserBadges badges={profile?.badges} className="mt-2" />
 
           <div className="mt-4 text-sm">
             <p className="whitespace-pre-wrap text-primary">{profile?.bio || bio}</p>

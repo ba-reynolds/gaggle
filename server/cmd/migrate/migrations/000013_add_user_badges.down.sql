@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS user_badges;
+DROP TABLE IF EXISTS badges;
+ALTER TABLE users DROP COLUMN IF EXISTS is_admin;

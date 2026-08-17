@@ -40,6 +40,21 @@ export interface RegisterResponse {
 }
 
 // Users
+export interface Badge {
+  id: number;
+  key: string;
+  label: string;
+  description: string;
+  icon: string;
+  kind: 'earned' | 'assigned';
+  criteria?: { metric: string; min: number };
+  created_at: string;
+}
+
+export interface UserBadge extends Badge {
+  granted_at?: string;
+}
+
 export interface UserProfileResponse {
   username: string;
   display_name: string;
@@ -52,6 +67,15 @@ export interface UserProfileResponse {
   followers_count: number;
   following_count: number;
   created_at: string;
+  is_admin?: boolean;
+  badges: UserBadge[];
+}
+
+export interface CreateBadgePayload {
+  key: string;
+  label: string;
+  description: string;
+  icon: string;
 }
 
 export interface UpdateProfilePayload {

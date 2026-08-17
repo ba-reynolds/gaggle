@@ -29,7 +29,8 @@ import {
   MoreHorizontal,
   Settings,
   Bell,
-  User
+  User,
+  Shield
 } from "lucide-react";
 import { useState } from "react";
 import { NavLink, Navigate, useNavigate } from 'react-router-dom';
@@ -125,6 +126,7 @@ export default function SocialMediaLayout({
                 <NavItem icon={Bell} label="Notifications" to="/notifications" badge={unreadCount} />
                 <NavItem icon={User} label="Profile" to={`/profile/${user.username}`} />
                 <NavItem icon={Settings} label="Settings" to="/settings" />
+                {user.isAdmin && <NavItem icon={Shield} label="Admin" to="/admin" />}
 
 
                 <Button

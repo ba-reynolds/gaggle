@@ -21,6 +21,9 @@ repository, two apps, fully containerized with Docker Compose.
 - Post power features: edit with history, pin to profile (one per author),
   cascade delete (post + all replies), and opinion polls (top-level only,
   2-4 options, one vote per user)
+- Profile badges: auto-earned milestone badges (account age, posts, followers,
+  likes received) plus admin-assigned badges managed from an admin UI
+- Admin area at `/admin` (only for admins; `alice` is the seeded admin)
 - Consistent `{data, error}` JSON envelope on every endpoint
 - Swagger UI at `/swagger` (regenerate with `make swag`)
 

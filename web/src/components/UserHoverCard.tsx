@@ -2,6 +2,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useFetchProfile } from "@/hooks/useUser";
+import UserBadges from "@/components/UserBadges";
 import { getMediaUrl } from "@/util/media";
 import { useUser } from "@/contexts/UserContext";
 import { Link } from "react-router-dom";
@@ -72,6 +73,7 @@ const UserHoverCard: React.FC<UserHoverCardProps> = ({
               <h4 className="font-bold">{displayName}</h4>
               <p className="text-sm text-muted-foreground">@{username}</p>
             </Link>
+            <UserBadges badges={profile?.badges} className="mt-1.5" />
 
             <p className="text-sm mt-2 line-clamp-4">{bio}</p>
 

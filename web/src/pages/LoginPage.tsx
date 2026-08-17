@@ -69,6 +69,7 @@ const LoginPage: React.FC = () => {
         username: meResponse.data.data.username,
         displayName: meResponse.data.data.display_name,
         profilePictureUUID: meResponse.data.data.profile_picture_uuid ?? '',
+        isAdmin: meResponse.data.data.is_admin ?? false,
       });
       toast.success("Login successful");
       navigate('/'); // Redirect to home page after successful login

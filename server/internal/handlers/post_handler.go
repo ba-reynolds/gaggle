@@ -862,6 +862,11 @@ func (h *PostHandler) GetPostLikers(w http.ResponseWriter, r *http.Request) {
 		util.RespondWithAppError(w, apperrors.InternalServerError(err))
 		return
 	}
+	if err := h.service.Badges.HydrateProfiles(r.Context(), list.Items); err != nil {
+		h.logger.Error("failed to hydrate badges", "error", err, "postID", postID)
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
 	util.RespondWithJson(w, http.StatusOK, list)
 }
 
@@ -902,6 +907,11 @@ func (h *PostHandler) GetPostReposters(w http.ResponseWriter, r *http.Request) {
 			util.RespondWithAppError(w, appErr)
 			return
 		}
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+	if err := h.service.Badges.HydrateProfiles(r.Context(), list.Items); err != nil {
+		h.logger.Error("failed to hydrate badges", "error", err, "postID", postID)
 		util.RespondWithAppError(w, apperrors.InternalServerError(err))
 		return
 	}
