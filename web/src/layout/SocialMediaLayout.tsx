@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import UserHoverCard from "@/components/UserHoverCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificationsContext";
+import { useTrends } from "@/hooks/useSearch";
 import { useUser } from "@/contexts/UserContext";
 import { useLogoutMutation } from "@/hooks/useAuth";
 import { getMediaUrl } from "@/util/media";
@@ -47,6 +48,8 @@ export default function SocialMediaLayout({
   const navigate = useNavigate();
   const [isComposing, setIsComposing] = useState(false);
   const [followingUsers, setFollowingUsers] = useState<{ [key: string]: boolean }>({});
+  const [search, setSearch] = useState('');
+  const trends = useTrends();
 
   const handleNewPost = () => {
     setIsComposing(false);
@@ -184,6 +187,11 @@ export default function SocialMediaLayout({
               <Input
                 placeholder="Search"
                 className="bg-transparent p-6 rounded-full focus-visible:ring-0 focus-visible:ring-offset-0 text-primary"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && search.trim()) navigate(`/search?q=${encodeURIComponent(search.trim())}`);
+                }}
               />
 
               <div className="bg-muted rounded-xl p-4 mb-4">
@@ -194,19 +202,15 @@ export default function SocialMediaLayout({
               {/* Trending */}
               <div className="bg-muted rounded-xl p-4">
                 <h3 className="font-bold text-xl mb-4 text-primary">Trending</h3>
-                <div className="space-y-4">
-
-                    <div className="cursor-pointer hover:bg-accent p-2 rounded">
-                      <p className="text-xs text-muted-foreground">Trending in Art</p>
-                      <p className="font-semibold text-primary">#DigitalArt</p>
-                      <p className="text-xs text-muted-foreground">1.3K posts</p>
-                    </div>
-                    <div className="cursor-pointer hover:bg-accent p-2 rounded">
-                      <p className="text-xs text-muted-foreground">Trending in Art</p>
-                      <p className="font-semibold text-primary">#Hockey</p>
-                      <p className="text-xs text-muted-foreground">2.5K posts</p>
-                    </div>
-
+                <div className="space-y-2">
+                  {trends.data?.slice(0, 5).map((trend) => (
+                    <button key={trend.name} className="block w-full rounded p-2 text-left hover:bg-accent" onClick={() => navigate(`/hashtags/${trend.name}`)}>
+                      <p className="text-xs text-muted-foreground">Trending now</p>
+                      <p className="font-semibold text-primary">#{trend.name}</p>
+                      <p className="text-xs text-muted-foreground">{trend.count} posts</p>
+                    </button>
+                  ))}
+                  {!trends.isLoading && !trends.data?.length && <p className="text-sm text-muted-foreground">No trends yet.</p>}
                 </div>
                 <Button variant="ghost" className="w-full mt-2 text-primary justify-start p-2">
                   Show more

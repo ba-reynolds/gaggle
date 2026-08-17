@@ -15,6 +15,8 @@ import PostPage from './pages/PostPage';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { NotificationsProvider } from './contexts/NotificationsContext';
 import NotificationsPage from './pages/NotificationsPage';
+import SearchPage from './pages/SearchPage';
+import HashtagPage from './pages/HashtagPage';
 
 
 const queryClient = new QueryClient({
@@ -46,6 +48,8 @@ function App() {
                   <Route path="/settings" element={<SocialMediaLayout><SettingsPage /></SocialMediaLayout>} />
                   <Route path="/post/:id" element={<SocialMediaLayout><PostPage /></SocialMediaLayout>} />
                   <Route path="/notifications" element={<SocialMediaLayout><NotificationsPage /></SocialMediaLayout>} />
+                  <Route path="/search" element={<SocialMediaLayout><SearchPage /></SocialMediaLayout>} />
+                  <Route path="/hashtags/:tag" element={<SocialMediaLayout><HashtagPage /></SocialMediaLayout>} />
                 </Routes>
               </Router>
             </NotificationsProvider>

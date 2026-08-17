@@ -77,3 +77,6 @@ Tricky things learned while working on this repo (newest on top).
   `/api/v1/stream` is cookie-authenticated SSE; nginx disables buffering for that route.
   The in-process realtime hub emits `notification.new`, `feed.post_created`, and
   `stream.resync`; frontend EventSource invalidates the relevant React Query caches.
+- Phase 2 search: migration `000011` creates `hashtags`/`post_hashtags` and a GIN
+  full-text index. Hashtags are normalized lowercase at write time; post search,
+  user search, hashtag feeds, and 24-hour top-level-post trends are protected routes.

@@ -92,6 +92,12 @@ type Service struct {
 		PublishFeedPost(ctx context.Context, authorID, postID int) error
 		CreateMentionNotifications(ctx context.Context, actorID, postID int, content string) error
 	}
+	Search interface {
+		Posts(ctx context.Context, viewerID int, query string, limit int, cursor string) (*models.PostFeed, error)
+		Users(ctx context.Context, query string, limit int) (*models.UserList, error)
+		HashtagPosts(ctx context.Context, viewerID int, name string, limit int, cursor string) (*models.PostFeed, error)
+		Trends(ctx context.Context, limit int) ([]models.Trend, error)
+	}
 }
 
 // NewService creates a new service with all required dependencies
@@ -108,5 +114,6 @@ func NewService(store *store.Store, logger *slog.Logger, authenticator *auth.JWT
 		PostEngagements:   NewPostEngagementService(store, logger),
 		UserRelationships: &UserRelationshipService{store, logger},
 		Notifications:     NewNotificationService(store, hub, logger),
+		Search:            NewSearchService(store, logger, config),
 	}
 }

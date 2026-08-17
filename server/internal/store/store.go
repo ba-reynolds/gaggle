@@ -31,6 +31,7 @@ type Store struct {
 		UpdateUserProfile(ctx context.Context, tx *sql.Tx, user *models.UserWithProfile) error
 		GetSettings(ctx context.Context, userID int) (*models.UserSettings, error)
 		UpdateSettings(ctx context.Context, userID int, settings *models.UserSettings) error
+		Search(ctx context.Context, query string, limit int) (*models.UserList, error)
 	}
 	Media interface {
 		Create(context.Context, *sql.Tx, *models.Media) error
@@ -54,6 +55,8 @@ type Store struct {
 		GetBookmarkedPostsFeed(ctx context.Context, userID int, categoryIDs []int, limit int, cursor string) (*models.PostFeed, error)
 		GetLikedPostsFeed(ctx context.Context, userID int, limit int, cursor string) (*models.PostFeed, error)
 		GetQuotesFeed(ctx context.Context, postID int, limit int, cursor string) (*models.PostFeed, error)
+		Search(ctx context.Context, query string, limit int, cursor string) (*models.PostFeed, error)
+		ListByHashtag(ctx context.Context, name string, limit int, cursor string) (*models.PostFeed, error)
 	}
 	PostEngagements interface {
 		Like(ctx context.Context, tx *sql.Tx, postID, userID int) (bool, error)
@@ -87,6 +90,10 @@ type Store struct {
 		MarkRead(ctx context.Context, recipientID, notificationID int) error
 		MarkAllRead(ctx context.Context, recipientID int) error
 	}
+	Hashtags interface {
+		SyncPost(ctx context.Context, tx *sql.Tx, postID int, content string) error
+		Trends(ctx context.Context, limit int) ([]models.Trend, error)
+	}
 }
 
 func NewStore(db *sql.DB, logger *slog.Logger, mediaDir string) *Store {
@@ -99,6 +106,7 @@ func NewStore(db *sql.DB, logger *slog.Logger, mediaDir string) *Store {
 		PostEngagements:   &postEngagementStore{db: db, logger: logger},
 		UserRelationships: &userRelationshipStore{db: db, logger: logger},
 		Notifications:     &notificationStore{db: db, logger: logger},
+		Hashtags:          &hashtagStore{db: db, logger: logger},
 	}
 }
 

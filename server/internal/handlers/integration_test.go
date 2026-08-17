@@ -324,6 +324,60 @@ func TestNotificationsLifecycle(t *testing.T) {
 	}
 }
 
+func TestSearchHashtagsAndTrends(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+	token := app.RegisterUser(t, "searcher", "searcher@example.com")
+	app.RegisterUser(t, "searchfriend", "searchfriend@example.com")
+
+	post, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/posts/",
+		Token:  token,
+		Body:   map[string]string{"content": "Building a searchable river boat #Docker #GoLang"},
+	}))
+	postID := int(post["id"].(float64))
+
+	searchRec := app.Do(t, testutil.Request{
+		Method: http.MethodGet,
+		Path:   "/api/v1/search?q=searchable&type=posts",
+		Token:  token,
+	})
+	if searchRec.Code != http.StatusOK {
+		t.Fatalf("post search status = %d body = %s", searchRec.Code, searchRec.Body.String())
+	}
+	search, _ := testutil.Decode[map[string]any](t, searchRec)
+	if len(search["items"].([]any)) != 1 {
+		t.Fatalf("post search items = %d, want 1", len(search["items"].([]any)))
+	}
+
+	users, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{
+		Method: http.MethodGet,
+		Path:   "/api/v1/search?q=searchfriend&type=users",
+		Token:  token,
+	}))
+	if len(users["items"].([]any)) != 1 {
+		t.Fatalf("user search items = %d, want 1", len(users["items"].([]any)))
+	}
+
+	hashtag, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{
+		Method: http.MethodGet,
+		Path:   "/api/v1/hashtags/docker/posts",
+		Token:  token,
+	}))
+	if len(hashtag["items"].([]any)) != 1 || int(hashtag["items"].([]any)[0].(map[string]any)["id"].(float64)) != postID {
+		t.Fatalf("hashtag result did not contain post %d: %v", postID, hashtag["items"])
+	}
+
+	trends, _ := testutil.Decode[[]map[string]any](t, app.Do(t, testutil.Request{
+		Method: http.MethodGet,
+		Path:   "/api/v1/trends",
+		Token:  token,
+	}))
+	if len(trends) == 0 || trends[0]["name"] == nil {
+		t.Fatalf("trends = %v, expected hashtag data", trends)
+	}
+}
+
 func TestParentChainAndDescendants(t *testing.T) {
 	app := testutil.NewApp(t, testutil.Database(t))
 	token := app.RegisterUser(t, "chainuser", "chain@example.com")

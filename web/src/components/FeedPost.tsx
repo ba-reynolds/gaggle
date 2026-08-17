@@ -51,6 +51,18 @@ interface PostProps {
   post: Post;
 }
 
+function renderPostContent(content: string) {
+  return content.split(/(#[\p{L}\p{N}_]+)/gu).map((part, index) => {
+    if (!part.startsWith('#')) return <React.Fragment key={`${part}-${index}`}>{part}</React.Fragment>;
+    const tag = part.slice(1).toLowerCase();
+    return (
+      <Link key={`${part}-${index}`} to={`/hashtags/${encodeURIComponent(tag)}`} onClick={(event) => event.stopPropagation()} className="text-primary hover:underline">
+        {part}
+      </Link>
+    );
+  });
+}
+
 const FeedPost: React.FC<PostProps> = ({ post }) => {
   const { id, author, content, media, created_at, engagement } = post;
   const { user } = useUser();
@@ -343,7 +355,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                 </DropdownMenu>
               </div>
 
-              <p className="mt-2 text-sm text-primary">{content}</p>
+              <p className="mt-2 whitespace-pre-wrap text-sm text-primary">{renderPostContent(content)}</p>
 
               {post.quoted_post_id != null && (
                 <Link

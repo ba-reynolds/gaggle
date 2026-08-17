@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strconv"
 	"strings"
 	"time"
 
@@ -1214,4 +1215,74 @@ func (store *postStore) GetQuotesFeed(ctx context.Context, postID int, limit int
 		HasMore:    hasMore,
 		NextCursor: nextCursor,
 	}, nil
+}
+
+func (store *postStore) Search(ctx context.Context, query string, limit int, cursor string) (*models.PostFeed, error) {
+	return store.listDiscoverablePosts(ctx, `
+		FROM posts p
+		WHERE p.soft_deleted = FALSE AND p.parent_id IS NULL
+		  AND to_tsvector('simple', p.content) @@ plainto_tsquery('simple', $1)
+	`, []any{query}, limit, cursor)
+}
+
+func (store *postStore) ListByHashtag(ctx context.Context, name string, limit int, cursor string) (*models.PostFeed, error) {
+	return store.listDiscoverablePosts(ctx, `
+		FROM posts p
+		JOIN post_hashtags ph ON ph.post_id = p.post_id
+		JOIN hashtags h ON h.hashtag_id = ph.hashtag_id
+		WHERE p.soft_deleted = FALSE AND p.parent_id IS NULL AND h.name = $1
+	`, []any{name}, limit, cursor)
+}
+
+func (store *postStore) listDiscoverablePosts(ctx context.Context, filters string, args []any, limit int, cursor string) (*models.PostFeed, error) {
+	query := `SELECT p.post_id, p.created_at ` + filters
+	if cursor != "" {
+		decoded, err := util.DecodeCursor(cursor)
+		if err != nil {
+			return nil, apperrors.BadRequestError("invalid search cursor", err)
+		}
+		id, ok := decoded.ID.(float64)
+		if !ok {
+			return nil, apperrors.BadRequestError("invalid search cursor", nil)
+		}
+		timestamp, err := time.Parse(time.RFC3339Nano, decoded.Timestamp)
+		if err != nil {
+			return nil, apperrors.BadRequestError("invalid search cursor", err)
+		}
+		query += " AND (p.created_at, p.post_id) < ($" + strconv.Itoa(len(args)+1) + ", $" + strconv.Itoa(len(args)+2) + ")"
+		args = append(args, timestamp, int(id))
+	}
+	query += " ORDER BY p.created_at DESC, p.post_id DESC LIMIT $" + strconv.Itoa(len(args)+1)
+	args = append(args, limit+1)
+	rows, err := store.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		store.logger.Error("search post query failed", "query", query, "args", args, "error", err)
+		return nil, apperrors.InternalServerError(err)
+	}
+	defer rows.Close()
+
+	items := make([]*models.FullPost, 0, limit)
+	for rows.Next() {
+		var id int
+		var createdAt time.Time
+		if err := rows.Scan(&id, &createdAt); err != nil {
+			return nil, apperrors.InternalServerError(err)
+		}
+		items = append(items, &models.FullPost{Post: models.Post{ID: id, CreatedAt: createdAt}})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, apperrors.InternalServerError(err)
+	}
+	feed := &models.PostFeed{Items: items}
+	if len(items) > limit {
+		feed.HasMore = true
+		feed.Items = items[:limit]
+		last := feed.Items[len(feed.Items)-1]
+		encoded, err := util.EncodeCursor(util.PaginationCursor{ID: last.ID, Timestamp: last.CreatedAt.Format(time.RFC3339Nano), Order: "desc"})
+		if err != nil {
+			return nil, apperrors.InternalServerError(err)
+		}
+		feed.NextCursor = encoded
+	}
+	return feed, nil
 }

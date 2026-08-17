@@ -133,6 +133,11 @@ export interface Notification {
   created_at: string;
 }
 
+export interface Trend {
+  name: string;
+  count: number;
+}
+
 export interface PostWithAncestorsAndDescendants {
   post: Post;
   ancestors?: PaginatedFeedResponse;

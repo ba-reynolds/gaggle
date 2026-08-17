@@ -1,6 +1,8 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGetFeedPosts } from "@/hooks/usePost";
 import { Loader2, Sparkles } from "lucide-react";
+import { useTrends } from "@/hooks/useSearch";
+import { Link } from "react-router-dom";
 import FeedPost from "@/components/FeedPost";
 import { useInView } from "react-intersection-observer";
 import { useEffect, useRef } from "react";
@@ -11,6 +13,7 @@ import { useEffect, useRef } from "react";
 const FeedPage: React.FC = () => {
   const { ref, inView } = useInView();
   const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useGetFeedPosts();
+  const trends = useTrends();
   const isFetchingRef = useRef(false);
 
   useEffect(() => {
@@ -91,10 +94,19 @@ const FeedPage: React.FC = () => {
 
         {/* Discover feed Content */}
         <TabsContent value="discover" className="mt-2 space-y-4">
-          <div className="flex items-center justify-center p-8 text-muted-foreground">
-            <div className="text-center">
-              <Sparkles className="h-8 w-8 mx-auto mb-2" />
-              <p>Discover trending content here</p>
+          <div className="p-5">
+            <div className="mb-5 flex items-center gap-2 text-primary">
+              <Sparkles className="h-5 w-5" />
+              <h2 className="font-semibold">What is happening</h2>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {trends.data?.map((trend) => (
+                <Link key={trend.name} to={`/hashtags/${trend.name}`} className="rounded-xl border border-border p-4 transition hover:bg-muted">
+                  <p className="text-xs text-muted-foreground">Trending now</p>
+                  <p className="mt-1 font-semibold text-primary">#{trend.name}</p>
+                  <p className="text-xs text-muted-foreground">{trend.count} posts</p>
+                </Link>
+              ))}
             </div>
           </div>
         </TabsContent>

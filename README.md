@@ -17,6 +17,7 @@ repository, two apps, fully containerized with Docker Compose.
 - Redis: home-feed caching + auth rate limiting (degrades gracefully if absent)
 - In-app notifications for likes, reposts, quotes, replies, follows, and mentions
 - Live notification/feed events over cookie-authenticated Server-Sent Events (SSE)
+- Full-text post and user search, clickable hashtags, hashtag feeds, and trends
 - Consistent `{data, error}` JSON envelope on every endpoint
 - Swagger UI at `/swagger` (regenerate with `make swag`)
 

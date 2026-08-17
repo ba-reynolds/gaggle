@@ -50,6 +50,7 @@ func NewRouter(
 	settingsHandler := handlers.NewSettingsHandler(service, logger)
 	notificationHandler := handlers.NewNotificationHandler(service, logger)
 	realtimeHandler := handlers.NewRealtimeHandler(service, logger)
+	searchHandler := handlers.NewSearchHandler(service, logger)
 
 	// API v1 routes
 	router.Route("/api/v1", func(r chi.Router) {
@@ -105,6 +106,9 @@ func NewRouter(
 				r.Post("/read", notificationHandler.MarkAllRead)
 				r.Post("/{notificationID}/read", notificationHandler.MarkRead)
 			})
+			protected.Get("/search", searchHandler.Search)
+			protected.Get("/hashtags/{tag}/posts", searchHandler.HashtagPosts)
+			protected.Get("/trends", searchHandler.Trends)
 
 			protected.Route("/posts", func(r chi.Router) {
 				r.Post("/", postHandler.CreatePost)

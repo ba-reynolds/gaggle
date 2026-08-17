@@ -272,6 +272,9 @@ func (s *PostService) Create(ctx context.Context, post *models.Post, mediaItems 
 			return err
 		}
 	}
+	if err := s.store.Hashtags.SyncPost(ctx, tx, post.ID, post.Content); err != nil {
+		return err
+	}
 
 	// Commit the transaction
 	if err := tx.Commit(); err != nil {
@@ -554,6 +557,9 @@ func (s *PostService) QuotePost(ctx context.Context, post *models.Post, mediaIte
 		if err := s.store.Media.LinkMediaToPost(ctx, tx, pm); err != nil {
 			return err
 		}
+	}
+	if err := s.store.Hashtags.SyncPost(ctx, tx, post.ID, post.Content); err != nil {
+		return err
 	}
 
 	if err := tx.Commit(); err != nil {
