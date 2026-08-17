@@ -1,5 +1,5 @@
 import api from "@/lib/api";
-import type { Envelope, UpdateProfilePayload, UserProfileResponse } from "@/types/api";
+import type { Envelope, Post, UpdateProfilePayload, UserProfileResponse } from "@/types/api";
 
 export const getMe = async (): Promise<Envelope<UserProfileResponse>> => {
     const response = await api.get<Envelope<UserProfileResponse>>('/users/me');
@@ -14,6 +14,11 @@ export const updateProfile = async (payload: UpdateProfilePayload): Promise<Enve
 // fetch profile
 export const fetchProfile = async (username: string): Promise<Envelope<UserProfileResponse>> => {
     const response = await api.get<Envelope<UserProfileResponse>>(`/users/${username}`);
+    return response.data;
+};
+
+export const fetchPinnedPost = async (username: string): Promise<Envelope<Post>> => {
+    const response = await api.get<Envelope<Post>>(`/users/${username}/pinned`);
     return response.data;
 };
 

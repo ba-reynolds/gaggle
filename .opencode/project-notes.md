@@ -80,3 +80,25 @@ Tricky things learned while working on this repo (newest on top).
 - Phase 2 search: migration `000011` creates `hashtags`/`post_hashtags` and a GIN
   full-text index. Hashtags are normalized lowercase at write time; post search,
   user search, hashtag feeds, and 24-hour top-level-post trends are protected routes.
+- Phase 3 post power: migration `000012` adds `posts.edited_at`/`is_pinned`,
+  `post_edits`, `polls`/`poll_options`/`poll_votes`, and a partial unique index
+  `posts_one_pinned_per_author_idx (author_id) WHERE is_pinned AND NOT soft_deleted`
+  (one pin per author). Polls are top-level-only, 2-4 options, one vote/user.
+- **Poll votes on a duplicate return 409 via `23505` — the app driver is `pgx/v5`, so
+  the unique-violation check must use `*pgconn.PgError` (`github.com/jackc/pgx/v5/pgconn`),
+  NOT `*pq.Error` from `lib/pq`** (real bug found by review test). `pq.Array()` still
+  works as a `driver.Valuer` for `ANY($1)` params even under pgx.
+- **Polls are hydrated in every feed path** via batch `store.Polls.GetForPosts(ids)` +
+  service `hydratePolls`, called alongside `hydrateEngagement`. Feeds dropped polls
+  before this (critical review finding). `GetFullPostByID`, `GetPinned`, search feed all
+  use the same batch helper now.
+- Poll/option IDs are global SERIALs (NOT per-post), so `option_id` values are sparse
+  across posts — never hardcode `1`; use the ids returned by the API (frontend does).
+- `GetByID` (used by `SetPostContextMiddleware`) does NOT filter `soft_deleted`; the
+  middleware itself returns 404 for soft-deleted posts so ALL `{postID}` sub-routes
+  (edits, poll votes, likes) correctly 404 after deletion — don't add a filter to
+  `GetByID` itself, some internals rely on reading deleted rows.
+- Swagger: new handler annotations need `@Router` + matching `@Security ApiKeyAuth`
+  or the endpoint won't appear in `server/docs` after `make swag`.
+- Edit flow: `PostService.Update` is a no-op when content unchanged (no history row);
+  `Store.Posts.Update` guards `soft_deleted=FALSE`, `PostService` enforces ownership.

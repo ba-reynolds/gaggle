@@ -47,7 +47,14 @@ type Store struct {
 		GetFullPostByID(ctx context.Context, id int) (*models.FullPost, error)
 		Create(ctx context.Context, tx *sql.Tx, post *models.Post) error
 		CreateQuotedPost(ctx context.Context, tx *sql.Tx, post *models.Post) error
+		Update(ctx context.Context, tx *sql.Tx, postID, authorID int, content string) (*models.Post, error)
 		DeleteByID(ctx context.Context, id int) error
+		DeleteCascade(ctx context.Context, tx *sql.Tx, id int) error
+		Pin(ctx context.Context, tx *sql.Tx, postID, authorID int) error
+		Unpin(ctx context.Context, tx *sql.Tx, postID, authorID int) error
+		GetPinned(ctx context.Context, authorID int) (*models.Post, error)
+		ListEdits(ctx context.Context, postID int) (*models.PostEditHistory, error)
+		CreateEdit(ctx context.Context, tx *sql.Tx, postID int, contentBefore string) error
 		GetParentChain(ctx context.Context, postID int, limit int, cursor string) (*models.PostChain, error)
 		GetDescendants(ctx context.Context, postID int, limit int, cursor string) (*models.PostDescendants, error)
 		GetHomeFeed(ctx context.Context, userID int, limit int, cursor string) (*models.PostFeed, error)
@@ -94,6 +101,12 @@ type Store struct {
 		SyncPost(ctx context.Context, tx *sql.Tx, postID int, content string) error
 		Trends(ctx context.Context, limit int) ([]models.Trend, error)
 	}
+	Polls interface {
+		Create(ctx context.Context, tx *sql.Tx, postID int, payload *models.CreatePollPayload) error
+		GetForPost(ctx context.Context, postID, viewerID int) (*models.Poll, error)
+		GetForPosts(ctx context.Context, postIDs []int, viewerID int) (map[int]*models.Poll, error)
+		Vote(ctx context.Context, tx *sql.Tx, postID, optionID, userID int) error
+	}
 }
 
 func NewStore(db *sql.DB, logger *slog.Logger, mediaDir string) *Store {
@@ -107,6 +120,7 @@ func NewStore(db *sql.DB, logger *slog.Logger, mediaDir string) *Store {
 		UserRelationships: &userRelationshipStore{db: db, logger: logger},
 		Notifications:     &notificationStore{db: db, logger: logger},
 		Hashtags:          &hashtagStore{db: db, logger: logger},
+		Polls:             &pollStore{db: db, logger: logger},
 	}
 }
 

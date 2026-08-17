@@ -116,9 +116,10 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	)
 
 	post := &models.Post{
-		Content:  payload.Content,
-		AuthorID: user.ID,
-		ParentID: payload.ParentID,
+		Content:     payload.Content,
+		AuthorID:    user.ID,
+		ParentID:    payload.ParentID,
+		PollPayload: payload.Poll,
 	}
 
 	if err := h.service.Posts.Create(r.Context(), post, payload.Media); err != nil {
@@ -341,6 +342,162 @@ func (h *PostHandler) DeletePostByID(w http.ResponseWriter, r *http.Request) {
 		util.RespondWithAppError(w, apperrors.InternalServerError(err))
 		return
 	}
+}
+
+// UpdatePost godoc
+//
+// @Summary      Update a post
+// @Description  Updates the author's own post content, recording the previous content in the edit history.
+// @Tags         posts
+// @Accept       json
+// @Produce      json
+// @Param        postID  path             int                     true  "Post ID"
+// @Param        payload body             models.UpdatePostPayload true "Post content"
+// @Success      200     {object}         models.FullPost
+// @Failure      400     {object}         models.Envelope{data=nil,error=apperrors.AppError}
+// @Failure      403     {object}         models.Envelope{data=nil,error=apperrors.AppError}
+// @Failure      404     {object}         models.Envelope{data=nil,error=apperrors.AppError}
+// @Failure      500     {object}         models.Envelope{data=nil,error=apperrors.AppError}
+// @Security     ApiKeyAuth
+// @Router       /posts/{postID} [patch]
+func (h *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
+	post := middleware.GetPostFromContext(r)
+	user, err := middleware.GetAuthenticatedUserFromContext(r)
+	if err != nil {
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+	var payload models.UpdatePostPayload
+	if err := util.ReadJSON(r, &payload); err != nil {
+		util.RespondWithAppError(w, apperrors.PayloadValidationError(err))
+		return
+	}
+	updated, err := h.service.Posts.Update(r.Context(), post, user.ID, payload.Content)
+	if err != nil {
+		h.respondError(w, err)
+		return
+	}
+	full, err := h.service.Posts.GetFullPostByID(r.Context(), updated.ID, user.ID)
+	if err != nil {
+		h.respondError(w, err)
+		return
+	}
+	util.RespondWithJson(w, http.StatusOK, full)
+}
+
+// ListPostEdits godoc
+//
+// @Summary      List post edit history
+// @Description  Returns the recorded edit history (previous contents) for a post.
+// @Tags         posts
+// @Produce      json
+// @Param        postID path int true "Post ID"
+// @Success      200    {object} models.PostEditHistory
+// @Failure      404    {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Failure      500    {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Security     ApiKeyAuth
+// @Router       /posts/{postID}/edits [get]
+func (h *PostHandler) ListPostEdits(w http.ResponseWriter, r *http.Request) {
+	post := middleware.GetPostFromContext(r)
+	history, err := h.service.Posts.ListEdits(r.Context(), post.ID)
+	if err != nil {
+		h.respondError(w, err)
+		return
+	}
+	util.RespondWithJson(w, http.StatusOK, history)
+}
+
+// PinPost godoc
+//
+// @Summary      Pin a post
+// @Description  Pins the author's own post to their profile. The author's previously pinned post (if any) is unpinned.
+// @Tags         posts
+// @Produce      json
+// @Param        postID path int true "Post ID"
+// @Success      200    {object} models.Envelope{data=map[string]bool}
+// @Failure      403    {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Failure      404    {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Failure      500    {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Security     ApiKeyAuth
+// @Router       /posts/{postID}/pin [post]
+func (h *PostHandler) PinPost(w http.ResponseWriter, r *http.Request) {
+	post := middleware.GetPostFromContext(r)
+	user, err := middleware.GetAuthenticatedUserFromContext(r)
+	if err != nil {
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+	if err := h.service.Posts.Pin(r.Context(), post, user.ID); err != nil {
+		h.respondError(w, err)
+		return
+	}
+	util.RespondWithJson(w, http.StatusOK, map[string]bool{"success": true})
+}
+
+// UnpinPost godoc
+//
+// @Summary      Unpin a post
+// @Description  Unpins the author's own post from their profile.
+// @Tags         posts
+// @Produce      json
+// @Param        postID path int true "Post ID"
+// @Success      200    {object} models.Envelope{data=map[string]bool}
+// @Failure      403    {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Failure      404    {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Failure      500    {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Security     ApiKeyAuth
+// @Router       /posts/{postID}/pin [delete]
+func (h *PostHandler) UnpinPost(w http.ResponseWriter, r *http.Request) {
+	post := middleware.GetPostFromContext(r)
+	user, err := middleware.GetAuthenticatedUserFromContext(r)
+	if err != nil {
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+	if err := h.service.Posts.Unpin(r.Context(), post, user.ID); err != nil {
+		h.respondError(w, err)
+		return
+	}
+	util.RespondWithJson(w, http.StatusOK, map[string]bool{"success": true})
+}
+
+// GetPinned godoc
+//
+// @Summary      Get a user's pinned post
+// @Description  Returns the full post currently pinned to the given user's profile, or 404 if none.
+// @Tags         users
+// @Produce      json
+// @Param        username path string true "Username"
+// @Success      200      {object} models.FullPost
+// @Failure      404      {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Failure      500      {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Security     ApiKeyAuth
+// @Router       /users/{username}/pinned [get]
+func (h *PostHandler) GetPinned(w http.ResponseWriter, r *http.Request) {
+	viewer, err := middleware.GetAuthenticatedUserFromContext(r)
+	if err != nil {
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+	profile, err := h.service.Users.GetUserProfileByUsername(r.Context(), r.PathValue("username"))
+	if err != nil {
+		h.respondError(w, err)
+		return
+	}
+	post, err := h.service.Posts.GetPinned(r.Context(), profile.ID, viewer.ID)
+	if err != nil {
+		h.respondError(w, err)
+		return
+	}
+	util.RespondWithJson(w, http.StatusOK, post)
+}
+
+func (h *PostHandler) respondError(w http.ResponseWriter, err error) {
+	if appErr, ok := err.(*apperrors.AppError); ok {
+		util.RespondWithAppError(w, appErr)
+		return
+	}
+	util.RespondWithAppError(w, apperrors.InternalServerError(err))
 }
 
 // GetHomeFeed godoc

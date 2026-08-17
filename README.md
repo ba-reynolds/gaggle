@@ -18,6 +18,9 @@ repository, two apps, fully containerized with Docker Compose.
 - In-app notifications for likes, reposts, quotes, replies, follows, and mentions
 - Live notification/feed events over cookie-authenticated Server-Sent Events (SSE)
 - Full-text post and user search, clickable hashtags, hashtag feeds, and trends
+- Post power features: edit with history, pin to profile (one per author),
+  cascade delete (post + all replies), and opinion polls (top-level only,
+  2-4 options, one vote per user)
 - Consistent `{data, error}` JSON envelope on every endpoint
 - Swagger UI at `/swagger` (regenerate with `make swag`)
 

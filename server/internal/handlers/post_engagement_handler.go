@@ -397,6 +397,52 @@ func (h *PostEngagementHandler) DeleteBookmarkCategory(w http.ResponseWriter, r 
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// VotePoll godoc
+//
+// @Summary      Vote in a poll
+// @Description  Casts one vote for the given option on a post's poll. Each user may vote once; voting a second time returns a conflict. Voting on an ended poll is rejected.
+// @Tags         posts
+// @Accept       json
+// @Produce      json
+// @Param        postID  path     int            true "Post ID"
+// @Param        payload body     object         true "Vote" SchemaExample({"option_id":1})
+// @Success      200     {object} models.Poll
+// @Failure      400     {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Failure      404     {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Failure      409     {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Failure      500     {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Security     ApiKeyAuth
+// @Router       /posts/{postID}/poll/vote [post]
+func (h *PostEngagementHandler) VotePoll(w http.ResponseWriter, r *http.Request) {
+	user, err := middleware.GetAuthenticatedUserFromContext(r)
+	if err != nil {
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+	postID, err := strconv.Atoi(r.PathValue("postID"))
+	if err != nil {
+		util.RespondWithAppError(w, apperrors.BadRequestError("invalid post ID", err))
+		return
+	}
+	var payload struct {
+		OptionID int `json:"option_id"`
+	}
+	if err := util.ReadJSON(r, &payload); err != nil || payload.OptionID <= 0 {
+		util.RespondWithAppError(w, apperrors.BadRequestError("option_id is required", err))
+		return
+	}
+	poll, err := h.service.Posts.VotePoll(r.Context(), postID, payload.OptionID, user.ID)
+	if err != nil {
+		if appErr, ok := err.(*apperrors.AppError); ok {
+			util.RespondWithAppError(w, appErr)
+			return
+		}
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+	util.RespondWithJson(w, http.StatusOK, poll)
+}
+
 // Quote godoc
 //
 // @Summary      Quote a post

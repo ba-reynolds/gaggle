@@ -3,7 +3,8 @@ import type { ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
-import { Image as ImageIcon, Globe, Users, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Image as ImageIcon, Globe, Users, Loader2, BarChart3, Plus, X } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,7 +30,7 @@ import { useMediaUpload } from "@/hooks/useMediaUpload";
 import { useCreatePost } from "@/hooks/usePost";
 import { CustomDialogContent } from "./ui/custom-dialog";
 import { getMediaUrl } from "@/util/media";
-import type { MediaItem } from "@/types/api";
+import type { CreatePollPayload, MediaItem } from "@/types/api";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
@@ -39,6 +40,7 @@ export interface PostData {
   text: string;
   media: GalleryItem[];
   visibility: Visibility;
+  poll?: CreatePollPayload;
 }
 
 export interface ComposeContentProps {
@@ -68,6 +70,9 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
   const [mediaItems, setMediaItems] = useState<GalleryItem[]>([]);
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [visibility, setVisibility] = useState<Visibility>("Everyone");
+  const [pollEnabled, setPollEnabled] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState(["", ""]);
   const [isUploading, setIsUploading] = useState(false);
   const [currentEditingMedia, setCurrentEditingMedia] = useState<GalleryItem | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -95,12 +100,14 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
         }
       }
 
+      const poll = pollEnabled ? { question: pollQuestion, options: pollOptions.filter(Boolean) } : undefined;
       if (handlePostCreation) {
         // Create the post with the media UUIDs
         const response = await createPostMutation.mutateAsync({
           content: text,
           media: mediaPayload,
-          parent_id: parentId
+          parent_id: parentId,
+          poll,
         });
 
         // Show success toast with link to the new post
@@ -126,7 +133,8 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
         onSubmit({
           text,
           media: mediaItems,
-          visibility
+          visibility,
+          poll,
         });
       }
 
@@ -135,6 +143,9 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
       setMediaItems([]);
       setMediaFiles([]);
       setVisibility("Everyone");
+      setPollEnabled(false);
+      setPollQuestion("");
+      setPollOptions(["", ""]);
     } catch {
       if (onError) {
         onError();
@@ -235,7 +246,7 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
 
   // Determine if the submit button should be disabled
   const isSubmitDisabled = 
-    (!text.trim() && mediaItems.length === 0) || 
+    (!text.trim() && mediaItems.length === 0 && !pollEnabled) || 
     mediaUploadMutation.isPending || 
     createPostMutation.isPending;
 
@@ -299,6 +310,10 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
               </Tooltip>
             </TooltipProvider>
 
+            {!parentId && <Button variant="ghost" size="icon" className="rounded-full text-primary hover:bg-primary/10" onClick={() => setPollEnabled((enabled) => !enabled)}>
+              <BarChart3 className="h-5 w-5" />
+            </Button>}
+
 
             {/* Dropdown menu for visibility options ("who can see this") */}
             <DropdownMenu>
@@ -352,6 +367,15 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
             {submitLabel}
           </Button>
         </div>
+
+        {pollEnabled && !parentId && <div className="mt-3 space-y-2 rounded-xl border border-border p-3">
+          <Input placeholder="Poll question" value={pollQuestion} onChange={(event) => setPollQuestion(event.target.value)} maxLength={140} />
+          {pollOptions.map((option, index) => <div key={index} className="flex gap-2">
+            <Input placeholder={`Option ${index + 1}`} value={option} onChange={(event) => setPollOptions((current) => current.map((item, itemIndex) => itemIndex === index ? event.target.value : item))} maxLength={100} />
+            {pollOptions.length > 2 && <Button type="button" variant="ghost" size="icon" onClick={() => setPollOptions((current) => current.filter((_, itemIndex) => itemIndex !== index))}><X className="h-4 w-4" /></Button>}
+          </div>)}
+          {pollOptions.length < 4 && <Button type="button" variant="ghost" size="sm" onClick={() => setPollOptions((current) => [...current, ""])}><Plus className="mr-1 h-4 w-4" /> Add option</Button>}
+        </div>}
       </div>
 
       {/* Alt text dialog */}

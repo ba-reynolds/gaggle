@@ -28,19 +28,22 @@ type Post struct {
 	Content string `json:"content"`
 	// Author ID is used for performance reasons, for example, if the user wants to delete
 	// a post, we don't have to make a join with the users table
-	AuthorID       int        `json:"-"`
-	ParentID       *int       `json:"parent_id"`
-	SoftDeleted    bool       `json:"-"`
-	SoftDeletedAt  *time.Time `json:"-"`
-	CreatedAt      time.Time  `json:"created_at"`
-	UpdatedAt      time.Time  `json:"updated_at"`
-	LikesCount     int        `json:"-"`
-	RepostsCount   int        `json:"-"`
-	QuotesCount    int        `json:"-"`
-	BookmarksCount int        `json:"-"`
-	ViewsCount     int        `json:"-"`
-	RepliesCount   int        `json:"-"`
-	QuotedPostID   *int       `json:"quoted_post_id"`
+	AuthorID       int                `json:"-"`
+	ParentID       *int               `json:"parent_id"`
+	SoftDeleted    bool               `json:"-"`
+	SoftDeletedAt  *time.Time         `json:"-"`
+	CreatedAt      time.Time          `json:"created_at"`
+	UpdatedAt      time.Time          `json:"updated_at"`
+	EditedAt       *time.Time         `json:"edited_at,omitempty"`
+	IsPinned       bool               `json:"is_pinned"`
+	LikesCount     int                `json:"-"`
+	RepostsCount   int                `json:"-"`
+	QuotesCount    int                `json:"-"`
+	BookmarksCount int                `json:"-"`
+	ViewsCount     int                `json:"-"`
+	RepliesCount   int                `json:"-"`
+	QuotedPostID   *int               `json:"quoted_post_id"`
+	PollPayload    *CreatePollPayload `json:"-"`
 }
 
 // PostEngagement captures the per-viewer engagement state of a post:
@@ -77,6 +80,44 @@ type CreatePostPayload struct {
 	Content  string             `json:"content"`
 	Media    []PostMediaRequest `json:"media" validate:"dive"`
 	ParentID *int               `json:"parent_id"`
+	Poll     *CreatePollPayload `json:"poll,omitempty"`
+}
+
+type UpdatePostPayload struct {
+	Content string `json:"content"`
+}
+
+type CreatePollPayload struct {
+	Question string     `json:"question"`
+	Options  []string   `json:"options"`
+	EndsAt   *time.Time `json:"ends_at,omitempty"`
+}
+
+type Poll struct {
+	ID               int          `json:"id"`
+	Question         string       `json:"question"`
+	EndsAt           *time.Time   `json:"ends_at,omitempty"`
+	Options          []PollOption `json:"options"`
+	TotalVotes       int          `json:"total_votes"`
+	SelectedOptionID *int         `json:"selected_option_id,omitempty"`
+	Closed           bool         `json:"closed"`
+}
+
+type PollOption struct {
+	ID        int    `json:"id"`
+	Label     string `json:"label"`
+	Position  int    `json:"position"`
+	VoteCount int    `json:"vote_count"`
+}
+
+type PostEdit struct {
+	ID            int       `json:"id"`
+	ContentBefore string    `json:"content_before"`
+	EditedAt      time.Time `json:"edited_at"`
+}
+
+type PostEditHistory struct {
+	Items []PostEdit `json:"items"`
 }
 
 // PostMedia represents the association between a Post and a Media
@@ -95,6 +136,7 @@ type FullPost struct {
 	Author     PostAuthor      `json:"author"`
 	Media      []PostMedia     `json:"media"`
 	Engagement *PostEngagement `json:"engagement"`
+	Poll       *Poll           `json:"poll,omitempty"`
 }
 
 // PostChain represents a chain of parent posts up to a certain limit

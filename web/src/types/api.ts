@@ -79,6 +79,13 @@ export interface CreatePostPayload {
   content: string;
   media: MediaItem[];
   parent_id: number | null;
+  poll?: CreatePollPayload;
+}
+
+export interface CreatePollPayload {
+  question: string;
+  options: string[];
+  ends_at?: string;
 }
 
 export interface PostAuthor {
@@ -115,6 +122,32 @@ export interface Post {
   author: PostAuthor;
   media: MediaItem[];
   engagement: PostEngagement;
+  edited_at?: string;
+  is_pinned: boolean;
+  poll?: Poll;
+}
+
+export interface PollOption {
+  id: number;
+  label: string;
+  position: number;
+  vote_count: number;
+}
+
+export interface Poll {
+  id: number;
+  question: string;
+  ends_at?: string;
+  options: PollOption[];
+  total_votes: number;
+  selected_option_id?: number;
+  closed: boolean;
+}
+
+export interface PostEdit {
+  id: number;
+  content_before: string;
+  edited_at: string;
 }
 
 // Pagination

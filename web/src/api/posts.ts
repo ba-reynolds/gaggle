@@ -10,10 +10,39 @@ import type {
   Post,
   PostWithAncestorsAndDescendants,
   UserProfileResponse,
+  PostEdit,
+  Poll,
 } from '@/types/api';
 
 export const createPost = async (payload: CreatePostPayload): Promise<Envelope<Post>> => {
   const response = await api.post<Envelope<Post>>('/posts', payload);
+  return response.data;
+};
+
+export const updatePost = async (postId: number, content: string): Promise<Envelope<Post>> => {
+  const response = await api.patch<Envelope<Post>>(`/posts/${postId}`, { content });
+  return response.data;
+};
+
+export const deletePost = async (postId: number): Promise<void> => {
+  await api.delete(`/posts/${postId}`);
+};
+
+export const pinPost = async (postId: number): Promise<void> => {
+  await api.post(`/posts/${postId}/pin`);
+};
+
+export const unpinPost = async (postId: number): Promise<void> => {
+  await api.delete(`/posts/${postId}/pin`);
+};
+
+export const getPostEdits = async (postId: number): Promise<Envelope<{ items: PostEdit[] }>> => {
+  const response = await api.get<Envelope<{ items: PostEdit[] }>>(`/posts/${postId}/edits`);
+  return response.data;
+};
+
+export const votePoll = async (postId: number, optionId: number): Promise<Envelope<Poll>> => {
+  const response = await api.post<Envelope<Poll>>(`/posts/${postId}/poll/vote`, { option_id: optionId });
   return response.data;
 };
 

@@ -18,6 +18,10 @@ import {
   useUnbookmarkPost,
   useUnlikePost,
   useUnrepostPost,
+  useDeletePost,
+  usePinPost,
+  usePostEdits,
+  useUpdatePost,
 } from "@/hooks/usePost";
 import { useBlockUser, useFollowUser, useUnblockUser, useUnfollowUser } from "@/hooks/useUser";
 import { useUser } from "@/contexts/UserContext";
@@ -43,6 +47,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import ComposeContent from "./ComposeContent";
 import MediaGallery, { type GalleryItem } from "./MediaGallery";
+import PollCard from "./PollCard";
 import UserHoverCard from "./UserHoverCard";
 import { getMediaUrl } from "@/util/media";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -70,6 +75,9 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
 
   const [replyDialogOpen, setReplyDialogOpen] = useState(false);
   const [quoteDialogOpen, setQuoteDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editText, setEditText] = useState(content);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [bookmarkDropdownOpen, setBookmarkDropdownOpen] = useState(false);
   const [categorySearchQuery, setCategorySearchQuery] = useState("");
   const debouncedCategorySearchQuery = useDebounce(categorySearchQuery, 150);
@@ -95,6 +103,10 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
   const { mutate: unfollow } = useUnfollowUser();
   const { mutate: block } = useBlockUser();
   const { mutate: unblock } = useUnblockUser();
+  const updateMutation = useUpdatePost();
+  const deleteMutation = useDeletePost();
+  const pinMutation = usePinPost();
+  const edits = usePostEdits(id, historyOpen);
 
   const categories = (categoriesEnvelope?.data ?? []).filter((category) =>
     category.name.toLowerCase().includes(debouncedCategorySearchQuery.toLowerCase())
@@ -302,7 +314,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <span className="text-muted-foreground text-xs ml-1 cursor-default">· {timePosted}</span>
+                      <span className="text-muted-foreground text-xs ml-1 cursor-default">· {timePosted}{post.edited_at ? " · edited" : ""}</span>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="pointer-events-none">
                       <p>{timePostedTooltip}</p>
@@ -322,6 +334,11 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="border border-muted">
+                    {isOwnPost && <>
+                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setEditText(content); setEditDialogOpen(true); }}>Edit post</DropdownMenuItem>
+                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); pinMutation.mutate({ postId: id, pinned: post.is_pinned, username: author.username }, { onError: () => toast.error(post.is_pinned ? "Failed to unpin post." : "Failed to pin post.") }); }}>{post.is_pinned ? "Unpin from profile" : "Pin to profile"}</DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); if (window.confirm("Delete this post and its replies?")) deleteMutation.mutate({ postId: id, username: author.username }, { onError: () => toast.error("Failed to delete post.") }); }}>Delete post</DropdownMenuItem>
+                    </>}
                     {!isOwnPost && (
                       <DropdownMenuItem className="cursor-pointer" onClick={handleFollowToggle}>
                         {following ? (
@@ -356,6 +373,11 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
               </div>
 
               <p className="mt-2 whitespace-pre-wrap text-sm text-primary">{renderPostContent(content)}</p>
+              {post.poll && <PollCard poll={post.poll} postId={id} />}
+              {isOwnPost && <button className="mt-2 text-xs text-muted-foreground hover:underline" onClick={(event) => { event.stopPropagation(); setHistoryOpen((open) => !open); }}>
+                {historyOpen ? "Hide edit history" : "View edit history"}
+              </button>}
+              {historyOpen && edits.data?.data.items.map((edit) => <div key={edit.id} className="mt-1 rounded border border-border p-2 text-xs text-muted-foreground">{edit.content_before}</div>)}
 
               {post.quoted_post_id != null && (
                 <Link
@@ -612,6 +634,17 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
               {quoteMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               Quote
             </Button>
+          </DialogFooter>
+        </CustomDialogContent>
+      </Dialog>
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <CustomDialogContent className="sm:max-w-xl bg-card">
+          <DialogHeader><DialogTitle className="text-primary">Edit post</DialogTitle></DialogHeader>
+          <Textarea value={editText} onChange={(event) => setEditText(event.target.value)} maxLength={280} className="min-h-32" />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+            <Button disabled={!editText.trim() || updateMutation.isPending} onClick={() => updateMutation.mutate({ postId: id, content: editText, username: author.username }, { onSuccess: () => setEditDialogOpen(false), onError: () => toast.error("Failed to update post.") })}>Save changes</Button>
           </DialogFooter>
         </CustomDialogContent>
       </Dialog>

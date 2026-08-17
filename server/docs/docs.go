@@ -1322,6 +1322,134 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Updates the author's own post content, recording the previous content in the edit history.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "Update a post",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Post ID",
+                        "name": "postID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Post content",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UpdatePostPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.FullPost"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
             }
         },
         "/posts/{postID}/bookmark": {
@@ -1446,6 +1574,82 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/posts/{postID}/edits": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Returns the recorded edit history (previous contents) for a post.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "List post edit history",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Post ID",
+                        "name": "postID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostEditHistory"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "allOf": [
                                 {
@@ -1708,6 +1912,358 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/posts/{postID}/pin": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Pins the author's own post to their profile. The author's previously pinned post (if any) is unpinned.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "Pin a post",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Post ID",
+                        "name": "postID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": {
+                                                "type": "boolean"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Unpins the author's own post from their profile.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "Unpin a post",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Post ID",
+                        "name": "postID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": {
+                                                "type": "boolean"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/posts/{postID}/poll/vote": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Casts one vote for the given option on a post's poll. Each user may vote once; voting a second time returns a conflict. Voting on an ended poll is rejected.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "Vote in a poll",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Post ID",
+                        "name": "postID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Vote",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Poll"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
                         "schema": {
                             "allOf": [
                                 {
@@ -3380,6 +3936,82 @@ const docTemplate = `{
                 }
             }
         },
+        "/users/{username}/pinned": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Returns the full post currently pinned to the given user's profile, or 404 if none.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get a user's pinned post",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Username",
+                        "name": "username",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.FullPost"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/users/{username}/posts": {
             "get": {
                 "security": [
@@ -3620,6 +4252,23 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_ba-reynolds_gophersocial_internal_models.CreatePollPayload": {
+            "type": "object",
+            "properties": {
+                "ends_at": {
+                    "type": "string"
+                },
+                "options": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "question": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_ba-reynolds_gophersocial_internal_models.CreatePostPayload": {
             "type": "object",
             "properties": {
@@ -3634,6 +4283,9 @@ const docTemplate = `{
                 },
                 "parent_id": {
                     "type": "integer"
+                },
+                "poll": {
+                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.CreatePollPayload"
                 }
             }
         },
@@ -3666,11 +4318,17 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
+                "edited_at": {
+                    "type": "string"
+                },
                 "engagement": {
                     "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostEngagement"
                 },
                 "id": {
                     "type": "integer"
+                },
+                "is_pinned": {
+                    "type": "boolean"
                 },
                 "media": {
                     "type": "array",
@@ -3680,6 +4338,9 @@ const docTemplate = `{
                 },
                 "parent_id": {
                     "type": "integer"
+                },
+                "poll": {
+                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Poll"
                 },
                 "quoted_post_id": {
                     "type": "integer"
@@ -3744,6 +4405,52 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_ba-reynolds_gophersocial_internal_models.Poll": {
+            "type": "object",
+            "properties": {
+                "closed": {
+                    "type": "boolean"
+                },
+                "ends_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "options": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PollOption"
+                    }
+                },
+                "question": {
+                    "type": "string"
+                },
+                "selected_option_id": {
+                    "type": "integer"
+                },
+                "total_votes": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_ba-reynolds_gophersocial_internal_models.PollOption": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "position": {
+                    "type": "integer"
+                },
+                "vote_count": {
+                    "type": "integer"
+                }
+            }
+        },
         "github_com_ba-reynolds_gophersocial_internal_models.Post": {
             "type": "object",
             "properties": {
@@ -3753,8 +4460,14 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
+                "edited_at": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "integer"
+                },
+                "is_pinned": {
+                    "type": "boolean"
                 },
                 "parent_id": {
                     "type": "integer"
@@ -3812,6 +4525,31 @@ const docTemplate = `{
                 },
                 "next_cursor": {
                     "type": "string"
+                }
+            }
+        },
+        "github_com_ba-reynolds_gophersocial_internal_models.PostEdit": {
+            "type": "object",
+            "properties": {
+                "content_before": {
+                    "type": "string"
+                },
+                "edited_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_ba-reynolds_gophersocial_internal_models.PostEditHistory": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostEdit"
+                    }
                 }
             }
         },
@@ -4001,6 +4739,14 @@ const docTemplate = `{
             "properties": {
                 "success": {
                     "type": "boolean"
+                }
+            }
+        },
+        "github_com_ba-reynolds_gophersocial_internal_models.UpdatePostPayload": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
                 }
             }
         },

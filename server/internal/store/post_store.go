@@ -25,7 +25,7 @@ type postStore struct {
 func (store *postStore) GetByID(ctx context.Context, id int) (*models.Post, error) {
 	query := `
 		SELECT post_id, author_id, content, parent_id, soft_deleted, soft_deleted_at, created_at, updated_at,
-		likes_count, reposts_count, quotes_count, bookmarks_count, views_count, replies_count
+		edited_at, is_pinned, likes_count, reposts_count, quotes_count, bookmarks_count, views_count, replies_count
 		FROM posts
 		WHERE post_id = $1
 	`
@@ -40,6 +40,8 @@ func (store *postStore) GetByID(ctx context.Context, id int) (*models.Post, erro
 		&post.SoftDeletedAt,
 		&post.CreatedAt,
 		&post.UpdatedAt,
+		&post.EditedAt,
+		&post.IsPinned,
 		&post.LikesCount,
 		&post.RepostsCount,
 		&post.QuotesCount,
@@ -70,7 +72,7 @@ func (store *postStore) GetFullPostByID(ctx context.Context, id int) (*models.Fu
 	query := `
 		SELECT
 			p.post_id, p.content, p.author_id, p.parent_id, p.soft_deleted, p.soft_deleted_at, p.created_at, p.updated_at,
-			p.likes_count, p.reposts_count, p.quotes_count, p.bookmarks_count, p.views_count, p.replies_count,
+			p.edited_at, p.is_pinned, p.likes_count, p.reposts_count, p.quotes_count, p.bookmarks_count, p.views_count, p.replies_count,
 			author.username, author_profile.display_name, author_profile.profile_picture_uuid
 		FROM posts p
 		JOIN users author ON p.author_id = author.user_id
@@ -89,6 +91,8 @@ func (store *postStore) GetFullPostByID(ctx context.Context, id int) (*models.Fu
 		&post.SoftDeletedAt,
 		&post.CreatedAt,
 		&post.UpdatedAt,
+		&post.EditedAt,
+		&post.IsPinned,
 		&post.LikesCount,
 		&post.RepostsCount,
 		&post.QuotesCount,
@@ -217,6 +221,144 @@ func (store *postStore) DeleteByID(ctx context.Context, id int) error {
 		return apperrors.NotFoundError("post not found", nil)
 	}
 
+	return nil
+}
+
+func (store *postStore) Update(ctx context.Context, tx *sql.Tx, postID, authorID int, content string) (*models.Post, error) {
+	query := `
+		UPDATE posts
+		SET content = $1, updated_at = CURRENT_TIMESTAMP, edited_at = CURRENT_TIMESTAMP
+		WHERE post_id = $2 AND author_id = $3 AND soft_deleted = FALSE
+		RETURNING post_id, author_id, content, parent_id, soft_deleted, soft_deleted_at, created_at, updated_at,
+		          edited_at, is_pinned, likes_count, reposts_count, quotes_count, bookmarks_count, views_count, replies_count
+	`
+	row := store.db.QueryRowContext
+	if tx != nil {
+		row = tx.QueryRowContext
+	}
+	var post models.Post
+	err := row(ctx, query, content, postID, authorID).Scan(
+		&post.ID, &post.AuthorID, &post.Content, &post.ParentID, &post.SoftDeleted, &post.SoftDeletedAt,
+		&post.CreatedAt, &post.UpdatedAt, &post.EditedAt, &post.IsPinned, &post.LikesCount,
+		&post.RepostsCount, &post.QuotesCount, &post.BookmarksCount, &post.ViewsCount, &post.RepliesCount,
+	)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, apperrors.NotFoundError("post not found or not owned by user", err)
+	}
+	if err != nil {
+		return nil, apperrors.InternalServerError(err)
+	}
+	return &post, nil
+}
+
+func (store *postStore) DeleteCascade(ctx context.Context, tx *sql.Tx, id int) error {
+	query := `
+		WITH RECURSIVE descendants AS (
+			SELECT post_id FROM posts WHERE post_id = $1
+			UNION ALL
+			SELECT p.post_id FROM posts p JOIN descendants d ON p.parent_id = d.post_id
+		)
+		UPDATE posts SET soft_deleted = TRUE, soft_deleted_at = CURRENT_TIMESTAMP
+		WHERE post_id IN (SELECT post_id FROM descendants) AND soft_deleted = FALSE
+	`
+	exec := store.db.ExecContext
+	if tx != nil {
+		exec = tx.ExecContext
+	}
+	result, err := exec(ctx, query, id)
+	if err != nil {
+		return apperrors.InternalServerError(err)
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return apperrors.InternalServerError(err)
+	}
+	if affected == 0 {
+		return apperrors.NotFoundError("post not found", nil)
+	}
+	return nil
+}
+
+func (store *postStore) Pin(ctx context.Context, tx *sql.Tx, postID, authorID int) error {
+	exec := store.db.ExecContext
+	if tx != nil {
+		exec = tx.ExecContext
+	}
+	if _, err := exec(ctx, `UPDATE posts SET is_pinned = FALSE WHERE author_id = $1 AND is_pinned = TRUE`, authorID); err != nil {
+		return apperrors.InternalServerError(err)
+	}
+	result, err := exec(ctx, `UPDATE posts SET is_pinned = TRUE WHERE post_id = $1 AND author_id = $2 AND soft_deleted = FALSE`, postID, authorID)
+	if err != nil {
+		return apperrors.InternalServerError(err)
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return apperrors.InternalServerError(err)
+	}
+	if affected == 0 {
+		return apperrors.NotFoundError("post not found or not owned by user", nil)
+	}
+	return nil
+}
+
+func (store *postStore) Unpin(ctx context.Context, tx *sql.Tx, postID, authorID int) error {
+	exec := store.db.ExecContext
+	if tx != nil {
+		exec = tx.ExecContext
+	}
+	result, err := exec(ctx, `UPDATE posts SET is_pinned = FALSE WHERE post_id = $1 AND author_id = $2 AND is_pinned = TRUE`, postID, authorID)
+	if err != nil {
+		return apperrors.InternalServerError(err)
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return apperrors.InternalServerError(err)
+	}
+	if affected == 0 {
+		return apperrors.NotFoundError("pinned post not found", nil)
+	}
+	return nil
+}
+
+func (store *postStore) GetPinned(ctx context.Context, authorID int) (*models.Post, error) {
+	var id int
+	if err := store.db.QueryRowContext(ctx, `SELECT post_id FROM posts WHERE author_id = $1 AND is_pinned = TRUE AND soft_deleted = FALSE`, authorID).Scan(&id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, apperrors.NotFoundError("pinned post not found", err)
+		}
+		return nil, apperrors.InternalServerError(err)
+	}
+	return store.GetByID(ctx, id)
+}
+
+func (store *postStore) ListEdits(ctx context.Context, postID int) (*models.PostEditHistory, error) {
+	rows, err := store.db.QueryContext(ctx, `SELECT edit_id, content_before, edited_at FROM post_edits WHERE post_id = $1 ORDER BY edited_at DESC, edit_id DESC`, postID)
+	if err != nil {
+		return nil, apperrors.InternalServerError(err)
+	}
+	defer rows.Close()
+	history := &models.PostEditHistory{Items: make([]models.PostEdit, 0)}
+	for rows.Next() {
+		var edit models.PostEdit
+		if err := rows.Scan(&edit.ID, &edit.ContentBefore, &edit.EditedAt); err != nil {
+			return nil, apperrors.InternalServerError(err)
+		}
+		history.Items = append(history.Items, edit)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, apperrors.InternalServerError(err)
+	}
+	return history, nil
+}
+
+func (store *postStore) CreateEdit(ctx context.Context, tx *sql.Tx, postID int, contentBefore string) error {
+	exec := store.db.ExecContext
+	if tx != nil {
+		exec = tx.ExecContext
+	}
+	if _, err := exec(ctx, `INSERT INTO post_edits (post_id, content_before) VALUES ($1, $2)`, postID, contentBefore); err != nil {
+		return apperrors.InternalServerError(err)
+	}
 	return nil
 }
 

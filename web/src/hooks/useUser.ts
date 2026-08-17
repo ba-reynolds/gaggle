@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { blockUser, fetchProfile, fetchUserFollowers, fetchUserFollowing, followUser, unblockUser, unfollowUser, updateProfile } from '@/api/user';
+import { blockUser, fetchPinnedPost, fetchProfile, fetchUserFollowers, fetchUserFollowing, followUser, unblockUser, unfollowUser, updateProfile } from '@/api/user';
 import type { Envelope, UpdateProfilePayload, UserProfileResponse } from '@/types/api';
 import { updateAuthorInPostQueries } from './usePost';
 
@@ -30,6 +30,13 @@ export const useFetchProfile = (username: string, enabled: boolean = true) => {
     enabled,
   });
 };
+
+export const usePinnedPost = (username: string) => useQuery({
+  queryKey: ['pinned-post', username],
+  queryFn: () => fetchPinnedPost(username),
+  enabled: !!username,
+  retry: false,
+});
 
 export const useFollowUser = () => {
   const queryClient = useQueryClient();

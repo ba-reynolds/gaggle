@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -50,6 +51,10 @@ func SetPostContextMiddleware(service *service.Service, logger *slog.Logger) fun
 					return
 				}
 				util.RespondWithAppError(w, apperrors.InternalServerError(err))
+				return
+			}
+			if post.SoftDeleted {
+				util.RespondWithAppError(w, apperrors.NotFoundError(fmt.Sprintf("post with id %d not found", postID), nil))
 				return
 			}
 

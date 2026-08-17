@@ -68,6 +68,17 @@ definitions:
       success:
         type: boolean
     type: object
+  github_com_ba-reynolds_gophersocial_internal_models.CreatePollPayload:
+    properties:
+      ends_at:
+        type: string
+      options:
+        items:
+          type: string
+        type: array
+      question:
+        type: string
+    type: object
   github_com_ba-reynolds_gophersocial_internal_models.CreatePostPayload:
     properties:
       content:
@@ -78,6 +89,8 @@ definitions:
         type: array
       parent_id:
         type: integer
+      poll:
+        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.CreatePollPayload'
     type: object
   github_com_ba-reynolds_gophersocial_internal_models.Date:
     properties:
@@ -98,16 +111,22 @@ definitions:
         type: string
       created_at:
         type: string
+      edited_at:
+        type: string
       engagement:
         $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostEngagement'
       id:
         type: integer
+      is_pinned:
+        type: boolean
       media:
         items:
           $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostMedia'
         type: array
       parent_id:
         type: integer
+      poll:
+        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Poll'
       quoted_post_id:
         type: integer
       updated_at:
@@ -148,14 +167,48 @@ definitions:
       push:
         type: boolean
     type: object
+  github_com_ba-reynolds_gophersocial_internal_models.Poll:
+    properties:
+      closed:
+        type: boolean
+      ends_at:
+        type: string
+      id:
+        type: integer
+      options:
+        items:
+          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PollOption'
+        type: array
+      question:
+        type: string
+      selected_option_id:
+        type: integer
+      total_votes:
+        type: integer
+    type: object
+  github_com_ba-reynolds_gophersocial_internal_models.PollOption:
+    properties:
+      id:
+        type: integer
+      label:
+        type: string
+      position:
+        type: integer
+      vote_count:
+        type: integer
+    type: object
   github_com_ba-reynolds_gophersocial_internal_models.Post:
     properties:
       content:
         type: string
       created_at:
         type: string
+      edited_at:
+        type: string
       id:
         type: integer
+      is_pinned:
+        type: boolean
       parent_id:
         type: integer
       quoted_post_id:
@@ -193,6 +246,22 @@ definitions:
         type: array
       next_cursor:
         type: string
+    type: object
+  github_com_ba-reynolds_gophersocial_internal_models.PostEdit:
+    properties:
+      content_before:
+        type: string
+      edited_at:
+        type: string
+      id:
+        type: integer
+    type: object
+  github_com_ba-reynolds_gophersocial_internal_models.PostEditHistory:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostEdit'
+        type: array
     type: object
   github_com_ba-reynolds_gophersocial_internal_models.PostEngagement:
     properties:
@@ -318,6 +387,11 @@ definitions:
     properties:
       success:
         type: boolean
+    type: object
+  github_com_ba-reynolds_gophersocial_internal_models.UpdatePostPayload:
+    properties:
+      content:
+        type: string
     type: object
   github_com_ba-reynolds_gophersocial_internal_models.UpdateUserProfileRequest:
     properties:
@@ -1110,6 +1184,79 @@ paths:
       summary: Get post details
       tags:
       - posts
+    patch:
+      consumes:
+      - application/json
+      description: Updates the author's own post content, recording the previous content
+        in the edit history.
+      parameters:
+      - description: Post ID
+        in: path
+        name: postID
+        required: true
+        type: integer
+      - description: Post content
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UpdatePostPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.FullPost'
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "403":
+          description: Forbidden
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Update a post
+      tags:
+      - posts
   /posts/{postID}/bookmark:
     delete:
       consumes:
@@ -1203,6 +1350,49 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Bookmark a post
+      tags:
+      - posts
+  /posts/{postID}/edits:
+    get:
+      description: Returns the recorded edit history (previous contents) for a post.
+      parameters:
+      - description: Post ID
+        in: path
+        name: postID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostEditHistory'
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: List post edit history
       tags:
       - posts
   /posts/{postID}/like:
@@ -1352,6 +1542,203 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Get users who liked a post
+      tags:
+      - posts
+  /posts/{postID}/pin:
+    delete:
+      description: Unpins the author's own post from their profile.
+      parameters:
+      - description: Post ID
+        in: path
+        name: postID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: boolean
+                  type: object
+              type: object
+        "403":
+          description: Forbidden
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Unpin a post
+      tags:
+      - posts
+    post:
+      description: Pins the author's own post to their profile. The author's previously
+        pinned post (if any) is unpinned.
+      parameters:
+      - description: Post ID
+        in: path
+        name: postID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: boolean
+                  type: object
+              type: object
+        "403":
+          description: Forbidden
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Pin a post
+      tags:
+      - posts
+  /posts/{postID}/poll/vote:
+    post:
+      consumes:
+      - application/json
+      description: Casts one vote for the given option on a post's poll. Each user
+        may vote once; voting a second time returns a conflict. Voting on an ended
+        poll is rejected.
+      parameters:
+      - description: Post ID
+        in: path
+        name: postID
+        required: true
+        type: integer
+      - description: Vote
+        in: body
+        name: payload
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Poll'
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "409":
+          description: Conflict
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Vote in a poll
       tags:
       - posts
   /posts/{postID}/quote:
@@ -2176,6 +2563,50 @@ paths:
       summary: Get posts liked by a user
       tags:
       - posts
+  /users/{username}/pinned:
+    get:
+      description: Returns the full post currently pinned to the given user's profile,
+        or 404 if none.
+      parameters:
+      - description: Username
+        in: path
+        name: username
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.FullPost'
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get a user's pinned post
+      tags:
+      - users
   /users/{username}/posts:
     get:
       consumes:

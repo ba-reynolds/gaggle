@@ -97,6 +97,7 @@ func NewRouter(
 					r.Delete("/block", userRelationshipHandler.UnblockUser)
 					// Change likes feed for user to use username instead of userID
 					r.Get("/likes", postHandler.LikedPostsFeed)
+					r.Get("/pinned", postHandler.GetPinned)
 				})
 			})
 
@@ -119,7 +120,11 @@ func NewRouter(
 				r.Route("/{postID}", func(r chi.Router) {
 					r.Use(mid.SetPostContextMiddleware(service, logger))
 					r.Get("/", postHandler.GetPostByID)
+					r.Patch("/", postHandler.UpdatePost)
 					r.Delete("/", postHandler.DeletePostByID)
+					r.Get("/edits", postHandler.ListPostEdits)
+					r.Post("/pin", postHandler.PinPost)
+					r.Delete("/pin", postHandler.UnpinPost)
 					r.Get("/quotes", postHandler.GetPostQuotesFeed)
 					r.Get("/likers", postHandler.GetPostLikers)
 					r.Get("/reposters", postHandler.GetPostReposters)
@@ -132,6 +137,7 @@ func NewRouter(
 					r.Post("/quote", postEngagementHandler.Quote)
 					r.Post("/bookmark", postEngagementHandler.Bookmark)
 					r.Delete("/bookmark", postEngagementHandler.Unbookmark)
+					r.Post("/poll/vote", postEngagementHandler.VotePoll)
 				})
 			})
 

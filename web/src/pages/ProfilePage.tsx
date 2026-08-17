@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useUser } from "@/contexts/UserContext";
 import { useMediaUpload } from "@/hooks/useMediaUpload";
 import { useGetUserPosts } from "@/hooks/usePost";
-import { useFetchProfile, useUpdateProfile } from "@/hooks/useUser";
+import { useFetchProfile, usePinnedPost, useUpdateProfile } from "@/hooks/useUser";
 import { getMediaUrl } from "@/util/media";
 import { format, parseISO } from "date-fns";
 import { Calendar, Camera, Link as LinkIcon, Loader2, MapPin } from "lucide-react";
@@ -25,6 +25,7 @@ const ProfilePage: React.FC = () => {
   const { user, setUser } = useUser();
   const { ref, inView } = useInView();
   const profileUpdateMutation = useUpdateProfile();
+  const pinnedPost = usePinnedPost(safeUsername);
   const mediaUpload = useMediaUpload();
   const [profileEditOpen, setProfileEditOpen] = useState(false);
 
@@ -262,6 +263,11 @@ const ProfilePage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {pinnedPost.data?.data && <div className="border-y border-border bg-primary/5 p-4">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Pinned post</p>
+        <FeedPost post={pinnedPost.data.data} />
+      </div>}
 
       {/* Tabs for posts, replies, media, etc. */}
       <Tabs defaultValue="posts" className="mt-4">

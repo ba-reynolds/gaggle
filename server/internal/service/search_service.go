@@ -71,13 +71,21 @@ func (s *SearchService) hydrateFeed(ctx context.Context, feed *models.PostFeed, 
 		}
 		feed.Items[index] = full
 	}
-	if err := s.store.Media.FetchPostMedia(ctx, feed.Items); err != nil {
-		s.logger.Error("search media hydration failed", "error", err)
-		return nil, err
-	}
 	ids := make([]int, 0, len(feed.Items))
 	for _, item := range feed.Items {
 		ids = append(ids, item.ID)
+	}
+	polls, err := s.store.Polls.GetForPosts(ctx, ids, viewerID)
+	if err != nil {
+		s.logger.Error("search poll hydration failed", "error", err)
+		return nil, err
+	}
+	for _, item := range feed.Items {
+		item.Poll = polls[item.ID]
+	}
+	if err := s.store.Media.FetchPostMedia(ctx, feed.Items); err != nil {
+		s.logger.Error("search media hydration failed", "error", err)
+		return nil, err
 	}
 	engagements, err := s.store.PostEngagements.GetEngagementForPosts(ctx, ids, viewerID)
 	if err != nil {

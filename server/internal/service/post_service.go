@@ -56,6 +56,9 @@ func (s *PostService) GetFullPostByID(ctx context.Context, id int, viewerID int)
 		return nil, err
 	}
 
+	if err := s.hydratePolls(ctx, []*models.FullPost{post}, viewerID); err != nil {
+		return nil, err
+	}
 	if err := s.hydrateEngagement(ctx, []*models.FullPost{post}, viewerID); err != nil {
 		return nil, err
 	}
@@ -108,6 +111,31 @@ func (s *PostService) hydrateEngagement(ctx context.Context, posts []*models.Ful
 	return nil
 }
 
+// hydratePolls populates each post's poll (if any) for the viewer, using a
+// single batched query across the whole set.
+func (s *PostService) hydratePolls(ctx context.Context, posts []*models.FullPost, viewerID int) error {
+	ids := make([]int, 0, len(posts))
+	for _, p := range posts {
+		if p != nil {
+			ids = append(ids, p.ID)
+		}
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	polls, err := s.store.Polls.GetForPosts(ctx, ids, viewerID)
+	if err != nil {
+		return err
+	}
+	for _, p := range posts {
+		if p == nil {
+			continue
+		}
+		p.Poll = polls[p.ID]
+	}
+	return nil
+}
+
 // GetFullPostByIDWithAncestors retrieves a full post with optional ancestor chain
 func (s *PostService) GetFullPostByIDWithAncestors(ctx context.Context, id int, viewerID int, includeAncestors bool, ancestorLimit int) (*models.FullPost, *models.PostChain, error) {
 	post, err := s.GetFullPostByID(ctx, id, viewerID)
@@ -149,6 +177,9 @@ func (s *PostService) GetDescendants(ctx context.Context, postID int, viewerID i
 	}
 
 	if err := s.hydrateEngagement(ctx, descendants.Items, viewerID); err != nil {
+		return nil, err
+	}
+	if err := s.hydratePolls(ctx, descendants.Items, viewerID); err != nil {
 		return nil, err
 	}
 
@@ -236,6 +267,14 @@ func (s *PostService) Create(ctx context.Context, post *models.Post, mediaItems 
 		)
 		return apperrors.BadRequestError("post content is required", nil)
 	}
+	if post.PollPayload != nil {
+		if post.ParentID != nil {
+			return apperrors.BadRequestError("polls are only allowed on top-level posts", nil)
+		}
+		if err := validatePoll(post.PollPayload); err != nil {
+			return err
+		}
+	}
 
 	// Create the post
 	if err := s.store.Posts.Create(ctx, tx, post); err != nil {
@@ -275,6 +314,11 @@ func (s *PostService) Create(ctx context.Context, post *models.Post, mediaItems 
 	if err := s.store.Hashtags.SyncPost(ctx, tx, post.ID, post.Content); err != nil {
 		return err
 	}
+	if post.PollPayload != nil {
+		if err := s.store.Polls.Create(ctx, tx, post.ID, post.PollPayload); err != nil {
+			return err
+		}
+	}
 
 	// Commit the transaction
 	if err := tx.Commit(); err != nil {
@@ -311,11 +355,16 @@ func (s *PostService) DeleteByID(ctx context.Context, post *models.Post, actorID
 		return apperrors.ForbiddenError("not authorized to delete this post", nil)
 	}
 
-	err := s.store.Posts.DeleteByID(ctx, post.ID)
+	tx, err := s.store.DB.BeginTx(ctx, nil)
 	if err != nil {
-		// Don't log here - storage layer already logged database errors
-		// Just handle business logic
+		return apperrors.InternalServerError(err)
+	}
+	defer tx.Rollback()
+	if err := s.store.Posts.DeleteCascade(ctx, tx, post.ID); err != nil {
 		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return apperrors.InternalServerError(err)
 	}
 
 	// Log successful business operations
@@ -324,6 +373,134 @@ func (s *PostService) DeleteByID(ctx context.Context, post *models.Post, actorID
 		"authorID", post.AuthorID,
 	)
 
+	return nil
+}
+
+func (s *PostService) Update(ctx context.Context, post *models.Post, actorID int, content string) (*models.Post, error) {
+	if post.AuthorID != actorID {
+		return nil, apperrors.ForbiddenError("not authorized to edit this post", nil)
+	}
+	if strings.TrimSpace(content) == "" {
+		return nil, apperrors.BadRequestError("post content is required", nil)
+	}
+	if content == post.Content {
+		return post, nil
+	}
+	tx, err := s.store.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, apperrors.InternalServerError(err)
+	}
+	defer tx.Rollback()
+	if err := s.store.Posts.CreateEdit(ctx, tx, post.ID, post.Content); err != nil {
+		return nil, err
+	}
+	updated, err := s.store.Posts.Update(ctx, tx, post.ID, actorID, content)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.store.Hashtags.SyncPost(ctx, tx, post.ID, content); err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, apperrors.InternalServerError(err)
+	}
+	return updated, nil
+}
+
+func (s *PostService) Pin(ctx context.Context, post *models.Post, actorID int) error {
+	if post.AuthorID != actorID {
+		return apperrors.ForbiddenError("not authorized to pin this post", nil)
+	}
+	tx, err := s.store.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return apperrors.InternalServerError(err)
+	}
+	defer tx.Rollback()
+	if err := s.store.Posts.Pin(ctx, tx, post.ID, actorID); err != nil {
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return apperrors.InternalServerError(err)
+	}
+	return nil
+}
+
+func (s *PostService) Unpin(ctx context.Context, post *models.Post, actorID int) error {
+	if post.AuthorID != actorID {
+		return apperrors.ForbiddenError("not authorized to unpin this post", nil)
+	}
+	tx, err := s.store.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return apperrors.InternalServerError(err)
+	}
+	defer tx.Rollback()
+	if err := s.store.Posts.Unpin(ctx, tx, post.ID, actorID); err != nil {
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return apperrors.InternalServerError(err)
+	}
+	return nil
+}
+
+func (s *PostService) GetPinned(ctx context.Context, authorID, viewerID int) (*models.FullPost, error) {
+	post, err := s.store.Posts.GetPinned(ctx, authorID)
+	if err != nil {
+		return nil, err
+	}
+	full, err := s.store.Posts.GetFullPostByID(ctx, post.ID)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.store.Media.FetchPostMedia(ctx, []*models.FullPost{full}); err != nil {
+		return nil, err
+	}
+	if err := s.hydratePolls(ctx, []*models.FullPost{full}, viewerID); err != nil {
+		return nil, err
+	}
+	if err := s.hydrateEngagement(ctx, []*models.FullPost{full}, viewerID); err != nil {
+		return nil, err
+	}
+	return full, nil
+}
+
+func (s *PostService) ListEdits(ctx context.Context, postID int) (*models.PostEditHistory, error) {
+	return s.store.Posts.ListEdits(ctx, postID)
+}
+
+func (s *PostService) VotePoll(ctx context.Context, postID, optionID, userID int) (*models.Poll, error) {
+	tx, err := s.store.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, apperrors.InternalServerError(err)
+	}
+	defer tx.Rollback()
+	if err := s.store.Polls.Vote(ctx, tx, postID, optionID, userID); err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, apperrors.InternalServerError(err)
+	}
+	return s.store.Polls.GetForPost(ctx, postID, userID)
+}
+
+func validatePoll(poll *models.CreatePollPayload) error {
+	if strings.TrimSpace(poll.Question) == "" || len(poll.Question) > 140 {
+		return apperrors.BadRequestError("poll question must be between 1 and 140 characters", nil)
+	}
+	if len(poll.Options) < 2 || len(poll.Options) > 4 {
+		return apperrors.BadRequestError("polls must have between 2 and 4 options", nil)
+	}
+	seen := make(map[string]struct{}, len(poll.Options))
+	for _, option := range poll.Options {
+		option = strings.TrimSpace(option)
+		if option == "" || len(option) > 100 {
+			return apperrors.BadRequestError("poll options must be between 1 and 100 characters", nil)
+		}
+		if _, exists := seen[strings.ToLower(option)]; exists {
+			return apperrors.BadRequestError("poll options must be unique", nil)
+		}
+		seen[strings.ToLower(option)] = struct{}{}
+	}
 	return nil
 }
 
@@ -353,6 +530,9 @@ func (s *PostService) GetParentChain(ctx context.Context, postID int, viewerID i
 	}
 
 	if err := s.hydrateEngagement(ctx, chain.Items, viewerID); err != nil {
+		return nil, err
+	}
+	if err := s.hydratePolls(ctx, chain.Items, viewerID); err != nil {
 		return nil, err
 	}
 
@@ -387,6 +567,9 @@ func (s *PostService) GetHomeFeed(ctx context.Context, userID int, limit int, cu
 	if err := s.hydrateEngagement(ctx, feed.Items, userID); err != nil {
 		return nil, err
 	}
+	if err := s.hydratePolls(ctx, feed.Items, userID); err != nil {
+		return nil, err
+	}
 
 	return feed, nil
 }
@@ -419,6 +602,9 @@ func (s *PostService) GetUserFeed(ctx context.Context, userID int, viewerID int,
 	if err := s.hydrateEngagement(ctx, feed.Items, viewerID); err != nil {
 		return nil, err
 	}
+	if err := s.hydratePolls(ctx, feed.Items, viewerID); err != nil {
+		return nil, err
+	}
 
 	return feed, nil
 }
@@ -435,6 +621,9 @@ func (s *PostService) GetBookmarkedPostsFeed(ctx context.Context, userID int, vi
 	if err := s.hydrateEngagement(ctx, feed.Items, viewerID); err != nil {
 		return nil, err
 	}
+	if err := s.hydratePolls(ctx, feed.Items, viewerID); err != nil {
+		return nil, err
+	}
 	s.logger.Info("bookmarked posts feed fetched", "userID", userID, "categoryIDs", categoryIDs, "count", len(feed.Items))
 	return feed, nil
 }
@@ -449,6 +638,9 @@ func (s *PostService) GetLikedPostsFeed(ctx context.Context, userID int, viewerI
 		return nil, err
 	}
 	if err := s.hydrateEngagement(ctx, feed.Items, viewerID); err != nil {
+		return nil, err
+	}
+	if err := s.hydratePolls(ctx, feed.Items, viewerID); err != nil {
 		return nil, err
 	}
 	s.logger.Info("liked posts feed fetched", "userID", userID, "count", len(feed.Items))
@@ -470,6 +662,9 @@ func (s *PostService) GetQuotesFeed(ctx context.Context, postID int, viewerID in
 		return nil, err
 	}
 	if err := s.hydrateEngagement(ctx, feed.Items, viewerID); err != nil {
+		return nil, err
+	}
+	if err := s.hydratePolls(ctx, feed.Items, viewerID); err != nil {
 		return nil, err
 	}
 	return feed, nil

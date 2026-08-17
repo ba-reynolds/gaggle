@@ -378,6 +378,202 @@ func TestSearchHashtagsAndTrends(t *testing.T) {
 	}
 }
 
+func TestPostPowerFeatures(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+	tokenA := app.RegisterUser(t, "power_a", "power-a@example.com")
+	tokenB := app.RegisterUser(t, "power_b", "power-b@example.com")
+
+	root, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/posts/",
+		Token:  tokenA,
+		Body:   map[string]string{"content": "original content"},
+	}))
+	rootID := int(root["id"].(float64))
+
+	edited, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{
+		Method: http.MethodPatch,
+		Path:   "/api/v1/posts/" + itoa(rootID),
+		Token:  tokenA,
+		Body:   map[string]string{"content": "edited content"},
+	}))
+	if edited["content"] != "edited content" || edited["edited_at"] == nil {
+		t.Fatalf("edited post = %v", edited)
+	}
+
+	edits, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{
+		Method: http.MethodGet,
+		Path:   "/api/v1/posts/" + itoa(rootID) + "/edits",
+		Token:  tokenA,
+	}))
+	if len(edits["items"].([]any)) != 1 {
+		t.Fatalf("edit history items = %d, want 1", len(edits["items"].([]any)))
+	}
+
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/posts/" + itoa(rootID) + "/pin", Token: tokenA}); rec.Code != http.StatusOK {
+		t.Fatalf("pin failed: %d %s", rec.Code, rec.Body.String())
+	}
+	pinned, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/users/power_a/pinned", Token: tokenA}))
+	if int(pinned["id"].(float64)) != rootID {
+		t.Fatalf("pinned post id = %v, want %d", pinned["id"], rootID)
+	}
+
+	// one pinned per author: pinning a second post replaces the first
+	second, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/posts/",
+		Token:  tokenA,
+		Body:   map[string]string{"content": "second post"},
+	}))
+	secondID := int(second["id"].(float64))
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/posts/" + itoa(secondID) + "/pin", Token: tokenA}); rec.Code != http.StatusOK {
+		t.Fatalf("re-pin failed: %d %s", rec.Code, rec.Body.String())
+	}
+	pinned, _ = testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/users/power_a/pinned", Token: tokenA}))
+	if int(pinned["id"].(float64)) != secondID {
+		t.Fatalf("pinned post after re-pin = %v, want %d", pinned["id"], secondID)
+	}
+	// unpin the second post
+	if rec := app.Do(t, testutil.Request{Method: http.MethodDelete, Path: "/api/v1/posts/" + itoa(secondID) + "/pin", Token: tokenA}); rec.Code != http.StatusOK {
+		t.Fatalf("unpin failed: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/users/power_a/pinned", Token: tokenA}); rec.Code != http.StatusNotFound {
+		t.Fatalf("pinned after unpin status = %d, want 404", rec.Code)
+	}
+	// re-pin the root for later delete/pinned assertions
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/posts/" + itoa(rootID) + "/pin", Token: tokenA}); rec.Code != http.StatusOK {
+		t.Fatalf("re-pin root failed: %d %s", rec.Code, rec.Body.String())
+	}
+
+	// non-author edit is forbidden
+	if rec := app.Do(t, testutil.Request{
+		Method: http.MethodPatch,
+		Path:   "/api/v1/posts/" + itoa(rootID),
+		Token:  tokenB,
+		Body:   map[string]string{"content": "nope"},
+	}); rec.Code != http.StatusForbidden {
+		t.Fatalf("non-author edit status = %d, want 403", rec.Code)
+	}
+	// non-author pin is forbidden
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/posts/" + itoa(rootID) + "/pin", Token: tokenB}); rec.Code != http.StatusForbidden {
+		t.Fatalf("non-author pin status = %d, want 403", rec.Code)
+	}
+
+	poll, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/posts/",
+		Token:  tokenA,
+		Body: map[string]any{
+			"content": "pick one",
+			"poll":    map[string]any{"question": "Which?", "options": []string{"one", "two"}},
+		},
+	}))
+	pollID := int(poll["id"].(float64))
+	if poll["poll"] == nil {
+		t.Fatal("created post missing poll")
+	}
+	postPoll := poll["poll"].(map[string]any)
+	if int(postPoll["id"].(float64)) == 0 {
+		t.Fatal("created post poll missing id")
+	}
+	if rec := app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/posts/" + itoa(pollID) + "/poll/vote",
+		Token:  tokenB,
+		Body:   map[string]int{"option_id": 1},
+	}); rec.Code != http.StatusOK {
+		t.Fatalf("poll vote failed: %d %s", rec.Code, rec.Body.String())
+	}
+	// duplicate vote conflicts
+	if rec := app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/posts/" + itoa(pollID) + "/poll/vote",
+		Token:  tokenB,
+		Body:   map[string]int{"option_id": 2},
+	}); rec.Code != http.StatusConflict {
+		t.Fatalf("duplicate poll vote status = %d, want 409", rec.Code)
+	}
+	// a poll can never be attached to a reply
+	if rec := app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/posts/",
+		Token:  tokenB,
+		Body: map[string]any{
+			"content":   "reply with poll",
+			"parent_id": rootID,
+			"poll":      map[string]any{"question": "nope?", "options": []string{"a", "b"}},
+		},
+	}); rec.Code != http.StatusBadRequest {
+		t.Fatalf("poll on reply status = %d, want 400", rec.Code)
+	}
+
+	// polls are hydrated in feeds: have tokenB follow power_a and read the home feed
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/users/power_a/follow", Token: tokenB}); rec.Code != http.StatusOK {
+		t.Fatalf("follow failed: %d %s", rec.Code, rec.Body.String())
+	}
+	feed, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/posts/feed", Token: tokenB}))
+	var feedPollSeen bool
+	for _, item := range feed["items"].([]any) {
+		if int(item.(map[string]any)["id"].(float64)) == pollID {
+			if item.(map[string]any)["poll"] == nil {
+				t.Fatalf("home feed poll post missing poll hydration")
+			}
+			feedPollSeen = true
+		}
+	}
+	if !feedPollSeen {
+		t.Fatalf("home feed did not include the poll post")
+	}
+	// poll also hydrated in the user feed
+	userFeed, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/users/power_a/posts", Token: tokenB}))
+	var userPollSeen bool
+	for _, item := range userFeed["items"].([]any) {
+		if int(item.(map[string]any)["id"].(float64)) == pollID {
+			if item.(map[string]any)["poll"] == nil {
+				t.Fatalf("user feed poll post missing poll hydration")
+			}
+			userPollSeen = true
+		}
+	}
+	if !userPollSeen {
+		t.Fatalf("user feed did not include the poll post")
+	}
+
+	reply, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/posts/",
+		Token:  tokenB,
+		Body:   map[string]any{"content": "reply", "parent_id": rootID},
+	}))
+	replyID := int(reply["id"].(float64))
+	if rec := app.Do(t, testutil.Request{Method: http.MethodDelete, Path: "/api/v1/posts/" + itoa(rootID), Token: tokenA}); rec.Code != http.StatusOK {
+		t.Fatalf("delete root failed: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/posts/" + itoa(replyID), Token: tokenB}); rec.Code != http.StatusNotFound {
+		t.Fatalf("deleted descendant status = %d, want 404", rec.Code)
+	}
+	// deleted root disappears from pinned
+	if rec := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/users/power_a/pinned", Token: tokenA}); rec.Code != http.StatusNotFound {
+		t.Fatalf("pinned after delete status = %d, want 404", rec.Code)
+	}
+	// deleted posts reject edit history and votes
+	if rec := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/posts/" + itoa(rootID) + "/edits", Token: tokenA}); rec.Code != http.StatusNotFound {
+		t.Fatalf("edit history on deleted post status = %d, want 404", rec.Code)
+	}
+	if rec := app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/posts/" + itoa(rootID) + "/poll/vote",
+		Token:  tokenB,
+		Body:   map[string]int{"option_id": 1},
+	}); rec.Code != http.StatusNotFound {
+		t.Fatalf("vote on deleted post status = %d, want 404", rec.Code)
+	}
+	// deleting a non-author post is forbidden
+	if rec := app.Do(t, testutil.Request{Method: http.MethodDelete, Path: "/api/v1/posts/" + itoa(pollID), Token: tokenB}); rec.Code != http.StatusForbidden {
+		t.Fatalf("non-author delete status = %d, want 403", rec.Code)
+	}
+}
+
 func TestParentChainAndDescendants(t *testing.T) {
 	app := testutil.NewApp(t, testutil.Database(t))
 	token := app.RegisterUser(t, "chainuser", "chain@example.com")

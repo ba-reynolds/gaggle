@@ -6,6 +6,12 @@ import {
   getBookmarkedPosts,
   getBookmarkCategories,
   getFeedPosts,
+  updatePost,
+  deletePost,
+  pinPost,
+  unpinPost,
+  getPostEdits,
+  votePoll,
   getPost,
   getUserPosts,
   likePost,
@@ -192,6 +198,53 @@ export function useGetFeedPosts(limit: number = 20) {
     getNextPageParam: (lastPage) => lastPage.data.next_cursor,
     staleTime: Infinity,
     gcTime: Infinity,
+  });
+}
+
+function invalidatePostQueries(queryClient: ReturnType<typeof useQueryClient>, postId: number, username?: string) {
+  void queryClient.invalidateQueries({ queryKey: ['post', postId] });
+  void queryClient.invalidateQueries({ queryKey: ['feed'] });
+  void queryClient.invalidateQueries({ queryKey: ['user-posts'] });
+  void queryClient.invalidateQueries({ queryKey: ['search-posts'] });
+  void queryClient.invalidateQueries({ queryKey: ['hashtag-posts'] });
+  if (username) {
+    void queryClient.invalidateQueries({ queryKey: ['pinned-post', username] });
+  }
+}
+
+export function useUpdatePost() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ postId, content }: { postId: number; content: string; username?: string }) => updatePost(postId, content),
+    onSuccess: (_, variables) => invalidatePostQueries(queryClient, variables.postId, variables.username),
+  });
+}
+
+export function useDeletePost() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ postId }: { postId: number; username?: string }) => deletePost(postId),
+    onSuccess: (_, variables) => invalidatePostQueries(queryClient, variables.postId, variables.username),
+  });
+}
+
+export function usePinPost() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ postId, pinned }: { postId: number; pinned: boolean; username?: string }) => pinned ? unpinPost(postId) : pinPost(postId),
+    onSuccess: (_, variables) => invalidatePostQueries(queryClient, variables.postId, variables.username),
+  });
+}
+
+export function usePostEdits(postId: number, enabled: boolean) {
+  return useQuery({ queryKey: ['post-edits', postId], queryFn: () => getPostEdits(postId), enabled });
+}
+
+export function useVotePoll() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ postId, optionId }: { postId: number; optionId: number }) => votePoll(postId, optionId),
+    onSuccess: (_, variables) => invalidatePostQueries(queryClient, variables.postId),
   });
 }
 

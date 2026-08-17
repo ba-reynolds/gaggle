@@ -52,6 +52,12 @@ type Service struct {
 		Create(ctx context.Context, post *models.Post, mediaItems []models.PostMediaRequest) error
 		QuotePost(ctx context.Context, post *models.Post, mediaItems []models.PostMediaRequest) error
 		DeleteByID(ctx context.Context, post *models.Post, actorID int) error
+		Update(ctx context.Context, post *models.Post, actorID int, content string) (*models.Post, error)
+		Pin(ctx context.Context, post *models.Post, actorID int) error
+		Unpin(ctx context.Context, post *models.Post, actorID int) error
+		GetPinned(ctx context.Context, authorID, viewerID int) (*models.FullPost, error)
+		ListEdits(ctx context.Context, postID int) (*models.PostEditHistory, error)
+		VotePoll(ctx context.Context, postID, optionID, userID int) (*models.Poll, error)
 		GetParentChain(ctx context.Context, postID int, viewerID int, limit int, cursor string) (*models.PostChain, error)
 		GetDescendants(ctx context.Context, postID int, viewerID int, limit int, cursor string) (*models.PostDescendants, error)
 		GetHomeFeed(ctx context.Context, userID int, limit int, cursor string) (*models.PostFeed, error)
