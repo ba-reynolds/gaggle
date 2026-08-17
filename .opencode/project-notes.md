@@ -30,22 +30,32 @@ Tricky things learned while working on this repo (newest on top).
 - Cursor timestamps must use `time.RFC3339Nano` — second precision drops posts created
   in the same second (see `post_store.go`).
 
-## Tooling / environment (NixOS)
-- Dev env via root `flake.nix`; enter with `nix develop`.
-- `migrate` CLI is NOT on PATH — run via Makefile which uses `go run -tags=postgres
-  github.com/golang-migrate/migrate/v4/cmd/migrate@v4.19.1`. The nixpkgs `go-migrate`
-  binary is broken (gosnowflake CA panic).
-- `swag` isn't in nixpkgs — the Makefile `swag` target uses `go run ...swag@latest`.
-  **Swag resolves `models.X` from the imports of the file containing the annotation** —
+## Tooling / environment (Docker)
+- Full stack runs via root `compose.yaml`; `make dev` = `docker compose up --build -d`.
+  Frontend served by nginx (host `:5173`) which reverse-proxies `/api/*` + `/swagger/*`
+  to the `api` container — the app is single-origin, so no CORS.
+- No Go/Node on the host. Go tooling runs in the `tools` compose service
+  (`server` mounted at `/src`); frontend tooling in `web-tools` (`web` at `/src`).
+  Both are `profile: tools`, not started by `make dev`.
+- `migrate` golang-migrate CLI is built into the api image and applied on start via
+  `/app/migrate` (entrypoint `scripts/docker-entrypoint.sh`, POSTGRES_URL env). Manual:
+  `make migrate-up` / `make new-migration <name>` (via tools container).
+- **Swag resolves `models.X` from the imports of the file containing the annotation** —
   if a handler's annotations reference `models.Foo`, that file must import `models`
-  (settings_handler has a `var _ models.UserSettings` for this).
-- Local Postgres/Redis (no Docker): `cd server && make dev-services` /
-  `make dev-services-stop`. Data lives in `/tmp/gophersocial`.
-- Tests: `go test ./...` uses a throwaway DB `social_test` (see `internal/testutil`),
-  created/dropped automatically against the local Postgres.
+  (settings_handler has a `var _ models.UserSettings` for this). Regen: `make swag`
+  (writes to `server/docs`).
+- Tests: `make test` = `docker compose --profile tools run --rm tools go test ./...`.
+  Uses a throwaway DB `social_test` (see `internal/testutil`), create/drop against
+  the `db` container via `TEST_DB_ADDRESS=db:5432` (configured in compose).
+- Seed: `make seed` runs `/app/seed` in the api image; idempotent (exits early if
+  `alice@example.com` exists).
+- Docker on NixOS must be enabled (`virtualisation.docker.enable = true`) in
+  `~/nixos-config`. Kernel has no legacy iptables + nftables is on; if published
+  ports fail, switch Docker to the nftables driver (see comment in configuration.nix).
 ## Frontend
 - `npm run build` needs esbuild/tailwind oxide install scripts approved
-  (`npm approve-scripts esbuild @tailwindcss/oxide`). react-day-picker must be v9 for
+  (`npm approve-scripts esbuild @tailwindcss/oxide`); `web/Dockerfile` uses `npm ci`
+  which honors package.json `allowScripts`. react-day-picker must be v9 for
   React 19 (was pinned to v8 and broke `npm install` with ERESOLVE).
 - Settings PATCH merges partial nested JSON; the payload type must be
   `DeepPartial<UserSettings>` (not `Partial`, which would require nested objects whole).
@@ -59,4 +69,6 @@ Tricky things learned while working on this repo (newest on top).
   `profile_picture_uuid` when none).
 - `POST /auth/refresh-token` is a POST with no body (reads cookie) — used in both the
   AuthContext bootstrap AND the 401 retry interceptor.
-- Build/lint: `nix develop --command bash -c 'cd web && npm run build'`.
+- Frontend API base URL is relative (`/api/v1`, `VITE_API_BASE_URL`); `npm run dev`
+  still works locally thanks to the vite dev proxy to `localhost:2021` (vite.config.ts).
+- Frontend build/lint (Docker): `docker compose --profile tools run --rm web-tools npm run build`.

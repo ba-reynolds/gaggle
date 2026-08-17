@@ -144,7 +144,7 @@ func NewApp(t *testing.T, db *sql.DB) *App {
 	authenticator := auth.NewJWTAuthenticator(cfg.AuthConfig)
 	store := store.NewStore(db, log, cfg.AppConfig.MediaDir)
 	svc := service.NewService(store, log, authenticator, cfg.AppConfig)
-	router := api.NewRouter(svc, log, nil, 0, 0)
+	router := api.NewRouter(svc, log, nil, 0, 0, false)
 	return &App{DB: db, Router: router}
 }
 

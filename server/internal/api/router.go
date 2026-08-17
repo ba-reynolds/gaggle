@@ -23,6 +23,7 @@ func NewRouter(
 	rdb *cache.Client,
 	rateLimitMaxRequests int,
 	rateLimitWindow time.Duration,
+	cookieSecure bool,
 ) http.Handler {
 	router := chi.NewRouter()
 
@@ -40,7 +41,7 @@ func NewRouter(
 		swagger.DomID("swagger-ui"),
 	))
 
-	authHandler := handlers.NewAuthHandler(service, logger)
+	authHandler := handlers.NewAuthHandler(service, logger, cookieSecure)
 	mediaHandler := handlers.NewMediaHandler(service, logger)
 	userHandler := handlers.NewUserHandler(service, logger)
 	postHandler := handlers.NewPostHandler(service, logger, rdb)
@@ -50,15 +51,18 @@ func NewRouter(
 
 	// API v1 routes
 	router.Route("/api/v1", func(r chi.Router) {
-		// Auth routes (public access - no auth required)
+		// Auth routes (public access - no auth required).
+		// Rate limiting targets brute-force vectors (login/register) only;
+		// refresh-token and logout are the recovery paths and must not be
+		// locked out.
 		r.Route("/auth", func(r chi.Router) {
 			r.Group(func(limited chi.Router) {
 				limited.Use(mid.RateLimitMiddleware(rdb, rateLimitMaxRequests, rateLimitWindow))
 				limited.Post("/register", authHandler.Register)
 				limited.Post("/login", authHandler.Login)
-				limited.Post("/refresh-token", authHandler.RefreshToken)
-				limited.Post("/logout", authHandler.Logout)
 			})
+			r.Post("/refresh-token", authHandler.RefreshToken)
+			r.Post("/logout", authHandler.Logout)
 		})
 
 		// Media files are served publicly because <img> tags cannot send the

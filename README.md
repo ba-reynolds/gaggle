@@ -1,7 +1,8 @@
 # GopherSocial
 
 A Twitter-like social media app: **Go** (chi + PostgreSQL + Redis) backend and a
-**React + TypeScript + shadcn/ui** (Vite) frontend. Single repository, two apps.
+**React + TypeScript + shadcn/ui** (Vite) frontend, served by **nginx**. Single
+repository, two apps, fully containerized with Docker Compose.
 
 ## Features
 
@@ -20,50 +21,51 @@ A Twitter-like social media app: **Go** (chi + PostgreSQL + Redis) backend and a
 ## Repository layout
 
 ```
-server/   Go API server (handlers -> services -> stores -> PostgreSQL)
-web/  React + Vite + shadcn/ui client
-flake.nix      Nix dev environment (Go, Node, Postgres, Redis)
+server/    Go API server (handlers -> services -> stores -> PostgreSQL) + Dockerfile
+web/       React + Vite + shadcn/ui client + nginx reverse proxy (Dockerfile)
+compose.yaml  One-shot local stack: Postgres + Redis + API + Web
 ```
 
 ## Quick start (Docker)
 
-```bash
-cd server
-cp .env.example .env
-docker compose up -d          # PostgreSQL (6969) + Redis (6379)
-make migrate-up               # apply migrations
-make seed-db                  # seed demo users (alice@example.com / password123)
-make run                      # API on :2021
-
-cd ../web
-npm install
-npm run dev                   # Vite dev server
-```
-
-Open http://localhost:5173 and sign in as `alice@example.com` / `password123`.
-
-## Quick start (Nix, no Docker)
+**Prerequisite:** Docker Engine running (`docker --version`). On NixOS that's
+`virtualisation.docker.enable = true` + `nixos-rebuild switch` + reboot.
 
 ```bash
-nix develop                    # reproducible toolchain
-cd server
-make dev-services              # local Postgres + Redis in /tmp
-make migrate-up && make seed-db
-make run
-
-cd ../web
-npm install && npm run dev
+make dev       # build + start db, redis, api, and web
+make seed      # create demo users (idempotent)
 ```
 
-## Testing
+Open **http://localhost:5173** and sign in as `alice@example.com` / `password123`.
 
-```bash
-# Backend integration tests (needs a local Postgres; creates a throwaway `social_test` DB)
-cd server && make test
+- The `web` container (nginx on host `:5173`) serves the frontend and
+  reverse-proxies `/api/*` and `/swagger/*` to the `api` container — the whole
+  app runs on a single origin (no CORS).
+- The `api` container **auto-applies migrations** on first start and seeds
+  nothing by itself; run `make seed` once for demo data.
 
-# Frontend
-cd web && npm run build && npm run lint
-```
+### Common commands
+
+| Command | What it does |
+|---------|--------------|
+| `make dev` | build + run the full stack in the background |
+| `make dev-logs` | stream all container logs |
+| `make dev-stop` | stop the stack (data volumes persist) |
+| `make seed` | create demo users (idempotent) |
+| `make test` | backend integration tests (throwaway `social_test` DB) |
+| `make swag` | regenerate Swagger docs into `server/docs` |
+| `make lint-frontend`, `make test-frontend` | frontend checks |
+| `make reset-db` | drop + recreate the app database |
+
+No Go/Node toolchain is needed on the host — everything runs through the
+`tools` / `web-tools` compose services (a `tools` profile not started by
+`make dev`).
+
+## Configuration
+
+Copy `.env.example` → `.env` to override compose variables (DB user/password,
+ports, JWT secret). Sensible defaults work out of the box. The API container's
+full config lives in `compose.yaml` under the `api` service `environment`.
 
 ## API contract
 
@@ -84,3 +86,5 @@ See `server/docs/swagger.yaml` for the full spec.
 - Media files are served publicly at `/api/v1/media/{uuid}` (UUIDs are
   unguessable); `<img>` tags can't send auth headers.
 - The backend degrades gracefully when Redis is down (no caching / rate limiting).
+- Migrations: applied automatically by the api container on start; manage
+  manually with `make migrate-up` / `make new-migration <name>`.

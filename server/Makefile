@@ -1,67 +1,39 @@
-include .env
-export PGUSER=$(DB_USER)
-DB_URI = "postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_ADDRESS)/$(DB_NAME)?sslmode=disable"
-MIGRATE := go run -tags=postgres github.com/golang-migrate/migrate/v4/cmd/migrate@v4.19.1
+# Go tooling targets for the server. All go commands run inside the Docker
+# `tools` container (see ../compose.yaml) so nothing needs to be installed on
+# the host. Run from the repo root for the compose-aware stack:
+#   make migrate-up
+#   make new-migration add_users
+#   make test
 
-# The `filter-out` at the end is just going to give us "xyz" for when we run "make new-migration xyz".
-# This gives an error when running the command as make will try to parse "xyz" as if it was another rule
-# defined in this file
+MIGRATE_ARGS = -path /src/cmd/migrate/migrations -database "postgres://white:teeth@db:5432/social?sslmode=disable"
+
+# Create a new pair of migration files:  make new-migration add_foo
 new-migration:
-	@$(MIGRATE) create -seq -ext sql -dir cmd/migrate/migrations $(filter-out $@,$(MAKECMDGOALS))
+	docker compose --profile tools run --rm tools go run -tags=postgres github.com/golang-migrate/migrate/v4/cmd/migrate@v4.19.1 create -seq -ext sql -dir /src/cmd/migrate/migrations $(filter-out $@,$(MAKECMDGOALS))
 
 migrate-up:
-	@$(MIGRATE) -path ./cmd/migrate/migrations -database=$(DB_URI) up
+	@echo ">> the api container auto-migrates on start; use this to migrate manually:"
+	docker compose --profile tools run --rm tools go run -tags=postgres github.com/golang-migrate/migrate/v4/cmd/migrate@v4.19.1 $(MIGRATE_ARGS) up
 
 migrate-down:
-	@$(MIGRATE) -path ./cmd/migrate/migrations -database=$(DB_URI) down
+	docker compose --profile tools run --rm tools go run -tags=postgres github.com/golang-migrate/migrate/v4/cmd/migrate@v4.19.1 $(MIGRATE_ARGS) down
 
 migrate-force:
-	@$(MIGRATE) -path ./cmd/migrate/migrations -database=$(DB_URI) force $(filter-out $@,$(MAKECMDGOALS))
-
-check-db:
-	psql -h localhost -p $(DB_PORT) -U $(DB_USER) -d $(DB_NAME)
-
-reset-db:
-	@echo "Resetting database $(DB_NAME)..."
-	dropdb -h localhost -p $(DB_PORT) -U $(DB_USER) --if-exists $(DB_NAME)
-	createdb -h localhost -p $(DB_PORT) -U $(DB_USER) $(DB_NAME)
-	@echo "Database $(DB_NAME) has been reset."
+	docker compose --profile tools run --rm tools go run -tags=postgres github.com/golang-migrate/migrate/v4/cmd/migrate@v4.19.1 $(MIGRATE_ARGS) force $(filter-out $@,$(MAKECMDGOALS))
 
 seed-db:
-	go run cmd/seed/main.go
+	@echo ">> use root:  make seed"
+	docker compose run --rm --no-deps --entrypoint /app/seed api
 
 swag:
-	go run github.com/swaggo/swag/cmd/swag@latest init -g cmd/api/main.go --parseDependency --output docs
+	docker compose --profile tools run --rm tools sh -c 'cd /src && go run github.com/swaggo/swag/cmd/swag@latest init -g cmd/api/main.go --parseDependency --output docs'
 
-run:
-	go run cmd/api/main.go
-
-# Testing targets. By default these run against a local Postgres/Redis started
-# via `make dev-services`; override with TEST_DATABASE_URL / TEST_REDIS_ADDR.
 test:
-	go test ./... -v
+	docker compose --profile tools run --rm tools go test ./... -v
 
 test-coverage:
-	go test ./... -cover
+	docker compose --profile tools run --rm tools go test ./... -cover
 
-test-coverage-report:
-	go test ./... -coverprofile=coverage.out
-	go tool cover -html=coverage.out -o coverage.html
-	@echo "Coverage report generated: coverage.html"
-
-test-short:
-	go test ./... -v -short
-
-# Start local dev services (Postgres + Redis) without Docker.
-dev-services:
-	@scripts/dev-services.sh start
-
-dev-services-stop:
-	@scripts/dev-services.sh stop
-
-dev-services-status:
-	@scripts/dev-services.sh status
-
-# catch-all rule for composed rules such as `migrate-force` and `new-migration`
+# catch-all rule for composed rules such as migrate-force and new-migration
 %:
 	@:

@@ -12,15 +12,30 @@ import (
 
 // AuthHandler handles HTTP requests for authentication
 type AuthHandler struct {
-	service *service.Service
-	logger  *slog.Logger
+	service      *service.Service
+	logger       *slog.Logger
+	cookieSecure bool
 }
 
-func NewAuthHandler(service *service.Service, logger *slog.Logger) *AuthHandler {
+func NewAuthHandler(service *service.Service, logger *slog.Logger, cookieSecure bool) *AuthHandler {
 	return &AuthHandler{
-		service: service,
-		logger:  logger,
+		service:      service,
+		logger:       logger,
+		cookieSecure: cookieSecure,
 	}
+}
+
+// setRefreshTokenCookie writes the refresh-token cookie. Secure is only enabled
+// behind TLS (browsers reject Secure cookies over http://localhost).
+func (h *AuthHandler) setRefreshTokenCookie(w http.ResponseWriter, token string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   h.cookieSecure,
+		SameSite: http.SameSiteLaxMode,
+	})
 }
 
 // RefreshToken godoc
@@ -130,15 +145,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// set refresh token cookie
-	http.SetCookie(w, &http.Cookie{
-		Name:  "refresh_token",
-		Value: refreshToken.TokenString,
-		Path:  "/",
-		// TODO: change to same site lax when in production
-		// TODO: change to true when in production
-		Secure:   true,
-		SameSite: http.SameSiteNoneMode,
-	})
+	h.setRefreshTokenCookie(w, refreshToken.TokenString)
 
 	response := models.LoginResponse{
 		AccessToken: accessToken.TokenString,
@@ -205,15 +212,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// set refresh token cookie
-	http.SetCookie(w, &http.Cookie{
-		Name:  "refresh_token",
-		Value: refreshToken.TokenString,
-		Path:  "/",
-		// TODO: change to same site lax when in production
-		// TODO: change to true when in production
-		Secure:   true,
-		SameSite: http.SameSiteNoneMode,
-	})
+	h.setRefreshTokenCookie(w, refreshToken.TokenString)
 
 	response := models.RegisterResponse{
 		User:        user,

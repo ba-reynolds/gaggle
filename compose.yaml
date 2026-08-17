@@ -1,0 +1,146 @@
+name: gophersocial
+
+# One-shot local dev stack: Postgres + Redis + API + Web (nginx).
+#   make dev          # or: docker compose up --build -d
+#   make dev-stop     # or: docker compose down
+# The API container auto-applies migrations on start (idempotent) and the
+# seed users are created with `make seed`.
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: gophersocial-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-white}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-teeth}
+      POSTGRES_DB: ${DB_NAME:-social}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-6969}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-white} -d ${DB_NAME:-social}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: gophersocial-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./server
+    container_name: gophersocial-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DB_ADDRESS: db:5432
+      DB_USER: ${DB_USER:-white}
+      DB_PASSWORD: ${DB_PASSWORD:-teeth}
+      DB_NAME: ${DB_NAME:-social}
+      DB_MAX_OPEN_CONNS: 30
+      DB_MAX_IDLE_CONNS: 15
+      DB_MAX_IDLE_TIME: 60
+      DB_QUERY_TIMEOUT_SECONDS: 5
+      REDIS_ADDRESS: redis:6379
+      REDIS_DB: 0
+      REDIS_FEED_CACHE_TTL_SECONDS: 60
+      RATE_LIMIT_MAX_REQUESTS: 30
+      RATE_LIMIT_WINDOW_SECONDS: 60
+      SERVER_ADDR: ":2021"
+      SERVER_WRITE_TIMEOUT: 30
+      SERVER_READ_TIMEOUT: 10
+      SERVER_IDLE_TIMEOUT: 360
+      SERVER_REQUEST_TIMEOUT: 2
+      MEDIA_DIR: /app/media
+      LOGGING_FILENAME: /app/logs/logs.log
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      JWT_ISSUER: gophersocial
+      JWT_ACCESS_TOKEN_EXPIRATION_TIME: 900
+      JWT_REFRESH_TOKEN_EXPIRATION_TIME: 1296000
+      COOKIE_SECURE: "false"
+      INVITATION_DURATION: 86400
+      # Used by the entrypoint to apply migrations on first start.
+      POSTGRES_URL: postgres://${DB_USER:-white}:${DB_PASSWORD:-teeth}@db:5432/${DB_NAME:-social}?sslmode=disable
+      MIGRATE_ON_START: "true"
+    ports:
+      - "2021:2021"
+    volumes:
+      - api_media:/app/media
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:2021/swagger/doc.json >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  web:
+    build:
+      context: ./web
+      args:
+        VITE_API_BASE_URL: /api/v1
+    container_name: gophersocial-web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-5173}:80"
+
+  # Local Go toolchain without needing anything installed on the host.
+  # Not started by `make dev` (profile "tools"); use it via:
+  #   docker compose --profile tools run --rm tools <go command>
+  # e.g. `make test`, `make swag`.
+  tools:
+    image: golang:1.24-alpine
+    profiles: ["tools"]
+    working_dir: /src
+    volumes:
+      - ./server:/src
+      - go_mod_cache:/go/pkg/mod
+    environment:
+      DB_USER: ${DB_USER:-white}
+      DB_PASSWORD: ${DB_PASSWORD:-teeth}
+      DB_NAME: ${DB_NAME:-social}
+      DB_ADDRESS: db:5432
+      REDIS_ADDRESS: redis:6379
+      # Test helper talks to the real Postgres on a throwaway `social_test` DB.
+      TEST_DB_ADDRESS: db:5432
+      TEST_DB_USER: ${DB_USER:-white}
+      TEST_DB_PASSWORD: ${DB_PASSWORD:-teeth}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Node toolchain for frontend lint/build without installing node on the host.
+  web-tools:
+    image: node:24-alpine
+    profiles: ["tools"]
+    working_dir: /src
+    volumes:
+      - ./web:/src
+      - npm_cache:/root/.npm
+
+volumes:
+  postgres_data:
+  redis_data:
+  api_media:
+  go_mod_cache:
+  npm_cache:

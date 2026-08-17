@@ -64,7 +64,7 @@ func main() {
 	store := store.NewStore(db, log, cfg.AppConfig.MediaDir)
 	svc := service.NewService(store, log, authenticator, cfg.AppConfig)
 
-	router := api.NewRouter(svc, log, rdb, cfg.RedisConfig.RateLimitMaxRequests, cfg.RedisConfig.RateLimitWindow)
+	router := api.NewRouter(svc, log, rdb, cfg.RedisConfig.RateLimitMaxRequests, cfg.RedisConfig.RateLimitWindow, cfg.AuthConfig.CookieSecure)
 
 	server := &http.Server{
 		Addr:         cfg.ServerConfig.ServerAddr,

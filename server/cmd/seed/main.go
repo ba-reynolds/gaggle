@@ -46,6 +46,13 @@ func main() {
 	// Create context
 	ctx := context.Background()
 
+	// Idempotency guard: if the seed anchor user already exists, the database
+	// is already seeded. Exit quietly so `make seed` / container re-runs are safe.
+	if _, err := store.Users.GetByEmail(ctx, "alice@example.com"); err == nil {
+		fmt.Println("✅ Database already seeded (alice@example.com exists); skipping.")
+		return
+	}
+
 	fmt.Println("🌱 Starting database seeding...")
 
 	// Seed users

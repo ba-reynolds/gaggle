@@ -1,0 +1,8 @@
+bin/
+logs/
+media/
+coverage.out
+coverage.html
+build-errors.log
+.env
+*.log

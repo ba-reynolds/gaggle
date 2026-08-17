@@ -3,6 +3,7 @@ import {
   useContext,
   useEffect,
   useLayoutEffect,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -39,15 +40,34 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
   // Token = string -> logged in
   const [token, setToken] = useState<string | null | undefined>();
   const { setUser } = useUser();
+  // Mirror token in a ref so the response interceptor always sees the latest
+  // value without being re-registered on every token change.
+  const tokenRef = useRef<string | null | undefined>(undefined);
+  // Single-flight: all concurrent 401s share one refresh request.
+  const refreshPromiseRef = useRef<Promise<string> | null>(null);
+
+  const refreshAccessToken = async (): Promise<string> => {
+    if (!refreshPromiseRef.current) {
+      refreshPromiseRef.current = api
+        .post<Envelope<RefreshTokenResponse>>('/auth/refresh-token')
+        .then((res) => {
+          const accessToken = res.data.data.access_token;
+          setToken(accessToken);
+          return accessToken;
+        })
+        .finally(() => {
+          refreshPromiseRef.current = null;
+        });
+    }
+    return refreshPromiseRef.current;
+  };
 
   // Bootstrap: try to restore the session from the refresh-token cookie and
   // hydrate the current user's profile.
   useEffect(() => {
     const fetchMe = async () => {
       try {
-        const refreshTokenResponse = await api.post<Envelope<RefreshTokenResponse>>('/auth/refresh-token');
-        const accessToken = refreshTokenResponse.data.data.access_token;
-        setToken(accessToken);
+        const accessToken = await refreshAccessToken();
 
         const meResponse = await api.get<Envelope<{ username: string; display_name: string; profile_picture_uuid?: string }>>('/users/me', {
           headers: {
@@ -65,13 +85,18 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     };
 
     fetchMe();
-  }, [setUser]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useLayoutEffect(() => {
+    tokenRef.current = token;
+  }, [token]);
 
   useLayoutEffect(() => {
     const authInterceptor = api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
       const retry = (config as InternalAxiosRequestConfig & { _retry?: boolean })._retry;
-      if (!retry && token) {
-        config.headers.Authorization = `Bearer ${token}`;
+      if (!retry && tokenRef.current) {
+        config.headers.Authorization = `Bearer ${tokenRef.current}`;
       }
 
       return config;
@@ -80,7 +105,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     return () => {
       api.interceptors.request.eject(authInterceptor);
     };
-  }, [token]);
+  }, []);
 
   useLayoutEffect(() => {
     const refreshInterceptor = api.interceptors.response.use(
@@ -88,16 +113,21 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
       async (error: AxiosError) => {
         const originalRequest = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
 
-        // Don't try to refresh if we're already trying to refresh the token
-        if (error.response?.status === 401 && originalRequest && !originalRequest.url?.includes('/auth/refresh-token')) {
-          try {
-            const response = await api.post<Envelope<RefreshTokenResponse>>('/auth/refresh-token');
-            const accessToken = response.data.data.access_token;
-            setToken(accessToken);
+        // We only try to refresh if we believe we have a session. When logged
+        // out there is no refresh cookie to use, and hammering the endpoint
+        // (once per 401, multiplied by Query retries) would trip rate limits.
+        const shouldRefresh =
+          error.response?.status === 401 &&
+          originalRequest &&
+          !originalRequest.url?.includes('/auth/refresh-token') &&
+          !originalRequest._retry &&
+          tokenRef.current != null;
 
+        if (shouldRefresh) {
+          try {
+            const accessToken = await refreshAccessToken();
             originalRequest._retry = true;
             originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-
             return api(originalRequest);
           } catch {
             setToken(null);
@@ -111,6 +141,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     return () => {
       api.interceptors.response.eject(refreshInterceptor);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

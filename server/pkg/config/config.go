@@ -53,6 +53,10 @@ type AuthConfig struct {
 	JWTIssuer                     string
 	JWTAccessTokenExpirationTime  time.Duration
 	JWTRefreshTokenExpirationTime time.Duration
+	// CookieSecure marks the refresh-token cookie as Secure. Must be false for
+	// plain-HTTP local development (browsers refuse to store Secure cookies
+	// over http://localhost), and true behind TLS in production.
+	CookieSecure bool
 }
 
 type RedisConfig struct {
@@ -105,6 +109,7 @@ func LoadConfig() (AllConfigs, error) {
 		JWTIssuer:                     getEnv("JWT_ISSUER", "social"),
 		JWTAccessTokenExpirationTime:  time.Duration(getEnvInt("JWT_ACCESS_TOKEN_EXPIRATION_TIME", 180)) * time.Second,
 		JWTRefreshTokenExpirationTime: time.Duration(getEnvInt("JWT_REFRESH_TOKEN_EXPIRATION_TIME", 86400)) * time.Second,
+		CookieSecure:                  getEnv("COOKIE_SECURE", "false") == "true",
 	}
 
 	redisConfig := RedisConfig{
