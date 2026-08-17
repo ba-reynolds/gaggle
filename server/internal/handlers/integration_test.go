@@ -822,3 +822,121 @@ func TestBadges(t *testing.T) {
 		t.Fatalf("earned prolific_poster missing from profile: %v", badges)
 	}
 }
+
+func TestLists(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+	ownerToken := app.RegisterUser(t, "listowner", "listowner@example.com")
+	app.RegisterUser(t, "listmember", "listmember@example.com")
+	otherToken := app.RegisterUser(t, "listother", "listother@example.com")
+
+	// Create a list.
+	created, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/lists",
+		Token:  ownerToken,
+		Body:   map[string]string{"name": "Go people", "description": "folks who write Go"},
+	}))
+	listID := int(created["id"].(float64))
+	if created["name"] != "Go people" {
+		t.Fatalf("created list = %v", created)
+	}
+
+	// Duplicate name -> 409.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/lists", Token: ownerToken, Body: map[string]string{"name": "Go people"}}); rec.Code != http.StatusConflict {
+		t.Fatalf("duplicate list name status = %d, want 409", rec.Code)
+	}
+
+	// Add a member.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/lists/" + itoa(listID) + "/members/listmember", Token: ownerToken}); rec.Code != http.StatusOK {
+		t.Fatalf("add member: %d %s", rec.Code, rec.Body.String())
+	}
+	// Non-owner cannot add members.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/lists/" + itoa(listID) + "/members/listother", Token: otherToken}); rec.Code != http.StatusForbidden {
+		t.Fatalf("non-owner add member status = %d, want 403", rec.Code)
+	}
+	// Adding yourself to your own list -> 400.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/lists/" + itoa(listID) + "/members/listowner", Token: ownerToken}); rec.Code != http.StatusBadRequest {
+		t.Fatalf("self-add status = %d, want 400", rec.Code)
+	}
+	// Duplicate member -> 409.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/lists/" + itoa(listID) + "/members/listmember", Token: ownerToken}); rec.Code != http.StatusConflict {
+		t.Fatalf("duplicate member status = %d, want 409", rec.Code)
+	}
+
+	// Members are public to any viewer.
+	members, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/lists/" + itoa(listID) + "/members", Token: otherToken}))
+	memberNames := []string{}
+	for _, m := range members["items"].([]any) {
+		memberNames = append(memberNames, m.(map[string]any)["username"].(string))
+	}
+	if len(memberNames) != 1 || memberNames[0] != "listmember" {
+		t.Fatalf("members = %v, want [listmember]", memberNames)
+	}
+
+	// The list feed contains the member's top-level post, but not replies.
+	if _, err := app.DB.Exec(`INSERT INTO posts (author_id, content) VALUES ((SELECT user_id FROM users WHERE username='listmember'), 'hello from member')`); err != nil {
+		t.Fatalf("insert member post: %v", err)
+	}
+	if _, err := app.DB.Exec(`INSERT INTO posts (author_id, content, parent_id) VALUES ((SELECT user_id FROM users WHERE username='listmember'), 'a reply', (SELECT post_id FROM posts WHERE content='hello from member'))`); err != nil {
+		t.Fatalf("insert member reply: %v", err)
+	}
+	feed, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/lists/" + itoa(listID) + "/feed", Token: otherToken}))
+	if len(feed["items"].([]any)) != 1 {
+		t.Fatalf("list feed items = %d, want 1 (top-level only)", len(feed["items"].([]any)))
+	}
+
+	// List appears in the user's lists (owner + public profile).
+	myLists, _ := testutil.Decode[[]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/lists", Token: ownerToken}))
+	if len(myLists) != 1 {
+		t.Fatalf("my lists = %d, want 1", len(myLists))
+	}
+	profileLists, _ := testutil.Decode[[]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/users/listowner/lists", Token: otherToken}))
+	if len(profileLists) != 1 {
+		t.Fatalf("profile lists = %d, want 1", len(profileLists))
+	}
+
+	// Non-owner cannot delete; owner can.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodDelete, Path: "/api/v1/lists/" + itoa(listID), Token: otherToken}); rec.Code != http.StatusForbidden {
+		t.Fatalf("non-owner delete status = %d, want 403", rec.Code)
+	}
+	if rec := app.Do(t, testutil.Request{Method: http.MethodDelete, Path: "/api/v1/lists/" + itoa(listID), Token: ownerToken}); rec.Code != http.StatusOK {
+		t.Fatalf("owner delete: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/lists/" + itoa(listID), Token: ownerToken}); rec.Code != http.StatusNotFound {
+		t.Fatalf("deleted list status = %d, want 404", rec.Code)
+	}
+}
+
+func TestSuggestedUsers(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+	viewerToken := app.RegisterUser(t, "sugviewer", "sugviewer@example.com")
+	app.RegisterUser(t, "sugbig", "sugbig@example.com")
+	app.RegisterUser(t, "sugfollowed", "sugfollowed@example.com")
+
+	// Give "sugbig" a follower head start via the profile counter column.
+	if _, err := app.DB.Exec(`UPDATE user_profiles SET followers_count = 5000 WHERE user_id = (SELECT user_id FROM users WHERE username='sugbig')`); err != nil {
+		t.Fatalf("bump follower count: %v", err)
+	}
+
+	// Follow "sugfollowed" so it should be excluded.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/users/sugfollowed/follow", Token: viewerToken}); rec.Code != http.StatusOK {
+		t.Fatalf("follow: %d %s", rec.Code, rec.Body.String())
+	}
+
+	suggested, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/users/suggested", Token: viewerToken}))
+	items := suggested["items"].([]any)
+	if len(items) == 0 {
+		t.Fatalf("suggested empty")
+	}
+	// "sugfollowed" must not appear (viewer follows them).
+	for _, u := range items {
+		uname := u.(map[string]any)["username"].(string)
+		if uname == "sugfollowed" || uname == "sugviewer" {
+			t.Fatalf("suggested contains excluded user %s", uname)
+		}
+	}
+	// The viewer's own suggested badge field is hydrated.
+	if _, ok := items[0].(map[string]any)["badges"]; !ok {
+		t.Fatalf("suggested item missing badges field")
+	}
+}

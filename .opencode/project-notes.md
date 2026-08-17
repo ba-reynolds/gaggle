@@ -120,3 +120,15 @@ Tricky things learned while working on this repo (newest on top).
 - Badge icons are stored as lucide-react component names; the `UserBadges` component
   falls back to `Award` when a name no longer exists. `deleteBadge` refuses (409)
   earned badges and assigned badges still held by a user.
+- Phase 5 explore+lists: migration `000014` adds `lists` and `list_members`
+  (composite PK). `postStore.GetListFeed` is a clone of `GetHomeFeed`
+  (`INNER JOIN list_members lm ON p.author_id = lm.user_id`, top-level only,
+  same keyset cursor). Suggested users = user search query minus the ILIKE
+  filter, excluding self/followed/blocked via `NOT EXISTS` on `user_relationships`.
+- The hydrate helpers (`hydrateEngagement`, `hydratePolls`) are now package-level
+  funcs in post_service.go taking `(ctx, *store.Store, ...)` so both PostService and
+  ListService share them — keep that signature when adding feed consumers.
+- List responses include `owner_username` (via `JOIN users`) so the frontend can
+  gate owner-only UI; `GET /users/{username}/lists` lists a user's public lists.
+- The sidebar "Who to follow" and ExplorePage both call `GET /users/suggested`
+  (`limit` default 5, max 20 for sidebar; 20 for the page).

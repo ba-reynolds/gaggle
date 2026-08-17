@@ -78,6 +78,22 @@ export interface CreateBadgePayload {
   icon: string;
 }
 
+// Lists
+export interface List {
+  id: number;
+  owner_id: number;
+  owner_username: string;
+  name: string;
+  description: string;
+  member_count: number;
+  created_at: string;
+}
+
+export interface CreateListPayload {
+  name: string;
+  description: string;
+}
+
 export interface UpdateProfilePayload {
   display_name: string;
   bio: string;

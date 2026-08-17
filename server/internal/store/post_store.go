@@ -881,6 +881,149 @@ func (store *postStore) GetHomeFeed(ctx context.Context, userID int, limit int, 
 	}, nil
 }
 
+// GetListFeed fetches top-level posts authored by users in the given list,
+// newest first, using the same keyset-cursor shape as the home feed.
+func (store *postStore) GetListFeed(ctx context.Context, listID int, limit int, cursor string) (*models.PostFeed, error) {
+	var query string
+	var args []interface{}
+
+	if cursor == "" {
+		query = `
+			SELECT 
+				p.post_id, p.content, p.author_id, p.parent_id, p.soft_deleted, p.soft_deleted_at, p.created_at, p.updated_at,
+				p.likes_count, p.reposts_count, p.quotes_count, p.bookmarks_count, p.views_count, p.replies_count
+			FROM posts p
+			INNER JOIN list_members lm ON p.author_id = lm.user_id
+			WHERE lm.list_id = $1
+			AND p.soft_deleted = FALSE
+			AND p.parent_id IS NULL  -- Only top-level posts (not replies)
+			ORDER BY p.created_at DESC, p.post_id DESC
+			LIMIT $2
+		`
+		args = []interface{}{listID, limit + 1}
+	} else {
+		cursorData, err := util.DecodeCursor(cursor)
+		if err != nil {
+			store.logger.Error("failed to decode cursor",
+				"operation", "get_list_feed",
+				"listID", listID,
+				"cursor", cursor,
+				"error", err,
+			)
+			return nil, apperrors.BadRequestError("invalid cursor", err)
+		}
+		if cursorData == nil || cursorData.Timestamp == "" {
+			store.logger.Error("invalid cursor data",
+				"operation", "get_list_feed",
+				"listID", listID,
+				"cursor", cursor,
+			)
+			return nil, apperrors.BadRequestError("invalid cursor data", nil)
+		}
+
+		query = `
+			SELECT 
+				p.post_id, p.content, p.author_id, p.parent_id, p.soft_deleted, p.soft_deleted_at, p.created_at, p.updated_at,
+				p.likes_count, p.reposts_count, p.quotes_count, p.bookmarks_count, p.views_count, p.replies_count
+			FROM posts p
+			INNER JOIN list_members lm ON p.author_id = lm.user_id
+			WHERE lm.list_id = $1
+			AND p.soft_deleted = FALSE
+			AND p.parent_id IS NULL  -- Only top-level posts (not replies)
+			AND (p.created_at, p.post_id) < ($2, $3)
+			ORDER BY p.created_at DESC, p.post_id DESC
+			LIMIT $4
+		`
+		args = []interface{}{listID, cursorData.Timestamp, cursorData.ID, limit + 1}
+	}
+
+	rows, err := store.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		store.logger.Error("database query failed",
+			"operation", "get_list_feed",
+			"listID", listID,
+			"limit", limit,
+			"cursor", cursor,
+			"query", query,
+			"error", err,
+		)
+		return nil, apperrors.InternalServerError(err)
+	}
+	defer rows.Close()
+
+	var postIDs []int
+	count := 0
+	for rows.Next() {
+		var post models.Post
+		if err := rows.Scan(
+			&post.ID,
+			&post.Content,
+			&post.AuthorID,
+			&post.ParentID,
+			&post.SoftDeleted,
+			&post.SoftDeletedAt,
+			&post.CreatedAt,
+			&post.UpdatedAt,
+			&post.LikesCount,
+			&post.RepostsCount,
+			&post.QuotesCount,
+			&post.BookmarksCount,
+			&post.ViewsCount,
+			&post.RepliesCount,
+		); err != nil {
+			store.logger.Error("failed to scan list feed post",
+				"operation", "get_list_feed",
+				"listID", listID,
+				"error", err,
+			)
+			return nil, apperrors.InternalServerError(err)
+		}
+		count++
+		if count > limit {
+			break
+		}
+		postIDs = append(postIDs, post.ID)
+	}
+	if err = rows.Err(); err != nil {
+		store.logger.Error("error iterating over list feed rows",
+			"operation", "get_list_feed",
+			"listID", listID,
+			"error", err,
+		)
+		return nil, apperrors.InternalServerError(err)
+	}
+
+	hasMore := len(postIDs) == limit
+
+	fullPosts := make([]*models.FullPost, 0, len(postIDs))
+	for _, id := range postIDs {
+		fullPost, err := store.GetFullPostByID(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		fullPosts = append(fullPosts, fullPost)
+	}
+
+	var nextCursor string
+	if hasMore && len(postIDs) > 0 {
+		lastPost, err := store.GetByID(ctx, postIDs[len(postIDs)-1])
+		if err == nil {
+			cursorData, err := util.CreateTimestampCursor(lastPost.ID, lastPost.CreatedAt.Format(time.RFC3339Nano))
+			if err == nil {
+				if encodedCursor, err := util.EncodeCursor(*cursorData); err == nil {
+					nextCursor = encodedCursor
+				}
+			}
+		}
+	}
+
+	return &models.PostFeed{
+		Items:      fullPosts,
+		HasMore:    hasMore,
+		NextCursor: nextCursor,
+	}, nil
+}
+
 // GetUserFeed fetches posts made by a specific user
 func (store *postStore) GetUserFeed(ctx context.Context, userID int, includeReplies bool, limit int, cursor string) (*models.PostFeed, error) {
 	var query string

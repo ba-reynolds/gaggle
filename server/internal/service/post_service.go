@@ -56,10 +56,10 @@ func (s *PostService) GetFullPostByID(ctx context.Context, id int, viewerID int)
 		return nil, err
 	}
 
-	if err := s.hydratePolls(ctx, []*models.FullPost{post}, viewerID); err != nil {
+	if err := hydratePolls(ctx, s.store, []*models.FullPost{post}, viewerID); err != nil {
 		return nil, err
 	}
-	if err := s.hydrateEngagement(ctx, []*models.FullPost{post}, viewerID); err != nil {
+	if err := hydrateEngagement(ctx, s.store, s.logger, []*models.FullPost{post}, viewerID); err != nil {
 		return nil, err
 	}
 
@@ -68,7 +68,7 @@ func (s *PostService) GetFullPostByID(ctx context.Context, id int, viewerID int)
 
 // hydrateEngagement populates each post's Engagement object with the counts
 // from the post row plus the viewer-specific flags (liked/reposted/bookmarked).
-func (s *PostService) hydrateEngagement(ctx context.Context, posts []*models.FullPost, viewerID int) error {
+func hydrateEngagement(ctx context.Context, st *store.Store, logger *slog.Logger, posts []*models.FullPost, viewerID int) error {
 	if len(posts) == 0 {
 		return nil
 	}
@@ -80,9 +80,9 @@ func (s *PostService) hydrateEngagement(ctx context.Context, posts []*models.Ful
 		}
 	}
 
-	engagements, err := s.store.PostEngagements.GetEngagementForPosts(ctx, ids, viewerID)
+	engagements, err := st.PostEngagements.GetEngagementForPosts(ctx, ids, viewerID)
 	if err != nil {
-		s.logger.Error("failed to load engagement state",
+		logger.Error("failed to load engagement state",
 			"operation", "hydrate_engagement",
 			"viewerID", viewerID,
 			"postIDs", ids,
@@ -113,7 +113,7 @@ func (s *PostService) hydrateEngagement(ctx context.Context, posts []*models.Ful
 
 // hydratePolls populates each post's poll (if any) for the viewer, using a
 // single batched query across the whole set.
-func (s *PostService) hydratePolls(ctx context.Context, posts []*models.FullPost, viewerID int) error {
+func hydratePolls(ctx context.Context, st *store.Store, posts []*models.FullPost, viewerID int) error {
 	ids := make([]int, 0, len(posts))
 	for _, p := range posts {
 		if p != nil {
@@ -123,7 +123,7 @@ func (s *PostService) hydratePolls(ctx context.Context, posts []*models.FullPost
 	if len(ids) == 0 {
 		return nil
 	}
-	polls, err := s.store.Polls.GetForPosts(ctx, ids, viewerID)
+	polls, err := st.Polls.GetForPosts(ctx, ids, viewerID)
 	if err != nil {
 		return err
 	}
@@ -176,10 +176,10 @@ func (s *PostService) GetDescendants(ctx context.Context, postID int, viewerID i
 		return nil, err
 	}
 
-	if err := s.hydrateEngagement(ctx, descendants.Items, viewerID); err != nil {
+	if err := hydrateEngagement(ctx, s.store, s.logger, descendants.Items, viewerID); err != nil {
 		return nil, err
 	}
-	if err := s.hydratePolls(ctx, descendants.Items, viewerID); err != nil {
+	if err := hydratePolls(ctx, s.store, descendants.Items, viewerID); err != nil {
 		return nil, err
 	}
 
@@ -455,10 +455,10 @@ func (s *PostService) GetPinned(ctx context.Context, authorID, viewerID int) (*m
 	if err := s.store.Media.FetchPostMedia(ctx, []*models.FullPost{full}); err != nil {
 		return nil, err
 	}
-	if err := s.hydratePolls(ctx, []*models.FullPost{full}, viewerID); err != nil {
+	if err := hydratePolls(ctx, s.store, []*models.FullPost{full}, viewerID); err != nil {
 		return nil, err
 	}
-	if err := s.hydrateEngagement(ctx, []*models.FullPost{full}, viewerID); err != nil {
+	if err := hydrateEngagement(ctx, s.store, s.logger, []*models.FullPost{full}, viewerID); err != nil {
 		return nil, err
 	}
 	return full, nil
@@ -529,10 +529,10 @@ func (s *PostService) GetParentChain(ctx context.Context, postID int, viewerID i
 		return nil, err
 	}
 
-	if err := s.hydrateEngagement(ctx, chain.Items, viewerID); err != nil {
+	if err := hydrateEngagement(ctx, s.store, s.logger, chain.Items, viewerID); err != nil {
 		return nil, err
 	}
-	if err := s.hydratePolls(ctx, chain.Items, viewerID); err != nil {
+	if err := hydratePolls(ctx, s.store, chain.Items, viewerID); err != nil {
 		return nil, err
 	}
 
@@ -564,10 +564,10 @@ func (s *PostService) GetHomeFeed(ctx context.Context, userID int, limit int, cu
 		return nil, err
 	}
 
-	if err := s.hydrateEngagement(ctx, feed.Items, userID); err != nil {
+	if err := hydrateEngagement(ctx, s.store, s.logger, feed.Items, userID); err != nil {
 		return nil, err
 	}
-	if err := s.hydratePolls(ctx, feed.Items, userID); err != nil {
+	if err := hydratePolls(ctx, s.store, feed.Items, userID); err != nil {
 		return nil, err
 	}
 
@@ -599,10 +599,10 @@ func (s *PostService) GetUserFeed(ctx context.Context, userID int, viewerID int,
 		return nil, err
 	}
 
-	if err := s.hydrateEngagement(ctx, feed.Items, viewerID); err != nil {
+	if err := hydrateEngagement(ctx, s.store, s.logger, feed.Items, viewerID); err != nil {
 		return nil, err
 	}
-	if err := s.hydratePolls(ctx, feed.Items, viewerID); err != nil {
+	if err := hydratePolls(ctx, s.store, feed.Items, viewerID); err != nil {
 		return nil, err
 	}
 
@@ -618,10 +618,10 @@ func (s *PostService) GetBookmarkedPostsFeed(ctx context.Context, userID int, vi
 	if err := s.store.Media.FetchPostMedia(ctx, feed.Items); err != nil {
 		return nil, err
 	}
-	if err := s.hydrateEngagement(ctx, feed.Items, viewerID); err != nil {
+	if err := hydrateEngagement(ctx, s.store, s.logger, feed.Items, viewerID); err != nil {
 		return nil, err
 	}
-	if err := s.hydratePolls(ctx, feed.Items, viewerID); err != nil {
+	if err := hydratePolls(ctx, s.store, feed.Items, viewerID); err != nil {
 		return nil, err
 	}
 	s.logger.Info("bookmarked posts feed fetched", "userID", userID, "categoryIDs", categoryIDs, "count", len(feed.Items))
@@ -637,10 +637,10 @@ func (s *PostService) GetLikedPostsFeed(ctx context.Context, userID int, viewerI
 	if err := s.store.Media.FetchPostMedia(ctx, feed.Items); err != nil {
 		return nil, err
 	}
-	if err := s.hydrateEngagement(ctx, feed.Items, viewerID); err != nil {
+	if err := hydrateEngagement(ctx, s.store, s.logger, feed.Items, viewerID); err != nil {
 		return nil, err
 	}
-	if err := s.hydratePolls(ctx, feed.Items, viewerID); err != nil {
+	if err := hydratePolls(ctx, s.store, feed.Items, viewerID); err != nil {
 		return nil, err
 	}
 	s.logger.Info("liked posts feed fetched", "userID", userID, "count", len(feed.Items))
@@ -661,10 +661,10 @@ func (s *PostService) GetQuotesFeed(ctx context.Context, postID int, viewerID in
 	if err := s.store.Media.FetchPostMedia(ctx, feed.Items); err != nil {
 		return nil, err
 	}
-	if err := s.hydrateEngagement(ctx, feed.Items, viewerID); err != nil {
+	if err := hydrateEngagement(ctx, s.store, s.logger, feed.Items, viewerID); err != nil {
 		return nil, err
 	}
-	if err := s.hydratePolls(ctx, feed.Items, viewerID); err != nil {
+	if err := hydratePolls(ctx, s.store, feed.Items, viewerID); err != nil {
 		return nil, err
 	}
 	return feed, nil

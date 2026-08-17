@@ -24,6 +24,14 @@ func NewUserHandler(service *service.Service, logger *slog.Logger) *UserHandler 
 	}
 }
 
+func (h *UserHandler) respondError(w http.ResponseWriter, err error) {
+	if appErr, ok := err.(*apperrors.AppError); ok {
+		util.RespondWithAppError(w, appErr)
+		return
+	}
+	util.RespondWithAppError(w, apperrors.InternalServerError(err))
+}
+
 // UpdateUserProfile godoc
 //
 //	@Summary		Update user profile
@@ -219,4 +227,36 @@ func (h *UserHandler) GetUserProfileByUsername(w http.ResponseWriter, r *http.Re
 		util.RespondWithAppError(w, apperrors.InternalServerError(err))
 		return
 	}
+}
+
+// GetSuggestedUsers godoc
+//
+//	@Summary		Get suggested users
+//	@Description	Returns accounts the authenticated user might want to follow, ordered by follower count.
+//	@Tags			users
+//	@Produce		json
+//	@Param			limit	query		int	false	"Maximum number of users to retrieve"
+//	@Success		200		{object}	models.Envelope{data=models.UserList,error=nil}
+//	@Failure		500		{object}	models.Envelope{data=nil,error=apperrors.AppError}
+//	@Security		ApiKeyAuth
+//	@Router			/users/suggested [get]
+func (h *UserHandler) GetSuggestedUsers(w http.ResponseWriter, r *http.Request) {
+	user, err := middleware.GetAuthenticatedUserFromContext(r)
+	if err != nil {
+		h.logger.Error("authentication middleware error", "error", err)
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+	limit, _, _ := util.ParsePaginationParams(r.URL.Query().Get("limit"), "", 5, 20)
+	users, err := h.service.Users.Suggested(r.Context(), user.ID, limit)
+	if err != nil {
+		h.respondError(w, err)
+		return
+	}
+	if err := h.service.Badges.HydrateProfiles(r.Context(), users.Items); err != nil {
+		h.logger.Error("failed to hydrate badges", "error", err)
+		h.respondError(w, err)
+		return
+	}
+	util.RespondWithJson(w, http.StatusOK, users)
 }

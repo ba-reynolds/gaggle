@@ -1,4 +1,4 @@
-import { getHashtagPosts, getTrends, searchPosts, searchUsers } from '@/api/search';
+import { getHashtagPosts, getSuggestedUsers, getTrends, searchPosts, searchUsers } from '@/api/search';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
 export function useSearchPosts(query: string) {
@@ -31,4 +31,8 @@ export function useHashtagPosts(tag: string) {
 
 export function useTrends() {
   return useQuery({ queryKey: ['trends'], queryFn: async () => (await getTrends()).data });
+}
+
+export function useSuggestedUsers(limit?: number) {
+  return useQuery({ queryKey: ['suggested-users', limit], queryFn: async () => (await getSuggestedUsers(limit)).data });
 }

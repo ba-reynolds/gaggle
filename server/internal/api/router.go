@@ -52,6 +52,7 @@ func NewRouter(
 	realtimeHandler := handlers.NewRealtimeHandler(service, logger)
 	searchHandler := handlers.NewSearchHandler(service, logger)
 	adminHandler := handlers.NewAdminHandler(service, logger)
+	listHandler := handlers.NewListHandler(service, logger)
 
 	// API v1 routes
 	router.Route("/api/v1", func(r chi.Router) {
@@ -84,6 +85,7 @@ func NewRouter(
 					r.Patch("/", userHandler.UpdateUserProfile)
 				})
 
+				r.Get("/suggested", userHandler.GetSuggestedUsers)
 				r.Get("/settings", settingsHandler.GetSettings)
 				r.Patch("/settings", settingsHandler.UpdateSettings)
 
@@ -99,6 +101,7 @@ func NewRouter(
 					// Change likes feed for user to use username instead of userID
 					r.Get("/likes", postHandler.LikedPostsFeed)
 					r.Get("/pinned", postHandler.GetPinned)
+					r.Get("/lists", listHandler.GetUserLists)
 				})
 			})
 
@@ -150,6 +153,19 @@ func NewRouter(
 				r.Post("/category", postEngagementHandler.CreateBookmarkCategory)
 				r.Get("/category", postEngagementHandler.ListBookmarkCategories)
 				r.Delete("/category/{categoryID}", postEngagementHandler.DeleteBookmarkCategory)
+			})
+
+			protected.Route("/lists", func(r chi.Router) {
+				r.Get("/", listHandler.ListMyLists)
+				r.Post("/", listHandler.CreateList)
+				r.Route("/{listID}", func(r chi.Router) {
+					r.Get("/", listHandler.GetList)
+					r.Delete("/", listHandler.DeleteList)
+					r.Get("/feed", listHandler.ListFeed)
+					r.Get("/members", listHandler.ListMembers)
+					r.Post("/members/{username}", listHandler.AddMember)
+					r.Delete("/members/{username}", listHandler.RemoveMember)
+				})
 			})
 
 			protected.Route("/admin", func(r chi.Router) {

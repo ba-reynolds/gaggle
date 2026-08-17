@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import UserHoverCard from "@/components/UserHoverCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificationsContext";
-import { useTrends } from "@/hooks/useSearch";
+import { useTrends, useSuggestedUsers } from "@/hooks/useSearch";
 import { useUser } from "@/contexts/UserContext";
 import { useLogoutMutation } from "@/hooks/useAuth";
 import { getMediaUrl } from "@/util/media";
@@ -30,7 +30,9 @@ import {
   Settings,
   Bell,
   User,
-  Shield
+  Shield,
+  Compass,
+  List as ListIcon
 } from "lucide-react";
 import { useState } from "react";
 import { NavLink, Navigate, useNavigate } from 'react-router-dom';
@@ -51,13 +53,14 @@ export default function SocialMediaLayout({
   const [followingUsers, setFollowingUsers] = useState<{ [key: string]: boolean }>({});
   const [search, setSearch] = useState('');
   const trends = useTrends();
+  const suggested = useSuggestedUsers(10);
 
   const handleNewPost = () => {
     setIsComposing(false);
   };
 
-  const handleFollowToggle = (userId: string) => (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleFollowToggle = (userId: string) => (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     setFollowingUsers(prev => ({
       ...prev,
       [userId]: !prev[userId]
@@ -122,7 +125,9 @@ export default function SocialMediaLayout({
               {/* Navigation */}
               <nav className="space-y-1">
                 <NavItem icon={Home} label="Home" to="/" />
+                <NavItem icon={Compass} label="Explore" to="/explore" />
                 <NavItem icon={Bookmark} label="Bookmarks" to="/bookmarks" />
+                <NavItem icon={ListIcon} label="Lists" to="/lists" />
                 <NavItem icon={Bell} label="Notifications" to="/notifications" badge={unreadCount} />
                 <NavItem icon={User} label="Profile" to={`/profile/${user.username}`} />
                 <NavItem icon={Settings} label="Settings" to="/settings" />
@@ -223,22 +228,27 @@ export default function SocialMediaLayout({
               <div className="bg-muted rounded-xl p-4">
                 <h3 className="font-bold text-xl mb-4 text-primary">Who to follow</h3>
                 <div className="space-y-4">
-                  {["alice", "bob", "charlie"].map((username) => {
+                  {suggested.data?.items.slice(0, 3).map((profile) => {
+                    const username = profile.username;
                     const isFollowing = followingUsers[username] || false;
                     return (
                       <div key={username} className="flex items-center justify-between">
                         <UserHoverCard
-                          name={username}
+                          name={profile.display_name}
                           username={username}
-                          userDescription=""
-                          fetchProfile={false}
+                          userDescription={profile.bio}
+                          followers={profile.followers_count}
+                          following={profile.following_count}
+                          isFollowing={isFollowing}
+                          onFollowToggle={handleFollowToggle(username)}
                         >
                           <div className="flex items-center">
                             <Avatar className="h-10 w-10 mr-2">
-                              <AvatarFallback>{username.charAt(0).toUpperCase()}</AvatarFallback>
+                              <AvatarImage src={getMediaUrl(profile.profile_picture_uuid)} />
+                              <AvatarFallback>{profile.display_name.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <div>
-                              <p className="font-semibold text-sm text-primary">{username}</p>
+                              <p className="font-semibold text-sm text-primary">{profile.display_name}</p>
                               <p className="text-xs text-muted-foreground">@{username}</p>
                             </div>
                           </div>
@@ -254,8 +264,11 @@ export default function SocialMediaLayout({
                       </div>
                     )
                   })}
+                  {!suggested.isLoading && !suggested.data?.items.length && (
+                    <p className="text-sm text-muted-foreground">No suggestions right now.</p>
+                  )}
                 </div>
-                <Button variant="ghost" className="w-full mt-2 text-primary justify-start p-2">
+                <Button variant="ghost" className="w-full mt-2 text-primary justify-start p-2" onClick={() => navigate('/explore')}>
                   Show more
                 </Button>
               </div>

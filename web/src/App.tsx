@@ -18,6 +18,9 @@ import NotificationsPage from './pages/NotificationsPage';
 import SearchPage from './pages/SearchPage';
 import HashtagPage from './pages/HashtagPage';
 import AdminPage from './pages/AdminPage';
+import ExplorePage from './pages/ExplorePage';
+import ListsPage from './pages/ListsPage';
+import ListPage from './pages/ListPage';
 
 
 const queryClient = new QueryClient({
@@ -46,6 +49,9 @@ function App() {
                   <Route path="/signup" element={<SignupPage />} />
                   <Route path="/profile/:username" element={<SocialMediaLayout><ProfilePage /></SocialMediaLayout>} />
                   <Route path="/bookmarks" element={<SocialMediaLayout><BookmarksPage /></SocialMediaLayout>} />
+                  <Route path="/lists" element={<SocialMediaLayout><ListsPage /></SocialMediaLayout>} />
+                  <Route path="/lists/:id" element={<SocialMediaLayout><ListPage /></SocialMediaLayout>} />
+                  <Route path="/explore" element={<SocialMediaLayout><ExplorePage /></SocialMediaLayout>} />
                   <Route path="/settings" element={<SocialMediaLayout><SettingsPage /></SocialMediaLayout>} />
                   <Route path="/post/:id" element={<SocialMediaLayout><PostPage /></SocialMediaLayout>} />
                   <Route path="/notifications" element={<SocialMediaLayout><NotificationsPage /></SocialMediaLayout>} />

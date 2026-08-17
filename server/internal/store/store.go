@@ -32,6 +32,7 @@ type Store struct {
 		GetSettings(ctx context.Context, userID int) (*models.UserSettings, error)
 		UpdateSettings(ctx context.Context, userID int, settings *models.UserSettings) error
 		Search(ctx context.Context, query string, limit int) (*models.UserList, error)
+		Suggested(ctx context.Context, viewerID int, limit int) (*models.UserList, error)
 	}
 	Media interface {
 		Create(context.Context, *sql.Tx, *models.Media) error
@@ -64,6 +65,7 @@ type Store struct {
 		GetQuotesFeed(ctx context.Context, postID int, limit int, cursor string) (*models.PostFeed, error)
 		Search(ctx context.Context, query string, limit int, cursor string) (*models.PostFeed, error)
 		ListByHashtag(ctx context.Context, name string, limit int, cursor string) (*models.PostFeed, error)
+		GetListFeed(ctx context.Context, listID int, limit int, cursor string) (*models.PostFeed, error)
 	}
 	PostEngagements interface {
 		Like(ctx context.Context, tx *sql.Tx, postID, userID int) (bool, error)
@@ -116,6 +118,15 @@ type Store struct {
 		RevokeBadge(ctx context.Context, userID, badgeID int) error
 		GetBadgesForUsers(ctx context.Context, ids []int) (map[int][]models.UserBadge, error)
 	}
+	Lists interface {
+		Create(ctx context.Context, list *models.List) error
+		GetByID(ctx context.Context, listID int) (*models.List, error)
+		ListByOwner(ctx context.Context, ownerID int) ([]models.List, error)
+		Delete(ctx context.Context, listID, ownerID int) error
+		AddMember(ctx context.Context, listID, memberID int) error
+		RemoveMember(ctx context.Context, listID, memberID int) error
+		GetMembers(ctx context.Context, listID, limit int, cursor string) (*models.ListMembersResponse, error)
+	}
 }
 
 func NewStore(db *sql.DB, logger *slog.Logger, mediaDir string) *Store {
@@ -131,6 +142,7 @@ func NewStore(db *sql.DB, logger *slog.Logger, mediaDir string) *Store {
 		Hashtags:          &hashtagStore{db: db, logger: logger},
 		Polls:             &pollStore{db: db, logger: logger},
 		Badges:            &badgeStore{db: db, logger: logger},
+		Lists:             &listStore{db: db, logger: logger},
 	}
 }
 

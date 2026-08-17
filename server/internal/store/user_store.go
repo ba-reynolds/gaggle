@@ -271,6 +271,50 @@ func (store *userStore) Search(ctx context.Context, query string, limit int) (*m
 	return result, nil
 }
 
+// Suggested returns users to follow: highest followers first, excluding the
+// viewer, accounts the viewer already follows, and accounts the viewer blocked.
+func (store *userStore) Suggested(ctx context.Context, viewerID int, limit int) (*models.UserList, error) {
+	rows, err := store.db.QueryContext(ctx, `
+		SELECT u.user_id, u.username, up.display_name, up.bio, up.profile_picture_uuid, up.banner_uuid,
+		       up.birth_date, up.location, up.website, up.followers_count, up.following_count, u.created_at
+		FROM users u
+		JOIN user_profiles up ON up.user_id = u.user_id
+		WHERE u.soft_deleted = FALSE
+		  AND u.user_id <> $1
+		  AND NOT EXISTS (
+		      SELECT 1 FROM user_relationships ur
+		      WHERE ur.follower_id = $1 AND ur.following_id = u.user_id
+		        AND ur.relationship_type IN ('follow', 'block')
+		  )
+		ORDER BY up.followers_count DESC, u.username ASC
+		LIMIT $2`, viewerID, limit+1)
+	if err != nil {
+		return nil, apperrors.InternalServerError(err)
+	}
+	defer rows.Close()
+
+	users := make([]models.UserProfileResponse, 0, limit+1)
+	for rows.Next() {
+		var profile models.UserProfileResponse
+		if err := rows.Scan(&profile.UserID, &profile.Username, &profile.DisplayName, &profile.Bio,
+			&profile.ProfilePictureUUID, &profile.BannerUUID, &profile.BirthDate,
+			&profile.Location, &profile.Website, &profile.FollowersCount,
+			&profile.FollowingCount, &profile.CreatedAt); err != nil {
+			return nil, apperrors.InternalServerError(err)
+		}
+		users = append(users, profile)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, apperrors.InternalServerError(err)
+	}
+	result := &models.UserList{Items: users}
+	if len(users) > limit {
+		result.HasMore = true
+		result.Items = users[:limit]
+	}
+	return result, nil
+}
+
 func (store *userStore) UpdateUserProfile(ctx context.Context, tx *sql.Tx, user *models.UserWithProfile) error {
 	query := `
 		UPDATE user_profiles

@@ -24,6 +24,10 @@ repository, two apps, fully containerized with Docker Compose.
 - Profile badges: auto-earned milestone badges (account age, posts, followers,
   likes received) plus admin-assigned badges managed from an admin UI
 - Admin area at `/admin` (only for admins; `alice` is the seeded admin)
+- Explore page at `/explore`: search, trending hashtags, and suggested users
+  ("Who to follow" in the sidebar is backed by the same suggested endpoint)
+- User-managed lists at `/lists`: public, owner-curated collections of users
+  with their own aggregated feed
 - Consistent `{data, error}` JSON envelope on every endpoint
 - Swagger UI at `/swagger` (regenerate with `make swag`)
 

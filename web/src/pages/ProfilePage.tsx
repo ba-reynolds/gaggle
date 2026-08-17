@@ -11,13 +11,14 @@ import { useUser } from "@/contexts/UserContext";
 import { useMediaUpload } from "@/hooks/useMediaUpload";
 import { useGetUserPosts } from "@/hooks/usePost";
 import { useFetchProfile, usePinnedPost, useUpdateProfile } from "@/hooks/useUser";
+import { useUserLists } from "@/hooks/useLists";
 import UserBadges from "@/components/UserBadges";
 import { getMediaUrl } from "@/util/media";
 import { format, parseISO } from "date-fns";
 import { Calendar, Camera, Link as LinkIcon, Loader2, MapPin } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useInView } from "react-intersection-observer";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { toast } from "sonner";
 
 const ProfilePage: React.FC = () => {
@@ -273,10 +274,11 @@ const ProfilePage: React.FC = () => {
 
       {/* Tabs for posts, replies, media, etc. */}
       <Tabs defaultValue="posts" className="mt-4">
-        <TabsList className="w-full grid grid-cols-3">
+        <TabsList className="w-full grid grid-cols-4">
           <TabsTrigger value="posts">Posts</TabsTrigger>
           <TabsTrigger value="replies">Replies</TabsTrigger>
           <TabsTrigger value="media">Media</TabsTrigger>
+          <TabsTrigger value="lists">Lists</TabsTrigger>
         </TabsList>
 
         <TabsContent value="posts" className="flex flex-col items-center mt-2 space-y-4">
@@ -314,6 +316,10 @@ const ProfilePage: React.FC = () => {
           <div className="text-center py-8 text-muted-foreground">
             No media yet
           </div>
+        </TabsContent>
+
+        <TabsContent value="lists" className="mt-4 space-y-2">
+          <ProfileLists username={safeUsername} />
         </TabsContent>
       </Tabs>
 
@@ -503,3 +509,22 @@ const ProfilePage: React.FC = () => {
 };
 
 export default ProfilePage;
+
+function ProfileLists({ username }: { username: string }) {
+  const { data } = useUserLists(username);
+  const lists = data?.data ?? [];
+  if (lists.length === 0) {
+    return <div className="text-center py-8 text-muted-foreground">No lists yet.</div>;
+  }
+  return (
+    <>
+      {lists.map((list) => (
+        <Link key={list.id} to={`/lists/${list.id}`} className="block rounded-xl border border-border p-4 hover:bg-muted">
+          <p className="font-semibold text-primary">{list.name}</p>
+          <p className="text-sm text-muted-foreground truncate">{list.description || 'No description'}</p>
+          <p className="text-xs text-muted-foreground mt-1">{list.member_count} members</p>
+        </Link>
+      ))}
+    </>
+  );
+}

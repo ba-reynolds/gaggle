@@ -192,3 +192,8 @@ func (s *UserService) GetSettings(ctx context.Context, userID int) (*models.User
 func (s *UserService) UpdateSettings(ctx context.Context, userID int, settings *models.UserSettings) error {
 	return s.store.Users.UpdateSettings(ctx, userID, settings)
 }
+
+// Suggested returns accounts the viewer might want to follow.
+func (s *UserService) Suggested(ctx context.Context, viewerID int, limit int) (*models.UserList, error) {
+	return s.store.Users.Suggested(ctx, viewerID, validateLimit(limit, 20, 100))
+}

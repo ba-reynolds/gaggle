@@ -38,6 +38,7 @@ type Service struct {
 		GetUserProfileByUsername(ctx context.Context, username string) (*models.UserWithProfile, error)
 		GetSettings(ctx context.Context, userID int) (*models.UserSettings, error)
 		UpdateSettings(ctx context.Context, userID int, settings *models.UserSettings) error
+		Suggested(ctx context.Context, viewerID int, limit int) (*models.UserList, error)
 	}
 	Media interface {
 		Create(ctx context.Context, media *models.Media, file multipart.File) error
@@ -116,6 +117,16 @@ type Service struct {
 		GrantBadge(ctx context.Context, username string, badgeID, grantedBy int) error
 		RevokeBadge(ctx context.Context, username string, badgeID int) error
 	}
+	Lists interface {
+		Create(ctx context.Context, ownerID int, payload models.CreateListPayload) (*models.List, error)
+		Get(ctx context.Context, listID int) (*models.List, error)
+		ListForUser(ctx context.Context, userID int) ([]models.List, error)
+		Delete(ctx context.Context, listID, actorID int) error
+		AddMember(ctx context.Context, listID, actorID, memberID int) error
+		RemoveMember(ctx context.Context, listID, actorID, memberID int) error
+		GetMembers(ctx context.Context, listID, limit int, cursor string) (*models.ListMembersResponse, error)
+		GetListFeed(ctx context.Context, viewerID, listID, limit int, cursor string) (*models.PostFeed, error)
+	}
 }
 
 // NewService creates a new service with all required dependencies
@@ -134,5 +145,6 @@ func NewService(store *store.Store, logger *slog.Logger, authenticator *auth.JWT
 		Notifications:     NewNotificationService(store, hub, logger),
 		Search:            NewSearchService(store, logger, config),
 		Badges:            NewBadgeService(store, logger),
+		Lists:             NewListService(store, logger),
 	}
 }

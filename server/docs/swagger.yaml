@@ -126,6 +126,18 @@ definitions:
       success:
         type: boolean
     type: object
+  github_com_ba-reynolds_gophersocial_internal_models.CreateListPayload:
+    properties:
+      description:
+        maxLength: 300
+        type: string
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+    required:
+    - name
+    type: object
   github_com_ba-reynolds_gophersocial_internal_models.CreatePollPayload:
     properties:
       ends_at:
@@ -194,6 +206,34 @@ definitions:
     properties:
       success:
         type: boolean
+    type: object
+  github_com_ba-reynolds_gophersocial_internal_models.List:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      member_count:
+        type: integer
+      name:
+        type: string
+      owner_id:
+        type: integer
+      owner_username:
+        type: string
+    type: object
+  github_com_ba-reynolds_gophersocial_internal_models.ListMembersResponse:
+    properties:
+      has_more:
+        type: boolean
+      items:
+        items:
+          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserProfileResponse'
+        type: array
+      next_cursor:
+        type: string
     type: object
   github_com_ba-reynolds_gophersocial_internal_models.LoginRequest:
     properties:
@@ -1411,6 +1451,477 @@ paths:
       summary: Delete a bookmark category
       tags:
       - bookmarks
+  /lists:
+    get:
+      description: Returns the lists owned by the authenticated user.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.List'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: List the user's lists
+      tags:
+      - lists
+    post:
+      consumes:
+      - application/json
+      description: Creates a new list owned by the authenticated user.
+      parameters:
+      - description: List details
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.CreateListPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.List'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "409":
+          description: Conflict
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Create a list
+      tags:
+      - lists
+  /lists/{listID}:
+    delete:
+      description: Deletes a list (owner only).
+      parameters:
+      - description: List ID
+        in: path
+        name: listID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: boolean
+                  type: object
+              type: object
+        "403":
+          description: Forbidden
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a list
+      tags:
+      - lists
+    get:
+      description: Returns a single public list by ID.
+      parameters:
+      - description: List ID
+        in: path
+        name: listID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.List'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get a list
+      tags:
+      - lists
+  /lists/{listID}/feed:
+    get:
+      description: Returns top-level posts from the users in a public list.
+      parameters:
+      - description: List ID
+        in: path
+        name: listID
+        required: true
+        type: integer
+      - description: Maximum number of posts to retrieve
+        in: query
+        name: limit
+        type: integer
+      - description: Cursor for pagination
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostFeed'
+                error:
+                  type: object
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get a list's feed
+      tags:
+      - lists
+  /lists/{listID}/members:
+    get:
+      description: Returns the users in a public list.
+      parameters:
+      - description: List ID
+        in: path
+        name: listID
+        required: true
+        type: integer
+      - description: Maximum number of members to retrieve
+        in: query
+        name: limit
+        type: integer
+      - description: Cursor for pagination
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.ListMembersResponse'
+                error:
+                  type: object
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get a list's members
+      tags:
+      - lists
+  /lists/{listID}/members/{username}:
+    delete:
+      description: Removes the given user from a list (owner only).
+      parameters:
+      - description: List ID
+        in: path
+        name: listID
+        required: true
+        type: integer
+      - description: Username to remove
+        in: path
+        name: username
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: boolean
+                  type: object
+              type: object
+        "403":
+          description: Forbidden
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Remove a user from a list
+      tags:
+      - lists
+    post:
+      description: Adds the given user to a list (owner only).
+      parameters:
+      - description: List ID
+        in: path
+        name: listID
+        required: true
+        type: integer
+      - description: Username to add
+        in: path
+        name: username
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: boolean
+                  type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "403":
+          description: Forbidden
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "409":
+          description: Conflict
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Add a user to a list
+      tags:
+      - lists
   /media/{uuid}:
     get:
       description: Returns the actual media file by UUID
@@ -3083,6 +3594,56 @@ paths:
       summary: Get posts liked by a user
       tags:
       - posts
+  /users/{username}/lists:
+    get:
+      description: Returns the public lists owned by the given user.
+      parameters:
+      - description: Username
+        in: path
+        name: username
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.List'
+                  type: array
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get a user's lists
+      tags:
+      - lists
   /users/{username}/pinned:
     get:
       description: Returns the full post currently pinned to the given user's profile,
@@ -3402,6 +3963,45 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Update user settings
+      tags:
+      - users
+  /users/suggested:
+    get:
+      description: Returns accounts the authenticated user might want to follow, ordered
+        by follower count.
+      parameters:
+      - description: Maximum number of users to retrieve
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserList'
+                error:
+                  type: object
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get suggested users
       tags:
       - users
 schemes:

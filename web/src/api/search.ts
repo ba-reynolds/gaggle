@@ -26,3 +26,10 @@ export const getTrends = async (): Promise<Envelope<Trend[]>> => {
   const response = await api.get<Envelope<Trend[]>>('/trends');
   return response.data;
 };
+
+export const getSuggestedUsers = async (limit?: number): Promise<Envelope<{ items: UserProfileResponse[] }>> => {
+  const response = await api.get<Envelope<{ items: UserProfileResponse[] }>>('/users/suggested', {
+    params: { limit },
+  });
+  return response.data;
+};
