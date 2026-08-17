@@ -19,25 +19,25 @@ func NewPostEngagementService(store *store.Store, logger *slog.Logger) *PostEnga
 	return &PostEngagementService{store: store, logger: logger}
 }
 
-func (s *PostEngagementService) Like(ctx context.Context, postID, userID int) error {
+func (s *PostEngagementService) Like(ctx context.Context, postID, userID int) (bool, error) {
 	tx, err := s.store.DB.BeginTx(ctx, nil)
 	if err != nil {
 		s.logger.Error("failed to begin transaction for like", "operation", "like_post", "postID", postID, "userID", userID, "error", err)
-		return apperrors.InternalServerError(err)
+		return false, apperrors.InternalServerError(err)
 	}
 	defer tx.Rollback()
 
-	if err := s.store.PostEngagements.Like(ctx, tx, postID, userID); err != nil {
-		return err
+	created, err := s.store.PostEngagements.Like(ctx, tx, postID, userID)
+	if err != nil {
+		return false, err
 	}
-
 	if err := tx.Commit(); err != nil {
 		s.logger.Error("failed to commit transaction for like", "operation", "like_post", "postID", postID, "userID", userID, "error", err)
-		return apperrors.InternalServerError(err)
+		return false, apperrors.InternalServerError(err)
 	}
 
 	s.logger.Info("post liked successfully", "postID", postID, "userID", userID)
-	return nil
+	return created, nil
 }
 
 func (s *PostEngagementService) Unlike(ctx context.Context, postID, userID int) error {
@@ -61,25 +61,26 @@ func (s *PostEngagementService) Unlike(ctx context.Context, postID, userID int) 
 	return nil
 }
 
-func (s *PostEngagementService) Repost(ctx context.Context, postID, userID int) error {
+func (s *PostEngagementService) Repost(ctx context.Context, postID, userID int) (bool, error) {
 	tx, err := s.store.DB.BeginTx(ctx, nil)
 	if err != nil {
 		s.logger.Error("failed to begin transaction for repost", "operation", "repost_post", "postID", postID, "userID", userID, "error", err)
-		return apperrors.InternalServerError(err)
+		return false, apperrors.InternalServerError(err)
 	}
 	defer tx.Rollback()
 
-	if err := s.store.PostEngagements.Repost(ctx, tx, postID, userID); err != nil {
-		return err
+	created, err := s.store.PostEngagements.Repost(ctx, tx, postID, userID)
+	if err != nil {
+		return false, err
 	}
 
 	if err := tx.Commit(); err != nil {
 		s.logger.Error("failed to commit transaction for repost", "operation", "repost_post", "postID", postID, "userID", userID, "error", err)
-		return apperrors.InternalServerError(err)
+		return false, apperrors.InternalServerError(err)
 	}
 
 	s.logger.Info("post reposted successfully", "postID", postID, "userID", userID)
-	return nil
+	return created, nil
 }
 
 func (s *PostEngagementService) Unrepost(ctx context.Context, postID, userID int) error {

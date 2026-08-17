@@ -144,6 +144,17 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	if h.rdb != nil {
 		h.invalidateFeedForUserAndFollowers(r.Context(), user.ID)
 	}
+	if post.ParentID != nil {
+		if err := h.service.Notifications.CreateForPost(r.Context(), user.ID, *post.ParentID, "reply"); err != nil {
+			h.logger.Warn("failed to create reply notification", "postID", post.ID, "parentID", *post.ParentID, "error", err)
+		}
+	}
+	if err := h.service.Notifications.CreateMentionNotifications(r.Context(), user.ID, post.ID, post.Content); err != nil {
+		h.logger.Warn("failed to create mention notifications", "postID", post.ID, "error", err)
+	}
+	if err := h.service.Notifications.PublishFeedPost(r.Context(), user.ID, post.ID); err != nil {
+		h.logger.Warn("failed to publish feed post event", "postID", post.ID, "userID", user.ID, "error", err)
+	}
 
 	if err := util.RespondWithJson(w, http.StatusCreated, fullPost); err != nil {
 		h.logger.Error("failed to write HTTP response",

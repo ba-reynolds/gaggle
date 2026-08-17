@@ -217,6 +217,113 @@ func TestPostsAndEngagement(t *testing.T) {
 	}
 }
 
+func TestNotificationsLifecycle(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+	tokenA := app.RegisterUser(t, "notify_a", "notify-a@example.com")
+	tokenB := app.RegisterUser(t, "notify_b", "notify-b@example.com")
+
+	post, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/posts/",
+		Token:  tokenA,
+		Body:   map[string]string{"content": "notify me"},
+	}))
+	postID := int(post["id"].(float64))
+
+	if rec := app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/posts/" + itoa(postID) + "/like",
+		Token:  tokenB,
+	}); rec.Code != http.StatusOK {
+		t.Fatalf("like failed: %d %s", rec.Code, rec.Body.String())
+	}
+	app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/posts/" + itoa(postID) + "/like", Token: tokenB})
+
+	notifications, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{
+		Method: http.MethodGet,
+		Path:   "/api/v1/notifications",
+		Token:  tokenA,
+	}))
+	items := notifications["items"].([]any)
+	if len(items) != 1 {
+		t.Fatalf("notifications items = %d, want 1", len(items))
+	}
+	notification := items[0].(map[string]any)
+	if notification["type"] != "like" {
+		t.Fatalf("notification type = %v, want like", notification["type"])
+	}
+	if notification["read_at"] != nil {
+		t.Fatal("new notification should be unread")
+	}
+
+	unread, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{
+		Method: http.MethodGet,
+		Path:   "/api/v1/notifications/unread-count",
+		Token:  tokenA,
+	}))
+	if unread["count"].(float64) != 1 {
+		t.Fatalf("unread count = %v, want 1", unread["count"])
+	}
+
+	notificationID := int(notification["id"].(float64))
+	if rec := app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/notifications/" + itoa(notificationID) + "/read",
+		Token:  tokenA,
+	}); rec.Code != http.StatusNoContent {
+		t.Fatalf("mark notification read: %d %s", rec.Code, rec.Body.String())
+	}
+
+	unread, _ = testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{
+		Method: http.MethodGet,
+		Path:   "/api/v1/notifications/unread-count",
+		Token:  tokenA,
+	}))
+	if unread["count"].(float64) != 0 {
+		t.Fatalf("unread count after read = %v, want 0", unread["count"])
+	}
+
+	mentionedPost, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/posts/",
+		Token:  tokenA,
+		Body:   map[string]string{"content": "hello @notify_b"},
+	}))
+	_ = mentionedPost
+	bNotifications, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{
+		Method: http.MethodGet,
+		Path:   "/api/v1/notifications",
+		Token:  tokenB,
+	}))
+	if len(bNotifications["items"].([]any)) != 1 {
+		t.Fatalf("mention notifications = %d, want 1", len(bNotifications["items"].([]any)))
+	}
+
+	if rec := app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/users/notify_a/block",
+		Token:  tokenB,
+	}); rec.Code != http.StatusOK {
+		t.Fatalf("block failed: %d %s", rec.Code, rec.Body.String())
+	}
+	blockedPost, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/posts/",
+		Token:  tokenB,
+		Body:   map[string]string{"content": "blocked test"},
+	}))
+	blockedPostID := int(blockedPost["id"].(float64))
+	app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/posts/" + itoa(blockedPostID) + "/like", Token: tokenA})
+	bNotifications, _ = testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{
+		Method: http.MethodGet,
+		Path:   "/api/v1/notifications",
+		Token:  tokenB,
+	}))
+	if len(bNotifications["items"].([]any)) != 1 {
+		t.Fatalf("blocked actor notification count = %d, want 1", len(bNotifications["items"].([]any)))
+	}
+}
+
 func TestParentChainAndDescendants(t *testing.T) {
 	app := testutil.NewApp(t, testutil.Database(t))
 	token := app.RegisterUser(t, "chainuser", "chain@example.com")

@@ -58,7 +58,8 @@ func (h *PostEngagementHandler) Like(w http.ResponseWriter, r *http.Request) {
 		util.RespondWithAppError(w, apperrors.BadRequestError("invalid post ID", err))
 		return
 	}
-	if err := h.service.PostEngagements.Like(r.Context(), postID, user.ID); err != nil {
+	created, err := h.service.PostEngagements.Like(r.Context(), postID, user.ID)
+	if err != nil {
 		if appErr, ok := err.(*apperrors.AppError); ok {
 			util.RespondWithAppError(w, appErr)
 			return
@@ -67,6 +68,11 @@ func (h *PostEngagementHandler) Like(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.invalidateActorFeed(r.Context(), user.ID)
+	if created {
+		if err := h.service.Notifications.CreateForPost(r.Context(), user.ID, postID, "like"); err != nil {
+			h.logger.Warn("failed to create like notification", "postID", postID, "userID", user.ID, "error", err)
+		}
+	}
 	util.RespondWithJson(w, http.StatusOK, models.LikeResponse{Success: true})
 }
 
@@ -134,7 +140,8 @@ func (h *PostEngagementHandler) Repost(w http.ResponseWriter, r *http.Request) {
 		util.RespondWithAppError(w, apperrors.BadRequestError("invalid post ID", err))
 		return
 	}
-	if err := h.service.PostEngagements.Repost(r.Context(), postID, user.ID); err != nil {
+	created, err := h.service.PostEngagements.Repost(r.Context(), postID, user.ID)
+	if err != nil {
 		if appErr, ok := err.(*apperrors.AppError); ok {
 			util.RespondWithAppError(w, appErr)
 			return
@@ -143,6 +150,11 @@ func (h *PostEngagementHandler) Repost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.invalidateActorFeed(r.Context(), user.ID)
+	if created {
+		if err := h.service.Notifications.CreateForPost(r.Context(), user.ID, postID, "repost"); err != nil {
+			h.logger.Warn("failed to create repost notification", "postID", postID, "userID", user.ID, "error", err)
+		}
+	}
 	util.RespondWithJson(w, http.StatusOK, models.RepostResponse{Success: true})
 }
 
@@ -438,5 +450,11 @@ func (h *PostEngagementHandler) Quote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.invalidateActorFeed(r.Context(), user.ID)
+	if err := h.service.Notifications.CreateForPost(r.Context(), user.ID, quotedPostID, "quote"); err != nil {
+		h.logger.Warn("failed to create quote notification", "postID", quotedPostID, "userID", user.ID, "error", err)
+	}
+	if err := h.service.Notifications.CreateMentionNotifications(r.Context(), user.ID, post.ID, post.Content); err != nil {
+		h.logger.Warn("failed to create mention notifications", "postID", post.ID, "error", err)
+	}
 	util.RespondWithJson(w, http.StatusCreated, post)
 }

@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import UserHoverCard from "@/components/UserHoverCard";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNotifications } from "@/contexts/NotificationsContext";
 import { useUser } from "@/contexts/UserContext";
 import { useLogoutMutation } from "@/hooks/useAuth";
 import { getMediaUrl } from "@/util/media";
@@ -26,6 +27,7 @@ import {
   LogOut,
   MoreHorizontal,
   Settings,
+  Bell,
   User
 } from "lucide-react";
 import { useState } from "react";
@@ -41,6 +43,7 @@ export default function SocialMediaLayout({
   const { user } = useUser();
   const { mutate: logout } = useLogoutMutation();
   const { token } = useAuth();
+  const { unreadCount } = useNotifications();
   const navigate = useNavigate();
   const [isComposing, setIsComposing] = useState(false);
   const [followingUsers, setFollowingUsers] = useState<{ [key: string]: boolean }>({});
@@ -58,7 +61,7 @@ export default function SocialMediaLayout({
   };
 
 
-  const NavItem = ({ icon: Icon, label, to }: { icon: React.ElementType, label: string, to: string }) => (
+  const NavItem = ({ icon: Icon, label, to, badge }: { icon: React.ElementType, label: string, to: string, badge?: number }) => (
     <NavLink
       to={to}
       className={({ isActive }) => `
@@ -67,7 +70,7 @@ export default function SocialMediaLayout({
         text-gray-800 dark:text-gray-100
       `}
     >
-      <Icon className="h-5 w-5" />
+      <span className="relative"><Icon className="h-5 w-5" />{badge ? <span className="absolute -right-2 -top-2 rounded-full bg-destructive px-1.5 text-[10px] leading-4 text-destructive-foreground">{badge > 99 ? '99+' : badge}</span> : null}</span>
       <span className="hidden md:inline">{label}</span>
     </NavLink>
   );
@@ -116,6 +119,7 @@ export default function SocialMediaLayout({
               <nav className="space-y-1">
                 <NavItem icon={Home} label="Home" to="/" />
                 <NavItem icon={Bookmark} label="Bookmarks" to="/bookmarks" />
+                <NavItem icon={Bell} label="Notifications" to="/notifications" badge={unreadCount} />
                 <NavItem icon={User} label="Profile" to={`/profile/${user.username}`} />
                 <NavItem icon={Settings} label="Settings" to="/settings" />
 

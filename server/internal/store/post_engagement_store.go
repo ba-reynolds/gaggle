@@ -18,18 +18,22 @@ type postEngagementStore struct {
 }
 
 // Like a post
-func (store *postEngagementStore) Like(ctx context.Context, tx *sql.Tx, postID, userID int) error {
+func (store *postEngagementStore) Like(ctx context.Context, tx *sql.Tx, postID, userID int) (bool, error) {
 	query := `INSERT INTO post_likes (post_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`
 	exec := store.db.ExecContext
 	if tx != nil {
 		exec = tx.ExecContext
 	}
-	_, err := exec(ctx, query, postID, userID)
+	result, err := exec(ctx, query, postID, userID)
 	if err != nil {
 		store.logger.Error("database insert failed", "operation", "like_post", "postID", postID, "userID", userID, "query", query, "error", err)
-		return apperrors.InternalServerError(err)
+		return false, apperrors.InternalServerError(err)
 	}
-	return nil
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return false, apperrors.InternalServerError(err)
+	}
+	return affected == 1, nil
 }
 
 // Unlike a post
@@ -48,18 +52,22 @@ func (store *postEngagementStore) Unlike(ctx context.Context, tx *sql.Tx, postID
 }
 
 // Repost a post (only tracks reposts, not quotes)
-func (store *postEngagementStore) Repost(ctx context.Context, tx *sql.Tx, postID, userID int) error {
+func (store *postEngagementStore) Repost(ctx context.Context, tx *sql.Tx, postID, userID int) (bool, error) {
 	query := `INSERT INTO post_reposts (original_post_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`
 	exec := store.db.ExecContext
 	if tx != nil {
 		exec = tx.ExecContext
 	}
-	_, err := exec(ctx, query, postID, userID)
+	result, err := exec(ctx, query, postID, userID)
 	if err != nil {
 		store.logger.Error("database insert failed", "operation", "repost_post", "postID", postID, "userID", userID, "query", query, "error", err)
-		return apperrors.InternalServerError(err)
+		return false, apperrors.InternalServerError(err)
 	}
-	return nil
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return false, apperrors.InternalServerError(err)
+	}
+	return affected == 1, nil
 }
 
 // Unrepost a post

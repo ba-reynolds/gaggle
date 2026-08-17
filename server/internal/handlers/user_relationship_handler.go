@@ -69,6 +69,19 @@ func (h *UserRelationshipHandler) FollowUser(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	// Only notify on a transition into the following state. Repeating the
+	// follow request is idempotent and must not spam the recipient.
+	status, err := h.service.UserRelationships.GetRelationshipStatus(r.Context(), authUser.ID, targetUser.ID)
+	if err != nil {
+		if appErr, ok := err.(*apperrors.AppError); ok {
+			util.RespondWithAppError(w, appErr)
+			return
+		}
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+	wasFollowing := status.IsFollowing
+
 	// Create follow relationship
 	_, err = h.service.UserRelationships.CreateRelationship(r.Context(), authUser.ID, targetUser.ID, "follow")
 	if err != nil {
@@ -78,6 +91,11 @@ func (h *UserRelationshipHandler) FollowUser(w http.ResponseWriter, r *http.Requ
 		}
 		util.RespondWithAppError(w, apperrors.InternalServerError(err))
 		return
+	}
+	if !wasFollowing {
+		if err := h.service.Notifications.Create(r.Context(), authUser.ID, targetUser.ID, "follow", nil); err != nil {
+			h.logger.Warn("failed to create follow notification", "actorID", authUser.ID, "recipientID", targetUser.ID, "error", err)
+		}
 	}
 
 	// Create response

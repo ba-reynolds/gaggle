@@ -13,6 +13,8 @@ import BookmarksPage from './pages/BookmarksPage';
 import SettingsPage from './pages/SettingsPage';
 import PostPage from './pages/PostPage';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { NotificationsProvider } from './contexts/NotificationsContext';
+import NotificationsPage from './pages/NotificationsPage';
 
 
 const queryClient = new QueryClient({
@@ -33,17 +35,20 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <UserProvider>
           <AuthProvider>
-            <Router>
-              <Routes>
-                <Route path="/" element={<SocialMediaLayout><FeedPage /></SocialMediaLayout>} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/signup" element={<SignupPage />} />
-                <Route path="/profile/:username" element={<SocialMediaLayout><ProfilePage /></SocialMediaLayout>} />
-                <Route path="/bookmarks" element={<SocialMediaLayout><BookmarksPage /></SocialMediaLayout>} />
-                <Route path="/settings" element={<SocialMediaLayout><SettingsPage /></SocialMediaLayout>} />
-                <Route path="/post/:id" element={<SocialMediaLayout><PostPage /></SocialMediaLayout>} />
-              </Routes>
-            </Router>
+            <NotificationsProvider>
+              <Router>
+                <Routes>
+                  <Route path="/" element={<SocialMediaLayout><FeedPage /></SocialMediaLayout>} />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/signup" element={<SignupPage />} />
+                  <Route path="/profile/:username" element={<SocialMediaLayout><ProfilePage /></SocialMediaLayout>} />
+                  <Route path="/bookmarks" element={<SocialMediaLayout><BookmarksPage /></SocialMediaLayout>} />
+                  <Route path="/settings" element={<SocialMediaLayout><SettingsPage /></SocialMediaLayout>} />
+                  <Route path="/post/:id" element={<SocialMediaLayout><PostPage /></SocialMediaLayout>} />
+                  <Route path="/notifications" element={<SocialMediaLayout><NotificationsPage /></SocialMediaLayout>} />
+                </Routes>
+              </Router>
+            </NotificationsProvider>
           </AuthProvider>
         </UserProvider>
         <Toaster />

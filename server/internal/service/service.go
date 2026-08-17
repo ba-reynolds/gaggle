@@ -8,6 +8,7 @@ import (
 
 	"github.com/ba-reynolds/gophersocial/internal/auth"
 	"github.com/ba-reynolds/gophersocial/internal/models"
+	"github.com/ba-reynolds/gophersocial/internal/realtime"
 	"github.com/ba-reynolds/gophersocial/internal/store"
 	"github.com/ba-reynolds/gophersocial/pkg/config"
 	"github.com/golang-jwt/jwt/v5"
@@ -16,15 +17,17 @@ import (
 
 type Service struct {
 	// TODO: add tx for very CUD operation
-	DB     *sql.DB
-	Config config.AppConfig
-	Auth   interface {
+	DB       *sql.DB
+	Config   config.AppConfig
+	Realtime *realtime.Hub
+	Auth     interface {
 		Login(ctx context.Context, identifier string, password string, ipAddress string, userAgent string) (*models.Token, *models.Token, error)
 		Register(ctx context.Context, username string, email string, password string, ipAddress string, userAgent string) (*models.User, *models.Token, *models.Token, error)
 		RefreshToken(ctx context.Context, refreshTokenString string) (*models.Token, error)
 		Logout(ctx context.Context, tokenHash string) error
 		ValidateToken(tokenString string, tokenType auth.TokenType) (*jwt.Token, error)
 		GetUserIDFromToken(token *jwt.Token) (int, error)
+		GetUserIDFromRefreshToken(ctx context.Context, tokenString string) (int, error)
 	}
 	Users interface {
 		GetByID(ctx context.Context, id int) (*models.User, error)
@@ -60,9 +63,9 @@ type Service struct {
 		GetPostReposters(ctx context.Context, postID int, limit int, cursor string) (*models.UserList, error)
 	}
 	PostEngagements interface {
-		Like(ctx context.Context, postID, userID int) error
+		Like(ctx context.Context, postID, userID int) (bool, error)
 		Unlike(ctx context.Context, postID, userID int) error
-		Repost(ctx context.Context, postID, userID int) error
+		Repost(ctx context.Context, postID, userID int) (bool, error)
 		Unrepost(ctx context.Context, postID, userID int) error
 		Bookmark(ctx context.Context, postID, userID int, categoryID *int) error
 		Unbookmark(ctx context.Context, postID, userID int) error
@@ -79,18 +82,31 @@ type Service struct {
 		GetRelationshipStatus(ctx context.Context, followerID, followingID int) (*models.RelationshipStatus, error)
 		GetFollowerIDs(ctx context.Context, userID int) ([]int, error)
 	}
+	Notifications interface {
+		CreateForPost(ctx context.Context, actorID, postID int, notificationType string) error
+		Create(ctx context.Context, actorID, recipientID int, notificationType string, postID *int) error
+		List(ctx context.Context, recipientID, limit int, cursor string) (*models.NotificationFeed, error)
+		UnreadCount(ctx context.Context, recipientID int) (int, error)
+		MarkRead(ctx context.Context, recipientID, notificationID int) error
+		MarkAllRead(ctx context.Context, recipientID int) error
+		PublishFeedPost(ctx context.Context, authorID, postID int) error
+		CreateMentionNotifications(ctx context.Context, actorID, postID int, content string) error
+	}
 }
 
 // NewService creates a new service with all required dependencies
 func NewService(store *store.Store, logger *slog.Logger, authenticator *auth.JWTAuthenticator, config config.AppConfig) *Service {
+	hub := realtime.NewHub()
 	return &Service{
 		DB:                store.DB,
 		Config:            config,
+		Realtime:          hub,
 		Auth:              &AuthService{store, authenticator, logger},
 		Users:             &UserService{store, logger},
 		Media:             &MediaService{store, logger},
 		Posts:             &PostService{store, logger, config},
 		PostEngagements:   NewPostEngagementService(store, logger),
 		UserRelationships: &UserRelationshipService{store, logger},
+		Notifications:     NewNotificationService(store, hub, logger),
 	}
 }

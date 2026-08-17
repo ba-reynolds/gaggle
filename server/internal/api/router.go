@@ -48,6 +48,8 @@ func NewRouter(
 	userRelationshipHandler := handlers.NewUserRelationshipHandler(service, logger)
 	postEngagementHandler := handlers.NewPostEngagementHandler(service, logger, rdb)
 	settingsHandler := handlers.NewSettingsHandler(service, logger)
+	notificationHandler := handlers.NewNotificationHandler(service, logger)
+	realtimeHandler := handlers.NewRealtimeHandler(service, logger)
 
 	// API v1 routes
 	router.Route("/api/v1", func(r chi.Router) {
@@ -64,6 +66,7 @@ func NewRouter(
 			r.Post("/refresh-token", authHandler.RefreshToken)
 			r.Post("/logout", authHandler.Logout)
 		})
+		r.Get("/stream", realtimeHandler.Stream)
 
 		// Media files are served publicly because <img> tags cannot send the
 		// Authorization header; the UUIDs act as unguessable access tokens.
@@ -94,6 +97,13 @@ func NewRouter(
 					// Change likes feed for user to use username instead of userID
 					r.Get("/likes", postHandler.LikedPostsFeed)
 				})
+			})
+
+			protected.Route("/notifications", func(r chi.Router) {
+				r.Get("/", notificationHandler.List)
+				r.Get("/unread-count", notificationHandler.UnreadCount)
+				r.Post("/read", notificationHandler.MarkAllRead)
+				r.Post("/{notificationID}/read", notificationHandler.MarkRead)
 			})
 
 			protected.Route("/posts", func(r chi.Router) {

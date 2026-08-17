@@ -196,6 +196,30 @@ func (s *AuthService) GetUserIDFromToken(token *jwt.Token) (int, error) {
 	return s.authenticator.GetUserIDFromToken(token)
 }
 
+func (s *AuthService) GetUserIDFromRefreshToken(ctx context.Context, tokenString string) (int, error) {
+	parsed, err := s.authenticator.ValidateToken(tokenString, auth.RefreshToken)
+	if err != nil {
+		return 0, apperrors.UnauthorizedError("invalid token", err)
+	}
+
+	hash := auth.HashToken(tokenString)
+	stored, err := s.store.Auth.GetRefreshToken(ctx, hash)
+	if err != nil {
+		return 0, err
+	}
+	if stored.Revoked {
+		return 0, apperrors.UnauthorizedError("invalid token", nil)
+	}
+	userID, err := s.authenticator.GetUserIDFromToken(parsed)
+	if err != nil {
+		return 0, apperrors.UnauthorizedError("invalid token", err)
+	}
+	if _, err := s.store.Users.GetByID(ctx, userID); err != nil {
+		return 0, err
+	}
+	return userID, nil
+}
+
 func (s *AuthService) Register(ctx context.Context, username string, email string, password string, ipAddress string, userAgent string) (*models.User, *models.Token, *models.Token, error) {
 	// Hash the password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)

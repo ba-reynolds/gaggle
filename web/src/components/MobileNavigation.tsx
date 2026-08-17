@@ -1,7 +1,8 @@
-import { Bookmark, Home, PenSquare, Settings, User } from "lucide-react";
+import { Bell, Bookmark, Home, PenSquare, Settings, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/contexts/UserContext";
 import { useNavigate } from "react-router-dom";
+import { useNotifications } from "@/contexts/NotificationsContext";
 
 interface MobileNavigationProps {
   onComposeClick?: () => void;
@@ -10,6 +11,7 @@ interface MobileNavigationProps {
 export default function MobileNavigation({ onComposeClick }: MobileNavigationProps) {
   const navigate = useNavigate();
   const { user } = useUser();
+  const { unreadCount } = useNotifications();
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border md:hidden z-10">
@@ -22,6 +24,17 @@ export default function MobileNavigation({ onComposeClick }: MobileNavigationPro
         >
           <Home className="h-6 w-6" />
           <span className="text-xs mt-1">Home</span>
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative flex flex-col items-center justify-center text-muted-foreground"
+          onClick={() => navigate("/notifications")}
+        >
+          <Bell className="h-6 w-6" />
+          {unreadCount > 0 && <span className="absolute right-1 top-0 h-2 w-2 rounded-full bg-destructive" />}
+          <span className="text-xs mt-1">Alerts</span>
         </Button>
 
         <Button

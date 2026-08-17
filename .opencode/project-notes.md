@@ -72,3 +72,8 @@ Tricky things learned while working on this repo (newest on top).
 - Frontend API base URL is relative (`/api/v1`, `VITE_API_BASE_URL`); `npm run dev`
   still works locally thanks to the vite dev proxy to `localhost:2021` (vite.config.ts).
 - Frontend build/lint (Docker): `docker compose --profile tools run --rm web-tools npm run build`.
+- Phase 1 notifications: migration `000009` creates persistent notifications; migration
+  `000010` changes post references to `ON DELETE SET NULL` so history survives deletion.
+  `/api/v1/stream` is cookie-authenticated SSE; nginx disables buffering for that route.
+  The in-process realtime hub emits `notification.new`, `feed.post_created`, and
+  `stream.resync`; frontend EventSource invalidates the relevant React Query caches.

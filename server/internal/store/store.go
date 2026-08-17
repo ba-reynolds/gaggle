@@ -56,9 +56,9 @@ type Store struct {
 		GetQuotesFeed(ctx context.Context, postID int, limit int, cursor string) (*models.PostFeed, error)
 	}
 	PostEngagements interface {
-		Like(ctx context.Context, tx *sql.Tx, postID, userID int) error
+		Like(ctx context.Context, tx *sql.Tx, postID, userID int) (bool, error)
 		Unlike(ctx context.Context, tx *sql.Tx, postID, userID int) error
-		Repost(ctx context.Context, tx *sql.Tx, postID, userID int) error
+		Repost(ctx context.Context, tx *sql.Tx, postID, userID int) (bool, error)
 		Unrepost(ctx context.Context, tx *sql.Tx, postID, userID int) error
 		Bookmark(ctx context.Context, tx *sql.Tx, postID, userID int, categoryID *int) error
 		Unbookmark(ctx context.Context, tx *sql.Tx, postID, userID int) error
@@ -80,6 +80,13 @@ type Store struct {
 		GetRelationshipStatus(context.Context, int, int) (*models.RelationshipStatus, error)
 		GetFollowerIDs(ctx context.Context, userID int) ([]int, error)
 	}
+	Notifications interface {
+		Create(ctx context.Context, tx *sql.Tx, notification *models.Notification, recipientID, actorID int, notificationType string, postID *int) error
+		List(ctx context.Context, recipientID, limit int, cursor string) (*models.NotificationFeed, error)
+		UnreadCount(ctx context.Context, recipientID int) (int, error)
+		MarkRead(ctx context.Context, recipientID, notificationID int) error
+		MarkAllRead(ctx context.Context, recipientID int) error
+	}
 }
 
 func NewStore(db *sql.DB, logger *slog.Logger, mediaDir string) *Store {
@@ -91,6 +98,7 @@ func NewStore(db *sql.DB, logger *slog.Logger, mediaDir string) *Store {
 		Posts:             &postStore{db: db, logger: logger},
 		PostEngagements:   &postEngagementStore{db: db, logger: logger},
 		UserRelationships: &userRelationshipStore{db: db, logger: logger},
+		Notifications:     &notificationStore{db: db, logger: logger},
 	}
 }
 

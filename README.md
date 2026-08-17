@@ -15,6 +15,8 @@ repository, two apps, fully containerized with Docker Compose.
 - User settings (notifications, privacy, appearance, language)
 - Cursor-based (keyset) pagination on every feed
 - Redis: home-feed caching + auth rate limiting (degrades gracefully if absent)
+- In-app notifications for likes, reposts, quotes, replies, follows, and mentions
+- Live notification/feed events over cookie-authenticated Server-Sent Events (SSE)
 - Consistent `{data, error}` JSON envelope on every endpoint
 - Swagger UI at `/swagger` (regenerate with `make swag`)
 
@@ -60,6 +62,10 @@ Open **http://localhost:5173** and sign in as `alice@example.com` / `password123
 No Go/Node toolchain is needed on the host — everything runs through the
 `tools` / `web-tools` compose services (a `tools` profile not started by
 `make dev`).
+
+Notifications are available at `/notifications`; the SSE stream is exposed at
+`/api/v1/stream` and is consumed automatically by the frontend. The stream
+uses the same-origin HttpOnly refresh cookie, so no token is placed in URLs.
 
 ## Configuration
 

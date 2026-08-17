@@ -124,6 +124,15 @@ export interface PaginatedFeedResponse<T = Post> {
   has_more: boolean;
 }
 
+export interface Notification {
+  id: number;
+  type: 'like' | 'repost' | 'quote' | 'reply' | 'follow' | 'mention';
+  actor: PostAuthor;
+  post_id?: number;
+  read_at?: string;
+  created_at: string;
+}
+
 export interface PostWithAncestorsAndDescendants {
   post: Post;
   ancestors?: PaginatedFeedResponse;
