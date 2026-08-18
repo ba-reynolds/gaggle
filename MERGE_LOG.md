@@ -2,6 +2,47 @@
 
 Running log of agent-branch merges into main. Newest on top.
 
+## 2026-08-18 — agent/refresh-token-rotation
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md` — both sides prepended their own section; kept **every** section,
+    newest on top, separated by `---`.
+
+## 2026-08-18 — agent/post-thread-and-bookmark-fixes
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md` — both sides prepended their own section; kept **every** section,
+    newest on top.
+  - `.opencode/project-notes.md` — both sides prepended notes sections; kept **every**
+    section from both sides plus the shared `Server: home feed Redis cache` /
+    `Theme system` context, newest on top.
+
+## 2026-08-18 — agent/pinned-post-menu-fixes
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md` — both sides prepended their own section; kept **every** section,
+    newest on top.
+  - `.opencode/project-notes.md` — both sides prepended notes sections; kept **every**
+    section from both sides, newest on top.
+- `server/internal/handlers/post_handler.go` auto-merged cleanly.
+
+## 2026-08-18 — agent/google-oauth-analysis
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md` — both sides prepended their own section; kept **every** section,
+    newest on top.
+
+## 2026-08-18 — agent/fix-profile-tabs-and-user-relations
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md` — both sides prepended their own section; kept **every** section,
+    newest on top.
+
 ## 2026-08-18 — agent/cloud-deploy-email-analysis
 
 - Status: **clean**
