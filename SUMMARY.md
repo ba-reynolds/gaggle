@@ -21,23 +21,16 @@ working end-to-end in the browser.
 - Root cause: `PostPage` rendered the current post first and the parent chain
   below it (reply on top of the post being replied to), with no visual
   connection between them.
-- Fix (final, after two design iterations from review feedback): the parent
-  chain renders as a **dedicated comment-thread panel** (`ThreadPanel`,
-  `web/src/components/ThreadPanel.tsx`) — NOT FeedPost cards:
-  - each ancestor is a row: avatar on the left, content to the right;
-  - the connection is a `border-l` rail on the *content* column, so it runs
-    beside the text (never through the profile pictures) and spans each row's
-    `pb` spacing — rows stay visibly separated and the rail stays continuous
-    and symmetric (no long-vs-short segments);
-  - rows include author/@handle/time, the "Replying to @user" line, text,
-    media, and polls; clicking a row opens that post;
-  - the **current post stays a full FeedPost card** right below the panel, so
-    it keeps every interaction (like/repost/bookmark/quote/reply composer).
-  - The earlier `thread` prop + inline rail experiment was removed from
-    `FeedPost` (dead code), reverting normal feeds to their original cards.
-- Ordering: the chain renders furthest-first above the current post
-  (`PostPage.tsx`), and `PostPage` still anchors the current post at the
-  bottom.
+- Fix (final, after several design iterations from review feedback): the chain
+  (ancestors furthest-first + the current post) renders as the **same
+  FeedPost cards used everywhere in the app**, with only a thin `<Separator>`
+  line between each adjacent pair — nothing else. No custom thread layout, no
+  rails, no special card styling. `Web/src/pages/PostPage.tsx` builds
+  `threadPosts = [...parentChain, post]` and maps it, inserting a `h-px`
+  separator before every card after the first.
+- Earlier experimental approaches (a `thread` prop + gutter rail on `FeedPost`,
+  then a dedicated `ThreadPanel` component) were removed; `FeedPost` is back to
+  its original card. `ThreadPanel.tsx` deleted.
 
 **3. Bookmarks category counter (already fixed on main → verified)**
 - Re-categorizing a bookmarked post through the bookmark popover calls

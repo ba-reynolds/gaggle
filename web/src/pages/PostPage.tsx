@@ -1,8 +1,9 @@
+import { Fragment } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useGetPost } from "@/hooks/usePost";
 import FeedPost from "@/components/FeedPost";
-import ThreadPanel from "@/components/ThreadPanel";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { Loader2, ArrowLeft } from "lucide-react";
 import ComposeContent from "@/components/ComposeContent";
 
@@ -35,6 +36,9 @@ const PostPage = () => {
   // Ancestors arrive nearest-parent-first; display them furthest-first so the
   // current post anchors the bottom of the conversation.
   const parentChain = [...ancestors].reverse();
+  // The chain uses the same FeedPost cards as everywhere else in the app, with
+  // only a thin line between each adjacent pair.
+  const threadPosts = [...parentChain, post];
 
   return (
     <div className="w-full max-w-xl mx-auto">
@@ -48,10 +52,17 @@ const PostPage = () => {
         </div>
       </header>
 
-      {/* Parent chain, displayed as a comment-style panel above the current
-          post (which stays a full FeedPost below it). */}
-      {parentChain.length > 0 && <ThreadPanel posts={parentChain} />}
-      <FeedPost post={post} />
+      {/* Conversation: ancestors (furthest-first) + the current post, using the
+          same FeedPost cards as the rest of the app with a thin line between
+          each pair. */}
+      <div className="mt-2">
+        {threadPosts.map((threadPost, index) => (
+          <Fragment key={threadPost.id}>
+            {index > 0 && <Separator className="my-2" />}
+            <FeedPost post={threadPost} />
+          </Fragment>
+        ))}
+      </div>
 
       {/* Reply composer */}
       <div className="mt-4 px-4">
