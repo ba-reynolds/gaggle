@@ -90,6 +90,47 @@ func (h *ListHandler) ListMyLists(w http.ResponseWriter, r *http.Request) {
 	util.RespondWithJson(w, http.StatusOK, lists)
 }
 
+// UpdateList godoc
+//
+// @Summary      Update a list
+// @Description  Edits a list's name and description (owner only).
+// @Tags         lists
+// @Accept       json
+// @Produce      json
+// @Param        listID  path int                    true "List ID"
+// @Param        payload body models.CreateListPayload true "List details"
+// @Success      200 {object} models.Envelope{data=models.List}
+// @Failure      400 {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Failure      403 {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Failure      404 {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Failure      409 {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Failure      500 {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Security     ApiKeyAuth
+// @Router       /lists/{listID} [patch]
+func (h *ListHandler) UpdateList(w http.ResponseWriter, r *http.Request) {
+	user, err := middleware.GetAuthenticatedUserFromContext(r)
+	if err != nil {
+		h.respondError(w, apperrors.InternalServerError(err))
+		return
+	}
+	listID, err := strconv.Atoi(r.PathValue("listID"))
+	if err != nil {
+		h.respondError(w, apperrors.BadRequestError("invalid list ID", err))
+		return
+	}
+	var payload models.CreateListPayload
+	if err := util.ReadJSON(r, &payload); err != nil {
+		h.respondError(w, apperrors.PayloadValidationError(err))
+		return
+	}
+	list, err := h.service.Lists.Update(r.Context(), listID, user.ID, payload)
+	if err != nil {
+		h.respondError(w, err)
+		return
+	}
+	util.RespondWithJson(w, http.StatusOK, list)
+}
+
 // GetList godoc
 //
 // @Summary      Get a list

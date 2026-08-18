@@ -113,6 +113,18 @@ func (s *listStore) Delete(ctx context.Context, listID, ownerID int) error {
 	return nil
 }
 
+// Update edits a list's name and description.
+func (s *listStore) Update(ctx context.Context, listID int, name, description string) (*models.List, error) {
+	if _, err := s.db.ExecContext(ctx, `UPDATE lists SET name = $1, description = $2 WHERE list_id = $3`, name, description, listID); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return nil, apperrors.AlreadyExistsError("you already have a list with that name", err)
+		}
+		return nil, apperrors.InternalServerError(err)
+	}
+	return s.GetByID(ctx, listID)
+}
+
 // AddMember adds a user to a list. Returns AlreadyExists on duplicate.
 func (s *listStore) AddMember(ctx context.Context, listID, memberID int) error {
 	var ownerID int

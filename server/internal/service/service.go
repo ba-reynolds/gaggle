@@ -121,6 +121,7 @@ type Service struct {
 		Create(ctx context.Context, ownerID int, payload models.CreateListPayload) (*models.List, error)
 		Get(ctx context.Context, listID int) (*models.List, error)
 		ListForUser(ctx context.Context, userID int) ([]models.List, error)
+		Update(ctx context.Context, listID, actorID int, payload models.CreateListPayload) (*models.List, error)
 		Delete(ctx context.Context, listID, actorID int) error
 		AddMember(ctx context.Context, listID, actorID, memberID int) error
 		RemoveMember(ctx context.Context, listID, actorID, memberID int) error

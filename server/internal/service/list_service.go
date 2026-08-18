@@ -21,19 +21,47 @@ func NewListService(store *store.Store, logger *slog.Logger) *ListService {
 
 // Create validates the payload and creates a list for the owner.
 func (s *ListService) Create(ctx context.Context, ownerID int, payload models.CreateListPayload) (*models.List, error) {
-	name := strings.TrimSpace(payload.Name)
-	description := strings.TrimSpace(payload.Description)
-	if name == "" || len(name) > 100 {
-		return nil, apperrors.BadRequestError("list name is required (max 100 characters)", nil)
-	}
-	if len(description) > 300 {
-		return nil, apperrors.BadRequestError("list description must be at most 300 characters", nil)
+	name, description, err := validateListPayload(payload)
+	if err != nil {
+		return nil, err
 	}
 	list := &models.List{OwnerID: ownerID, Name: name, Description: description}
 	if err := s.store.Lists.Create(ctx, list); err != nil {
 		return nil, err
 	}
 	return list, nil
+}
+
+// Update edits a list's name/description (owner only).
+func (s *ListService) Update(ctx context.Context, listID, actorID int, payload models.CreateListPayload) (*models.List, error) {
+	list, err := s.store.Lists.GetByID(ctx, listID)
+	if err != nil {
+		return nil, err
+	}
+	if list.OwnerID != actorID {
+		return nil, apperrors.ForbiddenError("only the list owner can edit this list", nil)
+	}
+	name, description, err := validateListPayload(payload)
+	if err != nil {
+		return nil, err
+	}
+	updated, err := s.store.Lists.Update(ctx, listID, name, description)
+	if err != nil {
+		return nil, err
+	}
+	return updated, nil
+}
+
+func validateListPayload(payload models.CreateListPayload) (string, string, error) {
+	name := strings.TrimSpace(payload.Name)
+	description := strings.TrimSpace(payload.Description)
+	if name == "" || len(name) > 100 {
+		return "", "", apperrors.BadRequestError("list name is required (max 100 characters)", nil)
+	}
+	if len(description) > 300 {
+		return "", "", apperrors.BadRequestError("list description must be at most 300 characters", nil)
+	}
+	return name, description, nil
 }
 
 // Get returns a public list by id.

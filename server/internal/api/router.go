@@ -161,6 +161,7 @@ func NewRouter(
 				r.Post("/", listHandler.CreateList)
 				r.Route("/{listID}", func(r chi.Router) {
 					r.Get("/", listHandler.GetList)
+					r.Patch("/", listHandler.UpdateList)
 					r.Delete("/", listHandler.DeleteList)
 					r.Get("/feed", listHandler.ListFeed)
 					r.Get("/members", listHandler.ListMembers)

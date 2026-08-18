@@ -122,6 +122,7 @@ type Store struct {
 		Create(ctx context.Context, list *models.List) error
 		GetByID(ctx context.Context, listID int) (*models.List, error)
 		ListByOwner(ctx context.Context, ownerID int) ([]models.List, error)
+		Update(ctx context.Context, listID int, name, description string) (*models.List, error)
 		Delete(ctx context.Context, listID, ownerID int) error
 		AddMember(ctx context.Context, listID, memberID int) error
 		RemoveMember(ctx context.Context, listID, memberID int) error

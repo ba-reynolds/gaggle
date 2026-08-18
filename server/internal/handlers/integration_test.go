@@ -860,6 +860,27 @@ func TestLists(t *testing.T) {
 		t.Fatalf("duplicate list name status = %d, want 409", rec.Code)
 	}
 
+	// Update the list (owner).
+	updated, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodPatch, Path: "/api/v1/lists/" + itoa(listID), Token: ownerToken, Body: map[string]string{"name": "Gophers", "description": "updated description"}}))
+	if updated["name"] != "Gophers" || updated["description"] != "updated description" {
+		t.Fatalf("updated list = %v", updated)
+	}
+	// Non-owner cannot update -> 403.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPatch, Path: "/api/v1/lists/" + itoa(listID), Token: otherToken, Body: map[string]string{"name": "Hijacked"}}); rec.Code != http.StatusForbidden {
+		t.Fatalf("non-owner update status = %d, want 403", rec.Code)
+	}
+	// Invalid payload (empty name) -> 400.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPatch, Path: "/api/v1/lists/" + itoa(listID), Token: ownerToken, Body: map[string]string{"name": ""}}); rec.Code != http.StatusBadRequest {
+		t.Fatalf("empty-name update status = %d, want 400", rec.Code)
+	}
+	// Updating to a duplicate name -> 409.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/lists", Token: ownerToken, Body: map[string]string{"name": "Other list"}}); rec.Code != http.StatusCreated {
+		t.Fatalf("create second list: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPatch, Path: "/api/v1/lists/" + itoa(listID), Token: ownerToken, Body: map[string]string{"name": "Other list"}}); rec.Code != http.StatusConflict {
+		t.Fatalf("duplicate-name update status = %d, want 409", rec.Code)
+	}
+
 	// Add a member.
 	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/lists/" + itoa(listID) + "/members/listmember", Token: ownerToken}); rec.Code != http.StatusOK {
 		t.Fatalf("add member: %d %s", rec.Code, rec.Body.String())
@@ -901,12 +922,12 @@ func TestLists(t *testing.T) {
 
 	// List appears in the user's lists (owner + public profile).
 	myLists, _ := testutil.Decode[[]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/lists", Token: ownerToken}))
-	if len(myLists) != 1 {
-		t.Fatalf("my lists = %d, want 1", len(myLists))
+	if len(myLists) != 2 {
+		t.Fatalf("my lists = %d, want 2", len(myLists))
 	}
 	profileLists, _ := testutil.Decode[[]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/users/listowner/lists", Token: otherToken}))
-	if len(profileLists) != 1 {
-		t.Fatalf("profile lists = %d, want 1", len(profileLists))
+	if len(profileLists) != 2 {
+		t.Fatalf("profile lists = %d, want 2", len(profileLists))
 	}
 
 	// Non-owner cannot delete; owner can.
