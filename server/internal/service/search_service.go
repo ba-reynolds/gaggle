@@ -93,7 +93,17 @@ func (s *SearchService) hydrateFeed(ctx context.Context, feed *models.PostFeed, 
 		return nil, err
 	}
 	for _, item := range feed.Items {
-		item.Engagement = engagements[item.ID]
+		eng, ok := engagements[item.ID]
+		if !ok {
+			eng = &models.PostEngagement{}
+		}
+		eng.LikeCount = item.LikesCount
+		eng.RepostCount = item.RepostsCount
+		eng.ReplyCount = item.RepliesCount
+		eng.ViewCount = item.ViewsCount
+		eng.BookmarkCount = item.BookmarksCount
+		eng.QuoteCount = item.QuotesCount
+		item.Engagement = eng
 	}
 	return feed, nil
 }

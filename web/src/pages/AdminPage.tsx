@@ -195,19 +195,19 @@ const AdminPage: React.FC = () => {
         <CustomDialogContent className="sm:max-w-md bg-card">
           <DialogHeader><DialogTitle className="text-primary">{editing ? "Edit badge" : "New badge"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div>
+            <div className="space-y-1.5">
               <Label htmlFor="badge-key">Key</Label>
               <Input id="badge-key" value={form.key} onChange={e => setForm({ ...form, key: e.target.value })} placeholder="staff" maxLength={50} />
             </div>
-            <div>
+            <div className="space-y-1.5">
               <Label htmlFor="badge-label">Label</Label>
               <Input id="badge-label" value={form.label} onChange={e => setForm({ ...form, label: e.target.value })} placeholder="Staff" maxLength={60} />
             </div>
-            <div>
+            <div className="space-y-1.5">
               <Label htmlFor="badge-desc">Description</Label>
               <Textarea id="badge-desc" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Why this badge exists" maxLength={200} className="min-h-20" />
             </div>
-            <div>
+            <div className="space-y-1.5">
               <Label htmlFor="badge-icon">Icon (lucide-react name)</Label>
               <Input id="badge-icon" value={form.icon} onChange={e => setForm({ ...form, icon: e.target.value })} placeholder="Award" maxLength={50} />
             </div>

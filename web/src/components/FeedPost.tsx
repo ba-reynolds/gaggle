@@ -36,9 +36,12 @@ import {
   Loader2,
   MessageCircle,
   MoreHorizontal,
+  Pencil,
+  Pin,
   Plus,
   Repeat2,
   Share,
+  Trash2,
   UserPlus,
   UserX,
 } from "lucide-react";
@@ -46,6 +49,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import ComposeContent from "./ComposeContent";
+import HashtagText from "./HashtagText";
 import MediaGallery, { type GalleryItem } from "./MediaGallery";
 import PollCard from "./PollCard";
 import UserHoverCard from "./UserHoverCard";
@@ -54,18 +58,6 @@ import { useDebounce } from "@/hooks/useDebounce";
 
 interface PostProps {
   post: Post;
-}
-
-function renderPostContent(content: string) {
-  return content.split(/(#[\p{L}\p{N}_]+)/gu).map((part, index) => {
-    if (!part.startsWith('#')) return <React.Fragment key={`${part}-${index}`}>{part}</React.Fragment>;
-    const tag = part.slice(1).toLowerCase();
-    return (
-      <Link key={`${part}-${index}`} to={`/hashtags/${encodeURIComponent(tag)}`} onClick={(event) => event.stopPropagation()} className="text-primary hover:underline">
-        {part}
-      </Link>
-    );
-  });
 }
 
 const FeedPost: React.FC<PostProps> = ({ post }) => {
@@ -335,9 +327,18 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="border border-muted">
                     {isOwnPost && <>
-                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setEditText(content); setEditDialogOpen(true); }}>Edit post</DropdownMenuItem>
-                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); pinMutation.mutate({ postId: id, pinned: post.is_pinned, username: author.username }, { onError: () => toast.error(post.is_pinned ? "Failed to unpin post." : "Failed to pin post.") }); }}>{post.is_pinned ? "Unpin from profile" : "Pin to profile"}</DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); if (window.confirm("Delete this post and its replies?")) deleteMutation.mutate({ postId: id, username: author.username }, { onError: () => toast.error("Failed to delete post.") }); }}>Delete post</DropdownMenuItem>
+                      <DropdownMenuItem className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setEditText(content); setEditDialogOpen(true); }}>
+                        <Pencil className="h-4 w-4 mr-2" />
+                        <span>Edit post</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="cursor-pointer" onClick={(e) => { e.stopPropagation(); pinMutation.mutate({ postId: id, pinned: post.is_pinned, username: author.username }, { onError: () => toast.error(post.is_pinned ? "Failed to unpin post." : "Failed to pin post.") }); }}>
+                        <Pin className="h-4 w-4 mr-2" />
+                        <span>{post.is_pinned ? "Unpin from profile" : "Pin to profile"}</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive" onClick={(e) => { e.stopPropagation(); if (window.confirm("Delete this post and its replies?")) deleteMutation.mutate({ postId: id, username: author.username }, { onError: () => toast.error("Failed to delete post.") }); }}>
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        <span>Delete post</span>
+                      </DropdownMenuItem>
                     </>}
                     {!isOwnPost && (
                       <DropdownMenuItem className="cursor-pointer" onClick={handleFollowToggle}>
@@ -349,10 +350,6 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                         <span>{following ? `Unfollow @${author.username}` : `Follow @${author.username}`}</span>
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setQuoteDialogOpen(true); }}>
-                      <Repeat2 className="h-4 w-4 mr-2" />
-                      <span>Quote post</span>
-                    </DropdownMenuItem>
                     {!isOwnPost && (
                       <>
                         {following ? (
@@ -372,7 +369,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                 </DropdownMenu>
               </div>
 
-              <p className="mt-2 whitespace-pre-wrap text-sm text-primary">{renderPostContent(content)}</p>
+              <p className="mt-2 whitespace-pre-wrap text-sm text-primary"><HashtagText content={content} /></p>
               {post.poll && <PollCard poll={post.poll} postId={id} />}
               {isOwnPost && <button className="mt-2 text-xs text-muted-foreground hover:underline" onClick={(event) => { event.stopPropagation(); setHistoryOpen((open) => !open); }}>
                 {historyOpen ? "Hide edit history" : "View edit history"}
@@ -417,23 +414,37 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
               <span className="hidden md:inline text-xs">{engagement.reply_count}</span>
             </Button>
 
-            {/* Repost Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`h-8 gap-1 border border-transparent transition-colors duration-300 ${
-                engagement.is_reposted
-                  ? 'text-green-500 hover:text-green-500 hover:bg-green-50 hover:border-green-400'
-                  : 'text-muted-foreground hover:text-green-500 hover:bg-green-50 hover:border-green-400'
-              }`}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleRepost();
-              }}
-            >
-              <Repeat2 className="h-4 w-4" />
-              <span className="hidden md:inline text-xs">{formatCount(engagement.repost_count)}</span>
-            </Button>
+            {/* Repost Button (dropdown: repost or quote) */}
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`h-8 gap-1 border border-transparent transition-colors duration-300 ${
+                    engagement.is_reposted
+                      ? 'text-green-500 hover:text-green-500 hover:bg-green-50 hover:border-green-400'
+                      : 'text-muted-foreground hover:text-green-500 hover:bg-green-50 hover:border-green-400'
+                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRepost();
+                  }}
+                >
+                  <Repeat2 className="h-4 w-4" />
+                  <span className="hidden md:inline text-xs">{formatCount(engagement.repost_count)}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="border border-muted">
+                <DropdownMenuItem className="cursor-pointer" onClick={(e) => { e.stopPropagation(); handleRepost(); }}>
+                  <Repeat2 className="h-4 w-4 mr-2" />
+                  <span>{engagement.is_reposted ? "Remove repost" : "Repost"}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setQuoteDialogOpen(true); }}>
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  <span>Quote post</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* Like Button */}
             <Button
@@ -600,6 +611,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
             submitLabel="Reply"
             textareaHeight="h-24"
             parentId={id}
+            onSubmit={() => setReplyDialogOpen(false)}
           />
         </CustomDialogContent>
       </Dialog>

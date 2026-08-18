@@ -39,16 +39,9 @@ const PostPage = () => {
 
       {/* Parent chain */}
       {parentChain.length > 0 && (
-        <div className="relative">
-          {/* Connecting line */}
-          <div className="absolute left-[1.25rem] top-0 bottom-0 w-[2px] bg-border" />
-
+        <div className="mt-2">
           {parentChain.map((parent) => (
-            <div key={parent.id} className="relative">
-              {/* Horizontal connecting line */}
-              <div className="absolute left-[1.25rem] top-1/2 w-4 h-[2px] bg-border" />
-              <FeedPost post={parent} />
-            </div>
+            <FeedPost key={parent.id} post={parent} />
           ))}
         </div>
       )}
@@ -64,20 +57,13 @@ const PostPage = () => {
       </div>
 
       {/* Replies */}
-      <div className="mt-4 relative">
-        {/* Connecting line for replies */}
-        <div className="absolute left-[1.25rem] top-0 bottom-0 w-[2px] bg-border" />
-
+      <div className="mt-4">
         {replies.length > 0 ? (
-          <>
+          <div className="space-y-2">
             {replies.map((reply) => (
-              <div key={reply.id} className="relative">
-                {/* Horizontal connecting line */}
-                <div className="absolute left-[1.25rem] top-1/2 w-4 h-[2px] bg-border" />
-                <FeedPost post={reply} />
-              </div>
+              <FeedPost key={reply.id} post={reply} />
             ))}
-          </>
+          </div>
         ) : (
           <div className="text-center py-8 text-muted-foreground">
             No replies yet

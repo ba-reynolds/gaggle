@@ -25,6 +25,8 @@ export default function ConversationPage() {
     () => [...(messages.data?.pages ?? [])].flatMap((page) => page.data.items),
     [messages.data]
   );
+  // API returns newest-first; display chronologically (oldest top, newest bottom).
+  const displayMessages = useMemo(() => [...allMessages].reverse(), [allMessages]);
 
   // Mark the conversation read when opened.
   useEffect(() => {
@@ -86,7 +88,7 @@ export default function ConversationPage() {
             {messages.hasNextPage && (
               <Button variant="ghost" className="w-full text-sm" onClick={() => void messages.fetchNextPage()}>Load older</Button>
             )}
-            {allMessages.map((m) => {
+            {displayMessages.map((m) => {
               const mine = m.sender.username === user.username;
               return (
                 <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>

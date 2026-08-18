@@ -147,3 +147,17 @@ Tricky things learned while working on this repo (newest on top).
   invalidates `dm-conversations`/`dm-unread-count` on `dm.new`, `dm.unread`, and
   `stream.resync` in NotificationsContext. Message query cache keys are
   `dm-messages`/`dm-conversation`.
+- **Search/hashtag feeds must default `Engagement` to an empty struct** —
+  `search_service.hydrateFeed` assigns `item.Engagement = engagements[item.ID]`
+  which is nil for posts with no likes/reposts/bookmarks; the frontend FeedPost
+  dereferences `engagement.*` and crashes (blank screen). Always populate counts
+  (`LikeCount = item.LikesCount`, etc.) like `hydrateEngagement` in post_service.
+- Frontend engagement optimistic updates are **delta-based**: `applyEngagementMerge`
+  in `usePost.ts` adds numeric fields (`like_count`/`repost_count`/`bookmark_count`)
+  to the current value (clamped ≥0) instead of overwriting, so like→unlike at 0
+  stays 0 rather than −1. Booleans (`is_*`) are set absolutely.
+- Hashtag rendering is centralized in `web/src/components/HashtagText.tsx`
+  (accent-colored `text-blue-600 dark:text-blue-400` links). ComposeContent shows
+  a live highlight via a mirror `<div>` behind a transparent-caret textarea; the
+  `.hashtag-composer` CSS in `index.css` keeps the placeholder visible while the
+  text fill is transparent.

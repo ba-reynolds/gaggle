@@ -120,3 +120,16 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ComposeContent live hashtag highlight: the editing textarea has transparent
+   text (visible caret) so the highlighted mirror shows through, but the
+   placeholder must stay visible and inherit theme color. */
+.hashtag-composer {
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  caret-color: var(--foreground);
+}
+.hashtag-composer::placeholder {
+  color: var(--muted-foreground);
+  -webkit-text-fill-color: var(--muted-foreground);
+}

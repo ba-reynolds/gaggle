@@ -125,6 +125,23 @@ const updateAuthorInAllQueries = (
 
 type EngagementUpdates = Partial<Post['engagement']>;
 
+// Numeric engagement fields are treated as deltas so like/unlike +1/-1 never
+// clobber the true count (e.g. unlike at 0 must land at 0, not -1).
+const applyEngagementMerge = (
+  base: Post['engagement'],
+  updates: EngagementUpdates
+): Post['engagement'] => {
+  const next = { ...base };
+  (Object.entries(updates) as [keyof Post['engagement'], Post['engagement'][keyof Post['engagement']]][]).forEach(([key, value]) => {
+    if ((key === 'like_count' || key === 'repost_count' || key === 'bookmark_count') && typeof value === 'number') {
+      next[key] = Math.max(0, (base[key] as number) + value);
+    } else {
+      (next as Record<string, unknown>)[key] = value;
+    }
+  });
+  return next;
+};
+
 // Common mutation pattern for post engagement
 const useEngagementMutation = <TVariables>(
   mutationFn: (variables: TVariables) => Promise<Envelope<BookmarkActionResponse>>,
@@ -141,20 +158,14 @@ const useEngagementMutation = <TVariables>(
       await queryClient.cancelQueries({ queryKey: ['post', postId] });
       updatePostInAllQueries(queryClient, postId, (post) => ({
         ...post,
-        engagement: {
-          ...post.engagement,
-          ...optimisticUpdate(variables),
-        },
+        engagement: applyEngagementMerge(post.engagement, optimisticUpdate(variables)),
       }));
     },
     onError: (_err, variables) => {
       const postId = getPostId(variables);
       updatePostInAllQueries(queryClient, postId, (post) => ({
         ...post,
-        engagement: {
-          ...post.engagement,
-          ...rollbackUpdate(variables),
-        },
+        engagement: applyEngagementMerge(post.engagement, rollbackUpdate(variables)),
       }));
     },
   });
@@ -165,7 +176,7 @@ export function useCreatePost() {
 
   return useMutation<Envelope<Post>, Error, CreatePostPayload>({
     mutationFn: createPost,
-    onSuccess: (response) => {
+    onSuccess: (response, variables) => {
       // Add the new post to the beginning of the feed
       queryClient.setQueryData<InfinitePages>(
         ['feed'],
@@ -186,6 +197,14 @@ export function useCreatePost() {
           };
         }
       );
+      // A reply must refresh the parent post page (ancestors + descendants).
+      if (variables.parent_id != null) {
+        void queryClient.invalidateQueries({ queryKey: ['post', variables.parent_id] });
+      }
+      // New content can show up in profile / search / hashtag feeds.
+      void queryClient.invalidateQueries({ queryKey: ['user-posts'] });
+      void queryClient.invalidateQueries({ queryKey: ['search-posts'] });
+      void queryClient.invalidateQueries({ queryKey: ['hashtag-posts'] });
     },
   });
 }

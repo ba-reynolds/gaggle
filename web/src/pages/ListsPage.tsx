@@ -81,11 +81,11 @@ const ListsPage: React.FC = () => {
         <CustomDialogContent className="sm:max-w-md bg-card">
           <DialogHeader><DialogTitle className="text-primary">New list</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div>
+            <div className="space-y-1.5">
               <Label htmlFor="list-name">Name</Label>
               <Input id="list-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Go developers" maxLength={100} />
             </div>
-            <div>
+            <div className="space-y-1.5">
               <Label htmlFor="list-desc">Description</Label>
               <Textarea id="list-desc" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What's this list about?" maxLength={300} className="min-h-20" />
             </div>
