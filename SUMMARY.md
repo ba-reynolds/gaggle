@@ -1,3 +1,60 @@
+# SUMMARY — pinned-post-menu-fixes
+
+Pinning a post from the main timeline never showed the "Unpin from profile"
+option on the newly pinned post. Root cause was a server-side cache, not the
+client local store.
+
+## What was changed and why
+
+**Root cause:** `GET /posts/feed` is served from a 60-second Redis cache
+(`feed:home:{userID}:{cursor}`) in `handlers.GetHomeFeed`. When a user pinned a
+second post, the DB and the `/users/{username}/pinned` endpoint updated
+correctly, but `PinPost` never invalidated the home-feed cache — so the main
+timeline kept serving the previous `is_pinned` flags for up to 60s. The
+frontend correctly refetched `['feed']` after the pin, but the API returned the
+stale cached copy. Result: the newly pinned post's menu still showed "Pin to
+profile" (no "Unpin from profile" option).
+
+Reproduced against the live stack: after pinning post 39, `/posts/feed`
+returned 40 pinned / 39 not (stale), while the DB and pinned endpoint returned
+39 pinned / 40 not (truth).
+
+**Fix:** `PostHandler.PinPost`, `UnpinPost`, `UpdatePost`, and
+`DeletePostByID` now all call `invalidateFeedForUserAndFollowers(ctx, user.ID)`
+after a successful write — the same helper `CreatePost` and the engagement
+handler already use. The feed must be dropped on any write that changes
+`is_pinned` (pin/unpin), post content/`edited_at` (edit), or post
+existence (delete), because that data is embedded in every cached home-feed
+payload for the author *and* their followers.
+
+## Files touched
+- `server/internal/handlers/post_handler.go` — cache invalidation added to
+  `PinPost`, `UnpinPost`, `UpdatePost`, `DeletePostByID` (nil-safe helper,
+  no-op when Redis is absent)
+- `.opencode/project-notes.md` — recorded the Redis home-feed cache gotcha
+
+## Verification
+- `go build ./...` and `go vet ./...` pass.
+- `go test ./...` passes (handlers integration tests cover pin/unpin/update/
+  delete flows; the harness runs without Redis).
+- Rebuilt the `api` container from this branch and repeated the repro sequence:
+  seed cache → pin 40 → home feed immediately shows 40 pinned / 39 unpinned
+  (was stale before); restored pin 39 → feed correct. DB state left as found
+  (post 39 pinned).
+
+## Things a reviewer should double-check
+- `UpdatePost` now invalidates the feed for the author + followers because a
+  content/`edited_at` change shows up in cached home-feed payloads; this closes
+  the same staleness class (edited posts showing old content in the timeline).
+- Redis staleness is not covered by `go test` (test harness passes `nil` rdb,
+  no seam to fake the concrete `*cache.Client`). Rebuilding/verifying against
+  the live stack is the regression check. A Redis-backed test would need a
+  cache interface or a test Redis.
+- The running API container now serves this branch's build (shared single
+  compose stack) — other parallel agent sessions may see their branch lose the
+  running build.
+
+---
 # SUMMARY — ui-responsiveness-fixes
 
 Batch of UI responsiveness bugs, fixed across the Go API and the React client.

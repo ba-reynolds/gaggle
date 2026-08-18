@@ -2,6 +2,23 @@
 
 Tricky things learned while working on this repo (newest on top).
 
+## Server: home feed Redis cache + pin/edit/delete invalidation
+- `GET /posts/feed` is served from a 60s Redis cache (`feed:home:{userID}:{cursor}`,
+  `handlers.GetHomeFeed`). Any write that changes `is_pinned`, content, or post
+  existence must invalidate via `PostHandler.invalidateFeedForUserAndFollowers`
+  or the timeline serves stale JSON for up to a minute.
+- PIN BUG (fixed): `PinPost`/`UnpinPost`/`UpdatePost`/`DeletePostByID` never
+  invalidated the cache, so after pinning a new post the main timeline kept
+  showing the OLD pinned flags — the newly pinned post's menu never gained
+  "Unpin from profile". `CreatePost` and the engagement handler already
+  invalidated; the four write handlers did not — now they all do.
+- The non-cached paths keep the cache fresh on the profile: user feed, pinned
+  endpoint (`/users/{u}/pinned`), and single-post fetches all hit the DB, which
+  is why only the main timeline looked stale.
+- Test harness (`testutil.NewApp`) passes `nil` rdb, so Redis staleness is NOT
+  covered by integration tests — cache client is concrete (`*cache.Client`), no
+  seam for a fake. Verify cache behavior against the live stack instead.
+
 ## Theme system (current work, uncommitted)
 - Themes swap via CSS variables: `theme-themes.css` holds scoped blocks
   `:root[data-theme="..."]` / `.dark[data-theme="..."]` setting shadcn tokens

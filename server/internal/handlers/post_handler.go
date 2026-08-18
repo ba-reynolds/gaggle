@@ -332,6 +332,10 @@ func (h *PostHandler) DeletePostByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// The soft-deleted post must disappear from cached home feeds immediately.
+	// Without this the cache (60s TTL) keeps serving the deleted post.
+	h.invalidateFeedForUserAndFollowers(r.Context(), user.ID)
+
 	if err := util.RespondWithJson(w, http.StatusOK, nil); err != nil {
 		h.logger.Error("failed to write HTTP response",
 			"error", err,
@@ -377,6 +381,9 @@ func (h *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 		h.respondError(w, err)
 		return
 	}
+	// An edit changes the content/edited_at shown in cached home feeds for the
+	// author and their followers.
+	h.invalidateFeedForUserAndFollowers(r.Context(), user.ID)
 	full, err := h.service.Posts.GetFullPostByID(r.Context(), updated.ID, user.ID)
 	if err != nil {
 		h.respondError(w, err)
@@ -431,6 +438,10 @@ func (h *PostHandler) PinPost(w http.ResponseWriter, r *http.Request) {
 		h.respondError(w, err)
 		return
 	}
+	// is_pinned is part of each cached home feed payload, and pinning one post
+	// implicitly unpins the previous one. Drop the cached feeds so the new pin
+	// state is served immediately instead of after the cache TTL expires.
+	h.invalidateFeedForUserAndFollowers(r.Context(), user.ID)
 	util.RespondWithJson(w, http.StatusOK, map[string]bool{"success": true})
 }
 
@@ -458,6 +469,9 @@ func (h *PostHandler) UnpinPost(w http.ResponseWriter, r *http.Request) {
 		h.respondError(w, err)
 		return
 	}
+	// is_pinned is part of each cached home feed payload; drop the cached feeds
+	// so the unpinned state is served immediately.
+	h.invalidateFeedForUserAndFollowers(r.Context(), user.ID)
 	util.RespondWithJson(w, http.StatusOK, map[string]bool{"success": true})
 }
 
