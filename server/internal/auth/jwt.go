@@ -8,6 +8,7 @@ import (
 	"github.com/ba-reynolds/gophersocial/internal/models"
 	"github.com/ba-reynolds/gophersocial/pkg/config"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 type JWTAuthenticator struct {
@@ -61,6 +62,10 @@ func (a *JWTAuthenticator) generateToken(userID int, tokenType TokenType) (*mode
 		"iss": a.issuer,
 		"aud": a.issuer,
 		"typ": string(tokenType),
+		// jti makes every token unique even when issued within the same second
+		// (iat/exp are second-resolved, so without it tokens are deterministic
+		// and two refresh tokens generated in quick succession collide).
+		"jti": uuid.NewString(),
 	}
 
 	tokenString, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(a.secret))

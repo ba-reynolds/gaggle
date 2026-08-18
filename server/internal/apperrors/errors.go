@@ -16,6 +16,7 @@ const (
 	Validation      = "VALIDATION"
 	InternalServer  = "INTERNAL_SERVER"
 	InvalidToken    = "INVALID_TOKEN"
+	SessionExpired  = "SESSION_EXPIRED"
 	UsernameExists  = "USERNAME_EXISTS"
 	EmailExists     = "EMAIL_EXISTS"
 	TooManyRequests = "TOO_MANY_REQUESTS"
@@ -137,6 +138,18 @@ func InternalServerError(err error) *AppError {
 func InvalidTokenError(message string, err error) *AppError {
 	return &AppError{
 		Code:    InvalidToken,
+		Message: message,
+		Status:  http.StatusUnauthorized,
+		Err:     err,
+	}
+}
+
+// SessionExpiredError creates a new session expired error, distinct from a
+// generic auth failure so the client can tell "your session is over, sign in
+// again" apart from "invalid credentials".
+func SessionExpiredError(message string, err error) *AppError {
+	return &AppError{
+		Code:    SessionExpired,
 		Message: message,
 		Status:  http.StatusUnauthorized,
 		Err:     err,

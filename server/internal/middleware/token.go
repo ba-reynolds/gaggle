@@ -91,6 +91,19 @@ func AuthTokenMiddleware(service *service.Service, logger *slog.Logger) func(htt
 				return
 			}
 
+			// A soft-deleted (e.g. banned) user is rejected on the very next
+			// request instead of staying authorized for the access-token
+			// lifetime. GetByID already hits the DB, so this costs nothing.
+			if user.SoftDeleted {
+				logger.Warn("soft-deleted user rejected in auth middleware",
+					"userID", user.ID,
+					"path", r.URL.Path,
+					"method", r.Method,
+				)
+				util.RespondWithAppError(w, apperrors.UnauthorizedError("user is not active", nil))
+				return
+			}
+
 			// Set user in request context
 			ctx := context.WithValue(r.Context(), authUserContext, user)
 			next.ServeHTTP(w, r.WithContext(ctx))

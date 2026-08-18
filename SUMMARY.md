@@ -1,3 +1,117 @@
+# SUMMARY — refresh-token-rotation
+
+Refresh tokens now rotate on every use, sessions are grouped into families,
+and replayed (theft) tokens kill the whole family. Daily-active users are no
+longer logged out on a fixed 15-day-from-login schedule; sessions instead end
+by (a) idle timeout (unchanged `JWT_REFRESH_TOKEN_EXPIRATION_TIME`, now
+interpreted as the gap between refreshes), (b) explicit logout, or
+(c) a detected replay.
+
+## What was changed and why
+
+Review feedback flagged three problems with the old single-long-lived refresh
+token: a hard 15-day wall even for daily users, silent logouts, and no way to
+detect theft. Full rotation decouples "how long can a session live while the
+user keeps using it" from "how long can an idle/stolen token stay valid".
+
+- **Rotation on every refresh** (`AuthService.RefreshToken`): validates the
+  presented refresh JWT, then in one transaction (`DB.BeginTx` + rollback on
+  error) inserts the successor token and marks the presented one
+  `revoked, revoked_reason='rotated'`. The handler now hands the successor
+  back through the same httpOnly `refresh_token` cookie
+  (`auth_handler.go`) — previously the refresh endpoint returned only the
+  access token and never updated the cookie, which would have made rotation
+  impossible (clients would keep replaying the revoked token and trip their
+  own theft detector). This cookie wiring is the single most important line.
+- **Session families** (`refresh_tokens.session_id`): every login/register
+  mints a UUID session id; all tokens from one login share it. Migration
+  `000016` backfills existing rows with `session_id = refresh_token_id` so
+  no one is logged out by the deploy.
+- **Theft detection**: a refresh arriving at a token already marked
+  `'rotated'` revokes the entire `session_id` family (`reason='theft'`) and
+  returns 401. Logout revokes the family too (`reason='logout'`) and is now
+  idempotent — logging out with a stale/garbage cookie returns 200 instead
+  of 404.
+- **SESSION_EXPIRED error code** (`apperrors.SessionExpiredError`): expired
+  or revoked refresh tokens map to 401 with `code: "SESSION_EXPIRED"`
+  (detected via `errors.Is(err, jwt.ErrTokenExpired)`), distinct from a
+  generic `UNAUTHORIZED`. The frontend `AuthContext` toasts "Your session
+  has expired" on this code instead of silently dropping the user to the
+  login screen.
+- **Realtime streams survive rotation**: `GetUserIDFromRefreshToken` (used by
+  the SSE stream heartbeat) now checks the session *family* is alive
+  (`SessionHasActiveToken`) rather than the exact token, so the stream does
+  not drop ~15s after every access-token refresh.
+- **Bug found while testing**: JWTs were deterministic — claims use
+  second-resolution `iat`/`exp`, so two refresh tokens issued within the same
+  second (rotation chains, parallel tabs) were byte-identical and broke the
+  entire scheme. Fixed by adding a random `jti` claim in `auth/jwt.go`.
+- **Free moderation win**: auth middleware already loads the user per request
+  (`GET /users/me` style), so it now rejects soft-deleted accounts on the
+  next request instead of leaving them authorized for the access-token
+  lifetime (`middleware/token.go`).
+
+## Behavior summary
+
+- Old: logged out exactly 15 days after login no matter what.
+- New: a user who refreshes at least once per 15 days stays logged in
+  indefinitely; an idle session dies after 15 days without a refresh; a
+  logged-out or replayed session dies immediately (family revoked).
+
+## Files touched
+
+- `server/cmd/migrate/migrations/000016_add-refresh-token-session.{up,down}.sql` (new; additive + backfill)
+- `server/internal/models/auth.go` — `SessionID`, `RevokedReason` + constants
+- `server/internal/store/auth_store.go` — `RotateRefreshToken`, `RevokeSession`, `SessionHasActiveToken`; `CreateRefreshToken`/`GetRefreshToken` read/write new columns
+- `server/internal/store/store.go` — Auth interface updated (dropped `MarkRefreshTokenAsRevoked`)
+- `server/internal/service/auth_service.go` — rotation, theft handling, family logout, session-aware stream auth
+- `server/internal/service/service.go` — `RefreshToken` interface signature
+- `server/internal/handlers/auth_handler.go` — refresh now sets the rotated cookie
+- `server/internal/middleware/token.go` — reject soft-deleted users
+- `server/internal/apperrors/errors.go` — `SESSION_EXPIRED`
+- `server/internal/auth/jwt.go` — `jti` claim (unique tokens)
+- `web/src/contexts/AuthContext.tsx` — session-expired toast (bootstrap + interceptor)
+- `server/internal/testutil/testutil.go` — cookie support + exposed `Service` (test infra)
+- `server/internal/handlers/integration_test.go` — 4 new tests
+
+## Verification
+
+- `go build ./...`, `go vet ./...` clean.
+- `go test ./...` all pass, including new:
+  - `TestRefreshTokenRotation` — rotates every refresh; reusing a rotated
+    token → 401 `SESSION_EXPIRED` and the whole family dies (newest token
+    included).
+  - `TestRefreshTokenRotationChain` — multiple refreshes keep working and
+    stream-style auth (`GetUserIDFromRefreshToken`) accepts an older rotated
+    token of a live session.
+  - `TestRefreshTokenLogoutRevokesFamily` — logout revokes the family; stale
+    and garbage-cookie logouts are idempotent 200s.
+  - `TestRefreshTokenExpiredRejected` — hand-signed expired refresh token →
+    401 `SESSION_EXPIRED`.
+- `npm run build` (tsc + vite) passes; `npm run lint` reports the same 14
+  pre-existing warnings as the base branch, zero new.
+
+## Things a reviewer should double-check
+
+- **Cross-tab race (known limitation):** two browser tabs refreshing the
+  *same* token concurrently — the loser sees `'rotated'` reuse and revokes
+  the whole family, logging the user out. The frontend single-flights per
+  tab only. An earlier plan discussed a grace window before nuking the family;
+  it was deliberately left out for simplicity. If false-positive logouts
+  appear in practice, add a short grace period in `AuthService.RefreshToken`
+  before calling `RevokeSession`.
+- **Migration order**: `000016` must run before deploy. Fine via the
+  container auto-migrate; nothing breaks if run late since backfill protects
+  existing rows.
+- **`t.TempDir()`/test DB**: `test-testutil` drops/recreates `social_test`
+  each run; no stored dev data was touched (handler tests build their own).
+- Old refresh tokens (issued before this change) keep working: they get
+  migrated into single-token families and are legitimately rotated on next
+  refresh.
+
+
+---
+
 # SUMMARY — post-thread-and-bookmark-fixes
 
 Verified a batch of five reported UI bugs against the running app and fixed the

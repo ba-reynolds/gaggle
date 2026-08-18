@@ -120,8 +120,9 @@ func applyMigrations(db *sql.DB) error {
 
 // App wires the full backend (store + services + router) against the given DB.
 type App struct {
-	DB     *sql.DB
-	Router http.Handler
+	DB      *sql.DB
+	Router  http.Handler
+	Service *service.Service
 }
 
 // NewApp builds the application stack without Redis (tests don't depend on it).
@@ -145,15 +146,16 @@ func NewApp(t *testing.T, db *sql.DB) *App {
 	store := store.NewStore(db, log, cfg.AppConfig.MediaDir)
 	svc := service.NewService(store, log, authenticator, cfg.AppConfig)
 	router := api.NewRouter(svc, log, nil, 0, 0, false)
-	return &App{DB: db, Router: router}
+	return &App{DB: db, Router: router, Service: svc}
 }
 
 // Request is a thin helper for making JSON API calls in tests.
 type Request struct {
-	Method string
-	Path   string
-	Token  string
-	Body   any
+	Method  string
+	Path    string
+	Token   string
+	Body    any
+	Cookies []*http.Cookie
 }
 
 // Do performs the request and returns the recorder.
@@ -176,6 +178,9 @@ func (a *App) Do(t *testing.T, req Request) *httptest.ResponseRecorder {
 	}
 	if req.Token != "" {
 		httpReq.Header.Set("Authorization", "Bearer "+req.Token)
+	}
+	for _, c := range req.Cookies {
+		httpReq.AddCookie(c)
 	}
 
 	rec := httptest.NewRecorder()

@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"log/slog"
 	"strings"
 
@@ -10,6 +12,7 @@ import (
 	"github.com/ba-reynolds/gophersocial/internal/models"
 	"github.com/ba-reynolds/gophersocial/internal/store"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -73,31 +76,55 @@ func (s *AuthService) Login(ctx context.Context, identifier string, password str
 	return accessToken, refreshToken, nil
 }
 
-func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenString string) (*models.Token, error) {
+// RefreshToken validates a refresh token, rotates it (issues a successor and
+// retires the presented one atomically), and mints a fresh access token.
+// Reusing an already-rotated token is treated as theft: the whole session
+// family is revoked. An expired-but-well-signed token maps to SESSION_EXPIRED
+// so the client can distinguish "session over" from "bad credentials".
+func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenString string, ipAddress string, userAgent string) (*models.Token, *models.Token, error) {
 	// Validate refresh token
 	parsedRefreshToken, err := s.authenticator.ValidateToken(refreshTokenString, auth.RefreshToken)
 	if err != nil {
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			s.logger.Info("expired refresh token used",
+				"operation", "refresh_token",
+				"error", err,
+			)
+			return nil, nil, apperrors.SessionExpiredError("session expired", err)
+		}
 		s.logger.Error("failed to validate refresh token",
 			"operation", "refresh_token",
 			"error", err,
 		)
-		return nil, apperrors.UnauthorizedError("invalid token", err)
+		return nil, nil, apperrors.UnauthorizedError("invalid token", err)
 	}
 
-	// check db that refresh token hasn't been revoked
+	// Check the DB row for the presented token.
 	refreshTokenHash := auth.HashToken(refreshTokenString)
 	storedRefreshToken, err := s.store.Auth.GetRefreshToken(ctx, refreshTokenHash)
 	if err != nil {
-		return nil, err
+		// Row missing entirely: nothing to replay against. Treat as invalid.
+		if apperrors.Is(err, apperrors.NotFound) {
+			return nil, nil, apperrors.UnauthorizedError("invalid token", nil)
+		}
+		return nil, nil, err
 	}
 
 	if storedRefreshToken.Revoked {
-		s.logger.Debug("attempted to use revoked refresh token",
-			"tokenHash", refreshTokenHash,
-			"userID", storedRefreshToken.UserID,
-			"operation", "refresh_token",
-		)
-		return nil, apperrors.UnauthorizedError("invalid token", nil)
+		// A token that was already rotated away is being replayed: that is the
+		// signature of a stolen credential. Revoke the entire session family,
+		// including its current token, and park the session.
+		if storedRefreshToken.RevokedReason != nil && *storedRefreshToken.RevokedReason == models.RevokedReasonRotated {
+			s.logger.Warn("rotated refresh token reused; revoking session family",
+				"sessionID", storedRefreshToken.SessionID.String(),
+				"userID", storedRefreshToken.UserID,
+				"operation", "refresh_token",
+			)
+			if revokeErr := s.store.Auth.RevokeSession(ctx, nil, storedRefreshToken.SessionID, models.RevokedReasonTheft); revokeErr != nil {
+				return nil, nil, revokeErr
+			}
+		}
+		return nil, nil, apperrors.SessionExpiredError("session expired", nil)
 	}
 
 	// Get user ID from token
@@ -108,13 +135,31 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenString strin
 			"tokenHash", refreshTokenHash,
 			"error", err,
 		)
-		return nil, apperrors.UnauthorizedError("invalid token", err)
+		return nil, nil, apperrors.UnauthorizedError("invalid token", err)
 	}
 
 	// Check if user exists
-	_, err = s.store.Users.GetByID(ctx, userID)
+	if _, err := s.store.Users.GetByID(ctx, userID); err != nil {
+		return nil, nil, err
+	}
+
+	// Rotate the refresh token atomically: insert the successor, retire the
+	// presented token, all in one transaction.
+	tx, err := s.store.DB.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, err
+		return nil, nil, apperrors.InternalServerError(err)
+	}
+	defer tx.Rollback()
+
+	newRefreshToken, err := s.issueRefreshToken(ctx, tx, userID, storedRefreshToken.SessionID, ipAddress, userAgent)
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := s.store.Auth.RotateRefreshToken(ctx, tx, storedRefreshToken.TokenHash); err != nil {
+		return nil, nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, nil, apperrors.InternalServerError(err)
 	}
 
 	// Generate new access token
@@ -125,7 +170,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenString strin
 			"userID", userID,
 			"error", err,
 		)
-		return nil, apperrors.InternalServerError(err)
+		return nil, nil, apperrors.InternalServerError(err)
 	}
 
 	// Log successful business operations
@@ -133,14 +178,23 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenString strin
 		"userID", userID,
 	)
 
-	return accessToken, nil
+	return accessToken, newRefreshToken, nil
 }
 
+// CreateRefreshToken issues a refresh token for a brand-new session family.
+// Used at login and registration.
 func (s *AuthService) CreateRefreshToken(ctx context.Context, userID int, RemoteAddr string, userAgent string) (*models.Token, error) {
+	return s.issueRefreshToken(ctx, nil, userID, uuid.New(), RemoteAddr, userAgent)
+}
+
+// issueRefreshToken generates a signed refresh token and persists its hash.
+// sessionID ties it to a session family so rotation chain revocation works.
+// When tx is non-nil the row is created inside that transaction (rotation).
+func (s *AuthService) issueRefreshToken(ctx context.Context, tx *sql.Tx, userID int, sessionID uuid.UUID, remoteAddr string, userAgent string) (*models.Token, error) {
 	refreshToken, err := s.authenticator.GenerateRefreshToken(userID)
 	if err != nil {
 		s.logger.Error("failed to generate refresh token",
-			"operation", "create_refresh_token",
+			"operation", "issue_refresh_token",
 			"userID", userID,
 			"error", err,
 		)
@@ -154,17 +208,18 @@ func (s *AuthService) CreateRefreshToken(ctx context.Context, userID int, Remote
 	}
 
 	// Strip port from the ip address
-	ipAddress := strings.Split(RemoteAddr, ":")[0]
+	ipAddress := strings.Split(remoteAddr, ":")[0]
 
-	err = s.store.Auth.CreateRefreshToken(ctx, nil, &models.RefreshToken{
-		TokenHash: refreshTokenHash,
-		UserID:    userID,
-		IssuedAt:  refreshToken.IssuedAt,
-		Revoked:   false,
-		RevokedAt: nil,
-		ExpiresAt: refreshToken.ExpiresAt,
-		IPAddress: ipAddress,
-		UserAgent: userAgent,
+	err = s.store.Auth.CreateRefreshToken(ctx, tx, &models.RefreshToken{
+		SessionID:   sessionID,
+		TokenHash:   refreshTokenHash,
+		UserID:      userID,
+		IssuedAt:    refreshToken.IssuedAt,
+		Revoked:     false,
+		RevokedAt:   nil,
+		ExpiresAt:   refreshToken.ExpiresAt,
+		IPAddress:   ipAddress,
+		UserAgent:   userAgent,
 	})
 	if err != nil {
 		return nil, err
@@ -175,14 +230,27 @@ func (s *AuthService) CreateRefreshToken(ctx context.Context, userID int, Remote
 
 func (s *AuthService) Logout(ctx context.Context, refreshTokenString string) error {
 	refreshTokenHash := auth.HashToken(refreshTokenString)
-	err := s.store.Auth.MarkRefreshTokenAsRevoked(ctx, nil, refreshTokenHash)
+	stored, err := s.store.Auth.GetRefreshToken(ctx, refreshTokenHash)
 	if err != nil {
+		// Session already gone (expired, rotated, or unknown token): logout
+		// stays idempotent so clearing the cookie is always valid.
+		if apperrors.Is(err, apperrors.NotFound) {
+			s.logger.Debug("logout for unknown refresh token",
+				"operation", "logout",
+			)
+			return nil
+		}
+		return err
+	}
+
+	if err := s.store.Auth.RevokeSession(ctx, nil, stored.SessionID, models.RevokedReasonLogout); err != nil {
 		return err
 	}
 
 	// Log successful business operations
 	s.logger.Info("user logged out successfully",
-		"tokenHash", refreshTokenHash,
+		"userID", stored.UserID,
+		"sessionID", stored.SessionID.String(),
 	)
 
 	return nil
@@ -196,6 +264,10 @@ func (s *AuthService) GetUserIDFromToken(token *jwt.Token) (int, error) {
 	return s.authenticator.GetUserIDFromToken(token)
 }
 
+// GetUserIDFromRefreshToken authenticates a long-lived connection (e.g. the
+// realtime stream) from a refresh token. It checks the session *family* rather
+// than the exact token so the stream survives refresh-token rotation; only a
+// fully dead (logged-out or stolen) session is rejected.
 func (s *AuthService) GetUserIDFromRefreshToken(ctx context.Context, tokenString string) (int, error) {
 	parsed, err := s.authenticator.ValidateToken(tokenString, auth.RefreshToken)
 	if err != nil {
@@ -205,15 +277,25 @@ func (s *AuthService) GetUserIDFromRefreshToken(ctx context.Context, tokenString
 	hash := auth.HashToken(tokenString)
 	stored, err := s.store.Auth.GetRefreshToken(ctx, hash)
 	if err != nil {
+		if apperrors.Is(err, apperrors.NotFound) {
+			return 0, apperrors.UnauthorizedError("invalid token", nil)
+		}
 		return 0, err
 	}
-	if stored.Revoked {
-		return 0, apperrors.UnauthorizedError("invalid token", nil)
-	}
+
 	userID, err := s.authenticator.GetUserIDFromToken(parsed)
 	if err != nil {
 		return 0, apperrors.UnauthorizedError("invalid token", err)
 	}
+
+	active, err := s.store.Auth.SessionHasActiveToken(ctx, stored.SessionID)
+	if err != nil {
+		return 0, err
+	}
+	if !active {
+		return 0, apperrors.UnauthorizedError("session is not active", nil)
+	}
+
 	if _, err := s.store.Users.GetByID(ctx, userID); err != nil {
 		return 0, err
 	}
