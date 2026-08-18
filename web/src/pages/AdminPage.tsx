@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Plus, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { useUser } from "@/contexts/UserContext";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 const emptyForm = (): CreateBadgePayload => ({ key: "", label: "", description: "", icon: "Award" });
 
@@ -32,6 +33,7 @@ const AdminPage: React.FC = () => {
   const [editing, setEditing] = useState<{ id: number } | null>(null);
   const [form, setForm] = useState<CreateBadgePayload>(emptyForm());
   const [grantedFor, setGrantedFor] = useState<Record<string, Record<number, boolean>>>({});
+  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
   const catalog = useMemo(() => catalogQuery.data?.data ?? [], [catalogQuery.data]);
 
@@ -94,12 +96,10 @@ const AdminPage: React.FC = () => {
   };
 
   const removeBadge = (id: number) => {
-    if (window.confirm("Delete this badge? Badges still assigned to users cannot be deleted.")) {
-      deleteBadge.mutate(id, {
-        onSuccess: () => toast.success("Badge deleted"),
-        onError: () => toast.error("Delete failed. Does a user still hold this badge?"),
-      });
-    }
+    deleteBadge.mutate(id, {
+      onSuccess: () => toast.success("Badge deleted"),
+      onError: () => toast.error("Delete failed. Does a user still hold this badge?"),
+    });
   };
 
   const earnedBadges = useMemo(() => catalog.filter(b => b.kind === 'earned'), [catalog]);
@@ -121,7 +121,7 @@ const AdminPage: React.FC = () => {
       {b.kind === 'assigned' && (
         <div className="flex gap-1 ml-3">
           <Button variant="ghost" size="icon" onClick={() => openEdit(b.id)}><Pencil className="h-4 w-4" /></Button>
-          <Button variant="ghost" size="icon" className="text-destructive" onClick={() => removeBadge(b.id)}><Trash2 className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" className="text-destructive" onClick={() => setDeleteTarget(b.id)}><Trash2 className="h-4 w-4" /></Button>
         </div>
       )}
     </div>
@@ -195,19 +195,19 @@ const AdminPage: React.FC = () => {
         <CustomDialogContent className="sm:max-w-md bg-card">
           <DialogHeader><DialogTitle className="text-primary">{editing ? "Edit badge" : "New badge"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label htmlFor="badge-key">Key</Label>
               <Input id="badge-key" value={form.key} onChange={e => setForm({ ...form, key: e.target.value })} placeholder="staff" maxLength={50} />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label htmlFor="badge-label">Label</Label>
               <Input id="badge-label" value={form.label} onChange={e => setForm({ ...form, label: e.target.value })} placeholder="Staff" maxLength={60} />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label htmlFor="badge-desc">Description</Label>
               <Textarea id="badge-desc" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Why this badge exists" maxLength={200} className="min-h-20" />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label htmlFor="badge-icon">Icon (lucide-react name)</Label>
               <Input id="badge-icon" value={form.icon} onChange={e => setForm({ ...form, icon: e.target.value })} placeholder="Award" maxLength={50} />
             </div>
@@ -221,6 +221,15 @@ const AdminPage: React.FC = () => {
           </DialogFooter>
         </CustomDialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete this badge?"
+        description="Badges still assigned to users cannot be deleted."
+        confirmLabel="Delete"
+        onConfirm={() => deleteTarget !== null && removeBadge(deleteTarget)}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+      />
     </div>
   );
 };

@@ -42,7 +42,7 @@ export default function NotificationsPage() {
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background/90 p-4 backdrop-blur">
+      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border p-4 backdrop-blur">
         <div>
           <h1 className="text-xl font-bold text-primary">Notifications</h1>
           <p className="text-sm text-muted-foreground">Stay close to what is happening.</p>

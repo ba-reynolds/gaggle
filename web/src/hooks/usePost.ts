@@ -161,6 +161,17 @@ const useEngagementMutation = <TVariables>(
         engagement: applyEngagementMerge(post.engagement, optimisticUpdate(variables)),
       }));
     },
+    onSuccess: (_data, variables) => {
+      // Refetch authoritative engagement state after the server confirms so
+      // the UI reflects the real counts even if optimistic math drifted.
+      const postId = getPostId(variables);
+      void queryClient.invalidateQueries({ queryKey: ['post', postId] });
+      void queryClient.invalidateQueries({ queryKey: ['feed'] });
+      void queryClient.invalidateQueries({ queryKey: ['bookmarked'] });
+      void queryClient.invalidateQueries({ queryKey: ['user-posts'] });
+      void queryClient.invalidateQueries({ queryKey: ['search-posts'] });
+      void queryClient.invalidateQueries({ queryKey: ['hashtag-posts'] });
+    },
     onError: (_err, variables) => {
       const postId = getPostId(variables);
       updatePostInAllQueries(queryClient, postId, (post) => ({

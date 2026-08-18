@@ -29,10 +29,10 @@ export function useHashtagPosts(tag: string) {
   });
 }
 
-export function useTrends() {
-  return useQuery({ queryKey: ['trends'], queryFn: async () => (await getTrends()).data });
+export function useTrends(enabled: boolean = true) {
+  return useQuery({ queryKey: ['trends'], queryFn: async () => (await getTrends()).data, enabled });
 }
 
-export function useSuggestedUsers(limit?: number) {
-  return useQuery({ queryKey: ['suggested-users', limit], queryFn: async () => (await getSuggestedUsers(limit)).data });
+export function useSuggestedUsers(limit?: number, enabled: boolean = true) {
+  return useQuery({ queryKey: ['suggested-users', limit], queryFn: async () => (await getSuggestedUsers(limit)).data, enabled });
 }

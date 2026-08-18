@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { List as ListIcon, Loader2, Plus, Trash2, Users } from 'lucide-react';
 import { toast } from 'sonner';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 const ListsPage: React.FC = () => {
   const { data, isLoading } = useMyLists();
@@ -19,6 +20,7 @@ const ListsPage: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
   const submit = () => {
     if (!name.trim()) return;
@@ -29,12 +31,10 @@ const ListsPage: React.FC = () => {
   };
 
   const remove = (id: number) => {
-    if (window.confirm('Delete this list?')) {
-      deleteList.mutate(id, {
-        onSuccess: () => toast.success('List deleted'),
-        onError: () => toast.error('Failed to delete list'),
-      });
-    }
+    deleteList.mutate(id, {
+      onSuccess: () => toast.success('List deleted'),
+      onError: () => toast.error('Failed to delete list'),
+    });
   };
 
   return (
@@ -69,7 +69,7 @@ const ListsPage: React.FC = () => {
                   <Users className="h-3 w-3" /> {list.member_count} members
                 </p>
               </div>
-              <Button variant="ghost" size="icon" className="text-destructive" onClick={(e) => { e.preventDefault(); remove(list.id); }}>
+              <Button variant="ghost" size="icon" className="text-destructive" onClick={(e) => { e.preventDefault(); setDeleteTarget(list.id); }}>
                 <Trash2 className="h-4 w-4" />
               </Button>
             </Link>
@@ -81,11 +81,11 @@ const ListsPage: React.FC = () => {
         <CustomDialogContent className="sm:max-w-md bg-card">
           <DialogHeader><DialogTitle className="text-primary">New list</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label htmlFor="list-name">Name</Label>
               <Input id="list-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Go developers" maxLength={100} />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label htmlFor="list-desc">Description</Label>
               <Textarea id="list-desc" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What's this list about?" maxLength={300} className="min-h-20" />
             </div>
@@ -99,6 +99,15 @@ const ListsPage: React.FC = () => {
           </DialogFooter>
         </CustomDialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete this list?"
+        description="This will permanently remove the list and its members."
+        confirmLabel="Delete"
+        onConfirm={() => deleteTarget !== null && remove(deleteTarget)}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+      />
     </div>
   );
 };

@@ -16,7 +16,7 @@ export default function SearchPage() {
 
   return (
     <div className="mx-auto w-full max-w-xl">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/90 p-4 backdrop-blur">
+      <header className="sticky top-0 z-10 border-b border-border p-4 backdrop-blur">
         <p className="text-xs uppercase tracking-wider text-muted-foreground">Search results</p>
         <h1 className="mt-1 text-2xl font-bold text-primary">{query ? `“${query}”` : 'Search'}</h1>
       </header>

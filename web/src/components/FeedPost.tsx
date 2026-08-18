@@ -49,6 +49,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import ComposeContent from "./ComposeContent";
+import ConfirmDialog from "./ConfirmDialog";
 import HashtagText from "./HashtagText";
 import MediaGallery, { type GalleryItem } from "./MediaGallery";
 import PollCard from "./PollCard";
@@ -67,6 +68,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
 
   const [replyDialogOpen, setReplyDialogOpen] = useState(false);
   const [quoteDialogOpen, setQuoteDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editText, setEditText] = useState(content);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -131,7 +133,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
     const mutation = engagement.is_reposted ? toggleUnrepost : toggleRepost;
     mutation(id, {
       onError: () => {
-        toast.error(`Failed to ${engagement.is_reposted ? 'remove repost' : 'repost'} post. Please try again.`);
+        toast.error(`Failed to ${engagement.is_reposted ? 'undo repost' : 'repost'}. Please try again.`);
       },
     });
   };
@@ -335,7 +337,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                         <Pin className="h-4 w-4 mr-2" />
                         <span>{post.is_pinned ? "Unpin from profile" : "Pin to profile"}</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive" onClick={(e) => { e.stopPropagation(); if (window.confirm("Delete this post and its replies?")) deleteMutation.mutate({ postId: id, username: author.username }, { onError: () => toast.error("Failed to delete post.") }); }}>
+                      <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteDialogOpen(true); }}>
                         <Trash2 className="h-4 w-4 mr-2" />
                         <span>Delete post</span>
                       </DropdownMenuItem>
@@ -425,10 +427,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                       ? 'text-green-500 hover:text-green-500 hover:bg-green-50 hover:border-green-400'
                       : 'text-muted-foreground hover:text-green-500 hover:bg-green-50 hover:border-green-400'
                   }`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRepost();
-                  }}
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <Repeat2 className="h-4 w-4" />
                   <span className="hidden md:inline text-xs">{formatCount(engagement.repost_count)}</span>
@@ -437,7 +436,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
               <DropdownMenuContent align="start" className="border border-muted">
                 <DropdownMenuItem className="cursor-pointer" onClick={(e) => { e.stopPropagation(); handleRepost(); }}>
                   <Repeat2 className="h-4 w-4 mr-2" />
-                  <span>{engagement.is_reposted ? "Remove repost" : "Repost"}</span>
+                  <span>{engagement.is_reposted ? "Undo repost" : "Repost"}</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setQuoteDialogOpen(true); }}>
                   <MessageCircle className="h-4 w-4 mr-2" />
@@ -660,6 +659,15 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
           </DialogFooter>
         </CustomDialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        title="Delete this post?"
+        description="This will permanently delete the post and all its replies."
+        confirmLabel="Delete"
+        onConfirm={() => deleteMutation.mutate({ postId: id, username: author.username }, { onError: () => toast.error("Failed to delete post.") })}
+        onOpenChange={setDeleteDialogOpen}
+      />
     </>
   );
 };

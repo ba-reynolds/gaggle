@@ -8,14 +8,17 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSuggestedUsers, useTrends, useSearchPosts } from '@/hooks/useSearch';
 import { useFollowUser, useUnfollowUser } from '@/hooks/useUser';
+import { useAuth } from '@/contexts/AuthContext';
 import { getMediaUrl } from '@/util/media';
 import { Loader2, Search as SearchIcon, TrendingUp, Users } from 'lucide-react';
 
 export default function ExplorePage() {
   const navigate = useNavigate();
+  const { token } = useAuth();
+  const isAuthenticated = typeof token === 'string';
   const [query, setQuery] = useState('');
-  const trends = useTrends();
-  const suggested = useSuggestedUsers(20);
+  const trends = useTrends(isAuthenticated);
+  const suggested = useSuggestedUsers(20, isAuthenticated);
   const results = useSearchPosts(query);
   const { mutate: follow } = useFollowUser();
   const { mutate: unfollow } = useUnfollowUser();
@@ -44,7 +47,7 @@ export default function ExplorePage() {
 
   return (
     <div className="mx-auto w-full max-w-xl">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/90 p-4 backdrop-blur">
+      <header className="sticky top-0 z-10 border-b border-border p-4 backdrop-blur">
         <h1 className="text-2xl font-bold text-primary">Explore</h1>
         <form onSubmit={submitSearch} className="mt-3">
           <div className="relative">

@@ -28,8 +28,8 @@ export const useConversationMessages = (conversationId: number, limit: number = 
     enabled: conversationId > 0,
   });
 
-export const useDmUnreadCount = () =>
-  useQuery({ queryKey: ['dm-unread-count'], queryFn: getDmUnreadCount });
+export const useDmUnreadCount = (enabled: boolean = true) =>
+  useQuery({ queryKey: ['dm-unread-count'], queryFn: getDmUnreadCount, enabled });
 
 export const useSendMessage = () => {
   const queryClient = useQueryClient();

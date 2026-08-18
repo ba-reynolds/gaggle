@@ -54,9 +54,10 @@ export default function SocialMediaLayout({
   const [isComposing, setIsComposing] = useState(false);
   const [followingUsers, setFollowingUsers] = useState<{ [key: string]: boolean }>({});
   const [search, setSearch] = useState('');
-  const trends = useTrends();
-  const suggested = useSuggestedUsers(10);
-  const dmUnread = useDmUnreadCount();
+  const isAuthenticated = typeof token === 'string';
+  const trends = useTrends(isAuthenticated);
+  const suggested = useSuggestedUsers(10, isAuthenticated);
+  const dmUnread = useDmUnreadCount(isAuthenticated);
 
   const handleNewPost = () => {
     setIsComposing(false);
@@ -119,7 +120,7 @@ export default function SocialMediaLayout({
             <div className="sticky top-4 space-y-6">
               {/* App Logo */}
               <div className="flex items-center mb-6">
-                <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                <div className="w-10 h-10 shrink-0 aspect-square bg-primary rounded-full flex items-center justify-center">
                   <span className="text-primary-foreground font-bold text-xl">G</span>
                 </div>
                 <span className="text-xl font-bold ml-2 hidden md:inline text-primary">GopherSocial</span>
@@ -192,7 +193,7 @@ export default function SocialMediaLayout({
           </div>
 
           {/* Right Sidebar */}
-          <div className="md:block md:col-span-0 lg:col-span-3">
+          <div className="hidden lg:block lg:col-span-3">
             <div className="py-2 sticky top-4 space-y-6">
               {/* Search */}
               <Input
