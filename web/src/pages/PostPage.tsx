@@ -69,20 +69,19 @@ const PostPage = () => {
             <div key={threadPost.id} className={position ? "flex gap-x-1.5" : ""}>
               {position && (
                 <div aria-hidden className="relative w-6 shrink-0">
-                  {/* Straight vertical rail. Starts at the top post's avatar,
-                      runs through, and stops at the last post's elbow. */}
-                  <div
-                    className={`absolute left-[11px] w-0.5 bg-border ${
-                      position === 'first' ? 'top-6 bottom-0 rounded-t-full' :
-                      position === 'last' ? 'top-0 h-[45px]' :
-                      'top-0 bottom-0'
-                    }`}
-                  />
-                  {/* Straight horizontal tick, at every post's avatar level,
-                      pointing right toward the profile picture. */}
-                  <div className="absolute top-[43px] left-[11px] w-[17px] h-0.5 rounded-full bg-border" />
-                  {/* Small rounded fillet where the rail meets the tick. */}
-                  <div className="absolute top-[42px] left-[10px] w-[5px] h-[5px] rounded-full bg-border" />
+                  {/* Rail above the join (incoming from the parent). */}
+                  {(position === 'middle' || position === 'last') && (
+                    <div className="absolute top-0 left-[11px] h-[40px] w-0.5 bg-border" />
+                  )}
+                  {/* Rail below the join (outgoing to the child). First post
+                      has none above, so its line starts at the circle. */}
+                  {(position === 'first' || position === 'middle') && (
+                    <div className="absolute top-[48px] left-[11px] bottom-0 w-0.5 bg-border" />
+                  )}
+                  {/* Straight horizontal tick pointing at this post's picture. */}
+                  <div className="absolute top-[43px] left-[16px] w-[12px] h-0.5 rounded-full bg-border" />
+                  {/* Hollow circle join where the lines meet. */}
+                  <div className="absolute top-[40px] left-[8px] w-2 h-2 rounded-full border-2 border-border" />
                 </div>
               )}
               <div className="flex-1 min-w-0">
