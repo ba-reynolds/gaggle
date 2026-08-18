@@ -639,7 +639,7 @@ func (store *postStore) GetDescendants(ctx context.Context, postID int, limit in
 				p.likes_count, p.reposts_count, p.quotes_count, p.bookmarks_count, p.views_count, p.replies_count
 			FROM posts p
 			WHERE p.parent_id = $1
-			ORDER BY p.created_at ASC
+			ORDER BY p.created_at DESC
 			LIMIT $2
 		`
 		args = []interface{}{postID, limit + 1}
@@ -665,15 +665,15 @@ func (store *postStore) GetDescendants(ctx context.Context, postID int, limit in
 			return nil, apperrors.BadRequestError("invalid cursor data", nil)
 		}
 
-		// Cursor-based query - get descendants after the cursor timestamp
+		// Cursor-based query - get descendants older than the cursor timestamp
 		query = `
 			SELECT 
 				p.post_id, p.content, p.author_id, p.parent_id, p.soft_deleted, p.soft_deleted_at, p.created_at, p.updated_at,
 				p.likes_count, p.reposts_count, p.quotes_count, p.bookmarks_count, p.views_count, p.replies_count
 			FROM posts p
 			WHERE p.parent_id = $1
-			AND p.created_at > $2
-			ORDER BY p.created_at ASC
+			AND p.created_at < $2
+			ORDER BY p.created_at DESC
 			LIMIT $3
 		`
 		args = []interface{}{postID, cursorData.Timestamp, limit + 1}

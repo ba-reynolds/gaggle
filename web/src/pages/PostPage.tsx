@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Loader2, ArrowLeft } from "lucide-react";
 import ComposeContent from "@/components/ComposeContent";
 
+type FeedPostThreadPosition = 'first' | 'middle' | 'last' | undefined;
+
 const PostPage = () => {
   const { id } = useParams<{ id: string }>();
   const postId = parseInt(id || "0", 10);
@@ -31,8 +33,19 @@ const PostPage = () => {
   const post = postData.data.post;
   const ancestors = postData.data.ancestors?.items ?? [];
   const replies = postData.data.descendants?.items ?? [];
-  // Ancestors arrive nearest-parent-first; display them furthest-first.
+  // Ancestors arrive nearest-parent-first; display them furthest-first so the
+  // current post anchors the bottom of the conversation.
   const parentChain = [...ancestors].reverse();
+  // The chain uses the same FeedPost cards as everywhere else in the app; a
+  // connector rail lives in a gutter to the LEFT of the whole chain, with a
+  // C-shaped elbow pointing from each parent's picture down to the child.
+  const threadPosts = [...parentChain, post];
+  const threadPosition = (index: number): FeedPostThreadPosition => {
+    if (threadPosts.length === 1) return undefined;
+    if (index === 0) return 'first';
+    if (index === threadPosts.length - 1) return 'last';
+    return 'middle';
+  };
 
   return (
     <div className="w-full max-w-xl mx-auto">
@@ -46,17 +59,38 @@ const PostPage = () => {
         </div>
       </header>
 
-      {/* Main post */}
-      <FeedPost post={post} />
-
-      {/* Parent chain */}
-      {parentChain.length > 0 && (
-        <div className="mt-2">
-          {parentChain.map((parent) => (
-            <FeedPost key={parent.id} post={parent} />
-          ))}
-        </div>
-      )}
+      {/* Conversation: ancestors (furthest-first) + the current post. The cards are
+          the same FeedPost cards used everywhere; the C-shaped connector lives
+          in a gutter on the left of the whole chain. */}
+      <div className="mt-2">
+        {threadPosts.map((threadPost, index) => {
+          const position = threadPosition(index);
+          return (
+            <div key={threadPost.id} className={position ? "flex gap-x-1.5" : ""}>
+              {position && (
+                <div aria-hidden className="relative w-6 shrink-0">
+                  {/* Rail above the join (incoming from the parent). */}
+                  {(position === 'middle' || position === 'last') && (
+                    <div className="absolute top-0 left-[11px] h-[40px] w-0.5 bg-border" />
+                  )}
+                  {/* Rail below the join (outgoing to the child). First post
+                      has none above, so its line starts at the circle. */}
+                  {(position === 'first' || position === 'middle') && (
+                    <div className="absolute top-[48px] left-[11px] bottom-0 w-0.5 bg-border" />
+                  )}
+                  {/* Straight horizontal tick pointing at this post's picture. */}
+                  <div className="absolute top-[43px] left-[16px] w-[12px] h-0.5 rounded-full bg-border" />
+                  {/* Hollow circle join where the lines meet. */}
+                  <div className="absolute top-[40px] left-[8px] w-2 h-2 rounded-full border-2 border-border" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <FeedPost post={threadPost} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
 
       {/* Reply composer */}
       <div className="mt-4 px-4">

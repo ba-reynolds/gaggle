@@ -1,3 +1,98 @@
+# SUMMARY — post-thread-and-bookmark-fixes
+
+Verified a batch of five reported UI bugs against the running app and fixed the
+two that were still broken. The other three turned out to be already fixed on
+`main` (from the earlier `ui-responsiveness-fixes` merge) and are confirmed
+working end-to-end in the browser.
+
+## What was changed and why
+
+**1. Reply/child ordering on a single post page (was broken → fixed)**
+- Root cause: `postStore.GetDescendants` ordered direct replies
+  `ORDER BY created_at ASC`, so when you replied to a post your new reply was
+  appended at the *bottom* of the replies list.
+- Fix: `server/internal/store/post_store.go` GetDescendants now orders
+  `created_at DESC` for both the initial and cursor-paged queries, and the paged
+  query uses `created_at < $cursor` (older pages) instead of `>`. New replies now
+  land at the top, driven by the existing `['post', parentId]` invalidation on
+  post-create.
+
+**2. Single-post page thread layout + visual connection (was broken → fixed)**
+- Root cause: `PostPage` rendered the current post first and the parent chain
+  below it (reply on top of the post being replied to), with no visual
+  connection between them.
+- Fix (final, after several design iterations from review feedback): the chain
+  (ancestors furthest-first + the current post) renders as the **same FeedPost
+  cards used everywhere in the app**, untouched. The connector lives entirely
+  in a **gutter to the left of the whole chain** (`PostPage.tsx`): each row is a
+  `flex` of `[gutter | card]`, so each gutter cell stretches to its card's
+  height and the cells stack flush. Inside the gutter:
+  - a thin vertical rail runs the full thread height, and each child row shows
+    a short right-pointing elbow (C-shape) horizontally aligned with that
+    post's profile picture (the tick sits at the avatar's vertical center and
+    points toward the card);
+  - `first` starts the rail level with the parent's avatar, `last` ends it at
+    the current post's avatar;
+  - the card's normal `mb-2` spacing is preserved while the rail stays
+    continuous (gutter cells are flush).
+- `FeedPost` is back to its original, untouched form — no connector prop, no
+  overlay, so other pages using it are pixel-identical.
+- Final connector style (after several review iterations): a 2px vertical rail +
+  a straight 2px horizontal tick at every post's avatar level, joined by an
+  **empty (border-only) circle** that acts as the node at each post.
+  - The first post's line starts **at** its circle (no line above the
+    horizontal), the rail runs through middle posts (entering and leaving each
+    circle), and the last post's line stops at its circle.
+  - All segments are straight divs (no border-drawn curves); the tick has
+    `rounded-full` caps and leaves the circle's right edge toward the post's
+    profile picture.
+- Earlier experimental approaches (gutter rail on FeedPost, a dedicated
+  `ThreadPanel`, `Separator` dividers, an in-card elbow overlay) were all
+  removed in favor of this left-gutter connector.
+
+**3. Bookmarks category counter (already fixed on main → verified)**
+- Re-categorizing a bookmarked post through the bookmark popover calls
+  `useBookmarkPost`, whose `onSuccess` invalidates `['bookmark-categories']`;
+  the badge `post_count`s refetch. Confirmed in the browser: moving the only
+  bookmarked post Travel→General updated both badges (Travel 1→0, General 0→1)
+  and back.
+
+**4. Pinned post position on profiles (already fixed on main → verified)**
+- The pinned block sits inside the "Posts" tab content (below the tab bar) and
+  is centered. Confirmed by geometry: pinned block center == tabs center
+  (x=587) and pinnedY (617) > tabs bottom (588).
+
+**5. "Replying to @user" text (already fixed on main → verified)**
+- `FeedPost` renders the "Replying to @username" line (or "Replying to a deleted
+  post") for `parent_id != null` posts; the server hydrates the `parent` summary
+  on every path including the single-post detail. Confirmed on `/post/41`.
+
+## Verification
+- Backend: `go test ./...` passes (tools container).
+- Frontend: `npm run build` (tsc + vite) and `npm run lint` pass (0 errors).
+- Browser (playwright + headless chrome, logged in as alice):
+  - `/bookmarks` re-categorize → badge counts update. PASS
+  - `/profile/alice` pinned post below tabs + centered. PASS
+  - `/post/41` parent above current post, 2 connector segments, "Replying to
+    @alice" text. PASS
+  - reply to `/post/40` → new reply is the first reply. PASS
+
+## Double-check for reviewers
+- The connector-line visuals should be eyeballed (screenshots under
+  `/tmp/opencode/verify/*.png` from the session). I could not view images, so
+  centering/line geometry was asserted numerically instead.
+- `GetDescendants` ordering flipped to DESC: confirm no other consumer assumed
+  ASC (only the single-post endpoint uses it; the integration test
+  `TestPostWithAncestorsAndDescendants` passes).
+- The DB holds test data created during verification (a reply set on post 40,
+  and post 40 pinned on alice's profile). Harmless dev data.
+- Out of scope, observed while testing: `POST /auth/refresh-token` returns 500
+  when no cookie is present (`auth_handler.go` maps `http.ErrNoCookie` to
+  InternalServerError). The app swallows it during boot, but it's a widespread
+  500 in logs. Consider returning 401 in a follow-up.
+
+---
+
 # SUMMARY — pinned-post-menu-fixes
 
 Pinning a post from the main timeline never showed the "Unpin from profile"
@@ -53,8 +148,6 @@ payload for the author *and* their followers.
 - The running API container now serves this branch's build (shared single
   compose stack) — other parallel agent sessions may see their branch lose the
   running build.
-
----
 
 ---
 
