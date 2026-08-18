@@ -273,6 +273,12 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
             placeholder={placeholder}
             value={text}
             onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+                e.preventDefault();
+                void handleSubmit();
+              }
+            }}
             className={`hashtag-composer relative w-full border-none resize-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-md ${textareaHeight} bg-transparent`}
           />
         </div>

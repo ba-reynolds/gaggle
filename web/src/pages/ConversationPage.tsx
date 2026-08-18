@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Loader2, Send } from 'lucide-react';
 import { getMediaUrl } from '@/util/media';
+import { formatMessageDayLabel, formatMessageHour, getMessageDayKey } from '@/util/date';
 import { toast } from 'sonner';
 
 export default function ConversationPage() {
@@ -88,15 +89,31 @@ export default function ConversationPage() {
             {messages.hasNextPage && (
               <Button variant="ghost" className="w-full text-sm" onClick={() => void messages.fetchNextPage()}>Load older</Button>
             )}
-            {displayMessages.map((m) => {
+            {displayMessages.map((m, index) => {
               const mine = m.sender.username === user.username;
+              const prev = displayMessages[index - 1];
+              const isNewDay = !prev || getMessageDayKey(m.created_at) !== getMessageDayKey(prev.created_at);
               return (
-                <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${mine ? 'bg-primary text-primary-foreground' : 'bg-muted text-primary'}`}>
-                    {!mine && (
-                      <p className="mb-0.5 text-xs text-muted-foreground">@{m.sender.username}</p>
-                    )}
-                    <p className="whitespace-pre-wrap">{m.body}</p>
+                <div key={m.id}>
+                  {isNewDay && (
+                    <div className="my-3 flex items-center gap-3">
+                      <div className="h-px flex-1 bg-border" />
+                      <span className="rounded-full border border-border bg-muted px-3 py-1 text-xs text-muted-foreground">
+                        {formatMessageDayLabel(m.created_at)}
+                      </span>
+                      <div className="h-px flex-1 bg-border" />
+                    </div>
+                  )}
+                  <div className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${mine ? 'bg-primary text-primary-foreground' : 'bg-muted text-primary'}`}>
+                      {!mine && (
+                        <p className="mb-0.5 text-xs text-muted-foreground">@{m.sender.username}</p>
+                      )}
+                      <p className="whitespace-pre-wrap">{m.body}</p>
+                      <p className={`mt-1 text-right text-[10px] ${mine ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                        {formatMessageHour(m.created_at)}
+                      </p>
+                    </div>
                   </div>
                 </div>
               );

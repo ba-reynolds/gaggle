@@ -9,6 +9,7 @@ import {
   getMyLists,
   getUserLists,
   removeUserFromList,
+  updateList,
 } from '@/api/lists';
 import type { CreateListPayload, List } from '@/types/api';
 
@@ -65,11 +66,28 @@ export const useDeleteList = () => {
   });
 };
 
+export const useUpdateList = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ listId, payload }: { listId: number; payload: CreateListPayload }) => updateList(listId, payload),
+    onSuccess: (_, { listId }) => invalidateListQueries(queryClient, listId),
+  });
+};
+
 export const useAddUserToList = (listId: number) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (username: string) => addUserToList(listId, username),
     onSuccess: () => invalidateListQueries(queryClient, listId),
+  });
+};
+
+export const useAddUsersToList = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ listId, usernames }: { listId: number; usernames: string[] }) =>
+      Promise.all(usernames.map((username) => addUserToList(listId, username))),
+    onSuccess: (_, { listId }) => invalidateListQueries(queryClient, listId),
   });
 };
 

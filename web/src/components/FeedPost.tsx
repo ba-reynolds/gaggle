@@ -308,7 +308,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <span className="text-muted-foreground text-xs ml-1 cursor-default">· {timePosted}{post.edited_at ? " · edited" : ""}</span>
+                      <span className="text-muted-foreground text-xs ml-1 cursor-default">· {timePosted}</span>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="pointer-events-none">
                       <p>{timePostedTooltip}</p>
@@ -373,7 +373,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
 
               <p className="mt-2 whitespace-pre-wrap text-sm text-primary"><HashtagText content={content} /></p>
               {post.poll && <PollCard poll={post.poll} postId={id} />}
-              {isOwnPost && <button className="mt-2 text-xs text-muted-foreground hover:underline" onClick={(event) => { event.stopPropagation(); setHistoryOpen((open) => !open); }}>
+              {post.edited_at && isOwnPost && <button className="mt-2 text-xs text-muted-foreground hover:underline" onClick={(event) => { event.stopPropagation(); setHistoryOpen((open) => !open); }}>
                 {historyOpen ? "Hide edit history" : "View edit history"}
               </button>}
               {historyOpen && edits.data?.data.items.map((edit) => <div key={edit.id} className="mt-1 rounded border border-border p-2 text-xs text-muted-foreground">{edit.content_before}</div>)}

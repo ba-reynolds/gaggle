@@ -21,6 +21,11 @@ export const createList = async (payload: CreateListPayload): Promise<Envelope<L
   return response.data;
 };
 
+export const updateList = async (listId: number, payload: CreateListPayload): Promise<Envelope<List>> => {
+  const response = await api.patch<Envelope<List>>(`/lists/${listId}`, payload);
+  return response.data;
+};
+
 export const deleteList = async (listId: number): Promise<Envelope<{ success: boolean }>> => {
   const response = await api.delete<Envelope<{ success: boolean }>>(`/lists/${listId}`);
   return response.data;
