@@ -21,18 +21,23 @@ working end-to-end in the browser.
 - Root cause: `PostPage` rendered the current post first and the parent chain
   below it (reply on top of the post being replied to), with no visual
   connection between them.
-- Fix: `web/src/pages/PostPage.tsx` now renders the parent chain above the
-  current post (furthest-first), with the current post anchoring the bottom of
-  the conversation — Twitter-style.
-- The thread is styled as one seamless X-style panel via the `thread` prop on
-  `FeedPost` (`'first' | 'middle' | 'last'`): rows are flush (`mb-0`) with the
-  middle rows `rounded-none`/`border-b-0` so adjacent borders collapse into 1px
-  hairlines, the first row is `rounded-t-lg` and the last `rounded-b-lg`, and a
-  thin (`w-px`) muted (`bg-foreground/10`) gutter rail runs continuously from
-  below the first avatar to the last avatar. Non-thread usages are unaffected.
-- A follow-up polish pass from review feedback replaced the original
-  `w-0.5 bg-border` full-height line (which read as "connecting the profile
-  pictures") and the cramped `mb-0` box stacking with this unified panel look.
+- Fix (final, after two design iterations from review feedback): the parent
+  chain renders as a **dedicated comment-thread panel** (`ThreadPanel`,
+  `web/src/components/ThreadPanel.tsx`) — NOT FeedPost cards:
+  - each ancestor is a row: avatar on the left, content to the right;
+  - the connection is a `border-l` rail on the *content* column, so it runs
+    beside the text (never through the profile pictures) and spans each row's
+    `pb` spacing — rows stay visibly separated and the rail stays continuous
+    and symmetric (no long-vs-short segments);
+  - rows include author/@handle/time, the "Replying to @user" line, text,
+    media, and polls; clicking a row opens that post;
+  - the **current post stays a full FeedPost card** right below the panel, so
+    it keeps every interaction (like/repost/bookmark/quote/reply composer).
+  - The earlier `thread` prop + inline rail experiment was removed from
+    `FeedPost` (dead code), reverting normal feeds to their original cards.
+- Ordering: the chain renders furthest-first above the current post
+  (`PostPage.tsx`), and `PostPage` still anchors the current post at the
+  bottom.
 
 **3. Bookmarks category counter (already fixed on main → verified)**
 - Re-categorizing a bookmarked post through the bookmark popover calls

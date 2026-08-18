@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useGetPost } from "@/hooks/usePost";
 import FeedPost from "@/components/FeedPost";
+import ThreadPanel from "@/components/ThreadPanel";
 import { Button } from "@/components/ui/button";
 import { Loader2, ArrowLeft } from "lucide-react";
 import ComposeContent from "@/components/ComposeContent";
@@ -47,22 +48,10 @@ const PostPage = () => {
         </div>
       </header>
 
-      {/* Conversation thread: parent chain above, current post anchoring the
-          bottom, connected with Twitter-style gutter lines. */}
-      {parentChain.length > 0 ? (
-        <div className="mt-2">
-          {parentChain.map((parent, index) => (
-            <FeedPost
-              key={parent.id}
-              post={parent}
-              thread={index === 0 ? 'first' : 'middle'}
-            />
-          ))}
-          <FeedPost post={post} thread="last" />
-        </div>
-      ) : (
-        <FeedPost post={post} />
-      )}
+      {/* Parent chain, displayed as a comment-style panel above the current
+          post (which stays a full FeedPost below it). */}
+      {parentChain.length > 0 && <ThreadPanel posts={parentChain} />}
+      <FeedPost post={post} />
 
       {/* Reply composer */}
       <div className="mt-4 px-4">

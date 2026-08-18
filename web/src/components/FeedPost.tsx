@@ -60,13 +60,9 @@ import { useDebounce } from "@/hooks/useDebounce";
 
 interface PostProps {
   post: Post;
-  /** Draws a Twitter-style vertical connector on the avatar gutter. 'first'
-   *  starts the thread (segment below the avatar), 'last' terminates it at
-   *  the avatar, 'middle' is a continuous segment for posts in between. */
-  thread?: 'first' | 'middle' | 'last';
 }
 
-const FeedPost: React.FC<PostProps> = ({ post, thread }) => {
+const FeedPost: React.FC<PostProps> = ({ post }) => {
   const { id, author, content, media, created_at, engagement } = post;
   const { user } = useUser();
   const isOwnPost = user.username === author.username;
@@ -274,32 +270,14 @@ const FeedPost: React.FC<PostProps> = ({ post, thread }) => {
   return (
     <>
       <Card
-        className={`w-full max-w-xl border border-border overflow-hidden cursor-pointer transition-colors hover:bg-accent py-2 gap-2 ${
-          thread === 'first'
-            ? "relative mb-0 rounded-t-lg rounded-b-none border-b-0"
-            : thread === 'middle'
-              ? "relative mb-0 rounded-none border-b-0"
-              : thread === 'last'
-                ? "relative mb-0 rounded-t-none rounded-b-lg"
-                : "mb-2"
-        }`}
+        className="w-full max-w-xl border border-border rounded-lg overflow-hidden mb-2 cursor-pointer transition-colors hover:bg-accent py-2 gap-2"
         onClick={handlePostClick}
         tabIndex={0}
         role="link"
         aria-label={`Post by ${author.display_name}: ${content}`}
       >
         <CardContent className="p-4 pb-0">
-          {thread && (
-            <div
-              aria-hidden
-              className={`absolute left-[35px] w-px bg-foreground/10 pointer-events-none z-0 ${
-                thread === 'first' ? 'top-16 bottom-0' :
-                thread === 'last' ? 'top-0 h-16' :
-                'top-0 bottom-0'
-              }`}
-            />
-          )}
-          <div className="flex items-start space-x-3 relative z-10">
+          <div className="flex items-start space-x-3">
             <UserHoverCard
               name={author.display_name}
               username={author.username}
