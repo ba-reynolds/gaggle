@@ -22,15 +22,20 @@ working end-to-end in the browser.
   below it (reply on top of the post being replied to), with no visual
   connection between them.
 - Fix (final, after several design iterations from review feedback): the chain
-  (ancestors furthest-first + the current post) renders as the **same
-  FeedPost cards used everywhere in the app**, with only a thin `<Separator>`
-  line between each adjacent pair — nothing else. No custom thread layout, no
-  rails, no special card styling. `Web/src/pages/PostPage.tsx` builds
-  `threadPosts = [...parentChain, post]` and maps it, inserting a `h-px`
-  separator before every card after the first.
-- Earlier experimental approaches (a `thread` prop + gutter rail on `FeedPost`,
-  then a dedicated `ThreadPanel` component) were removed; `FeedPost` is back to
-  its original card. `ThreadPanel.tsx` deleted.
+  (ancestors furthest-first + the current post) renders as the **same FeedPost
+  cards used everywhere in the app**, with a **C-shaped gutter connector**
+  joining each adjacent pair (parent -> child):
+  - a thin vertical line runs in the avatar gutter (behind the avatars), and
+    each child shows a short right-pointing elbow where the line turns in
+    toward its profile picture;
+  - cards keep their normal spacing (`mb-2`) and untouched styling;
+  - the connector is drawn via an optional `thread: 'first' | 'middle' |
+    'last'` prop on `FeedPost` (overlay only — non-thread usage is identical);
+  - `PostPage.tsx` maps `threadPosts = [...parentChain, post]` and assigns
+    positions (`first` topmost, `last` = current post, `middle` in between).
+- Earlier experimental approaches (a gutter rail on FeedPost, a dedicated
+  `ThreadPanel`, then simple `Separator` dividers between cards) were all
+  removed in favor of this elbow connector.
 
 **3. Bookmarks category counter (already fixed on main → verified)**
 - Re-categorizing a bookmarked post through the bookmark popover calls

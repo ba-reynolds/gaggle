@@ -1,11 +1,11 @@
-import { Fragment } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useGetPost } from "@/hooks/usePost";
 import FeedPost from "@/components/FeedPost";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { Loader2, ArrowLeft } from "lucide-react";
 import ComposeContent from "@/components/ComposeContent";
+
+type FeedPostThreadPosition = 'first' | 'middle' | 'last' | undefined;
 
 const PostPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -36,9 +36,15 @@ const PostPage = () => {
   // Ancestors arrive nearest-parent-first; display them furthest-first so the
   // current post anchors the bottom of the conversation.
   const parentChain = [...ancestors].reverse();
-  // The chain uses the same FeedPost cards as everywhere else in the app, with
-  // only a thin line between each adjacent pair.
+  // The chain uses the same FeedPost cards as everywhere else in the app; the
+  // gutter connector joins each adjacent pair (parent -> child).
   const threadPosts = [...parentChain, post];
+  const threadPosition = (index: number): FeedPostThreadPosition => {
+    if (threadPosts.length === 1) return undefined;
+    if (index === 0) return 'first';
+    if (index === threadPosts.length - 1) return 'last';
+    return 'middle';
+  };
 
   return (
     <div className="w-full max-w-xl mx-auto">
@@ -53,14 +59,11 @@ const PostPage = () => {
       </header>
 
       {/* Conversation: ancestors (furthest-first) + the current post, using the
-          same FeedPost cards as the rest of the app with a thin line between
-          each pair. */}
+          same FeedPost cards as the rest of the app, with a C-shaped gutter
+          connector between each adjacent pair. */}
       <div className="mt-2">
         {threadPosts.map((threadPost, index) => (
-          <Fragment key={threadPost.id}>
-            {index > 0 && <Separator className="my-2" />}
-            <FeedPost post={threadPost} />
-          </Fragment>
+          <FeedPost key={threadPost.id} post={threadPost} thread={threadPosition(index)} />
         ))}
       </div>
 
