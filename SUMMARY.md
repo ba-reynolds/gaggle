@@ -23,19 +23,23 @@ working end-to-end in the browser.
   connection between them.
 - Fix (final, after several design iterations from review feedback): the chain
   (ancestors furthest-first + the current post) renders as the **same FeedPost
-  cards used everywhere in the app**, with a **C-shaped gutter connector**
-  joining each adjacent pair (parent -> child):
-  - a thin vertical line runs in the avatar gutter (behind the avatars), and
-    each child shows a short right-pointing elbow where the line turns in
-    toward its profile picture;
-  - cards keep their normal spacing (`mb-2`) and untouched styling;
-  - the connector is drawn via an optional `thread: 'first' | 'middle' |
-    'last'` prop on `FeedPost` (overlay only — non-thread usage is identical);
-  - `PostPage.tsx` maps `threadPosts = [...parentChain, post]` and assigns
-    positions (`first` topmost, `last` = current post, `middle` in between).
-- Earlier experimental approaches (a gutter rail on FeedPost, a dedicated
-  `ThreadPanel`, then simple `Separator` dividers between cards) were all
-  removed in favor of this elbow connector.
+  cards used everywhere in the app**, untouched. The connector lives entirely
+  in a **gutter to the left of the whole chain** (`PostPage.tsx`): each row is a
+  `flex` of `[gutter | card]`, so each gutter cell stretches to its card's
+  height and the cells stack flush. Inside the gutter:
+  - a thin vertical rail runs the full thread height, and each child row shows
+    a short right-pointing elbow (C-shape) horizontally aligned with that
+    post's profile picture (the tick sits at the avatar's vertical center and
+    points toward the card);
+  - `first` starts the rail level with the parent's avatar, `last` ends it at
+    the current post's avatar;
+  - the card's normal `mb-2` spacing is preserved while the rail stays
+    continuous (gutter cells are flush).
+- `FeedPost` is back to its original, untouched form — no connector prop, no
+  overlay, so other pages using it are pixel-identical.
+- Earlier experimental approaches (gutter rail on FeedPost, a dedicated
+  `ThreadPanel`, `Separator` dividers, an in-card elbow overlay) were all
+  removed in favor of this left-gutter connector.
 
 **3. Bookmarks category counter (already fixed on main → verified)**
 - Re-categorizing a bookmarked post through the bookmark popover calls

@@ -60,14 +60,9 @@ import { useDebounce } from "@/hooks/useDebounce";
 
 interface PostProps {
   post: Post;
-  /** Draws the reply-thread connector in the avatar gutter. `'first'` is the
-   *  topmost post (line leaves its avatar downward), `'last'` terminates the
-   *  thread at its avatar, and `'middle'` continues through. Every non-first
-   *  post also shows a small right-pointing elbow where the line meets it. */
-  thread?: 'first' | 'middle' | 'last';
 }
 
-const FeedPost: React.FC<PostProps> = ({ post, thread }) => {
+const FeedPost: React.FC<PostProps> = ({ post }) => {
   const { id, author, content, media, created_at, engagement } = post;
   const { user } = useUser();
   const isOwnPost = user.username === author.username;
@@ -275,37 +270,14 @@ const FeedPost: React.FC<PostProps> = ({ post, thread }) => {
   return (
     <>
       <Card
-        className={`w-full max-w-xl border border-border rounded-lg overflow-hidden mb-2 cursor-pointer transition-colors hover:bg-accent py-2 gap-2 ${
-          thread ? "relative" : ""
-        }`}
+        className="w-full max-w-xl border border-border rounded-lg overflow-hidden mb-2 cursor-pointer transition-colors hover:bg-accent py-2 gap-2"
         onClick={handlePostClick}
         tabIndex={0}
         role="link"
         aria-label={`Post by ${author.display_name}: ${content}`}
       >
         <CardContent className="p-4 pb-0">
-          {thread && (
-            <>
-              {/* Elbow (C-shape): where the line from the parent's avatar meets
-                  this post, it turns right toward the profile picture. */}
-              {thread !== 'first' && (
-                <div
-                  aria-hidden
-                  className="absolute top-[19px] left-[35px] w-[17px] h-0.5 bg-border pointer-events-none z-0"
-                />
-              )}
-              {/* Vertical gutter line, running behind the avatars. */}
-              <div
-                aria-hidden
-                className={`absolute left-[35px] w-0.5 bg-border pointer-events-none z-0 ${
-                  thread === 'first' ? 'top-16 bottom-0' :
-                  thread === 'last' ? 'top-0 h-16' :
-                  'top-0 bottom-0'
-                }`}
-              />
-            </>
-          )}
-          <div className={`flex items-start space-x-3 ${thread ? "relative z-10" : ""}`}>
+          <div className="flex items-start space-x-3">
             <UserHoverCard
               name={author.display_name}
               username={author.username}

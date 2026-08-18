@@ -36,8 +36,9 @@ const PostPage = () => {
   // Ancestors arrive nearest-parent-first; display them furthest-first so the
   // current post anchors the bottom of the conversation.
   const parentChain = [...ancestors].reverse();
-  // The chain uses the same FeedPost cards as everywhere else in the app; the
-  // gutter connector joins each adjacent pair (parent -> child).
+  // The chain uses the same FeedPost cards as everywhere else in the app; a
+  // connector rail lives in a gutter to the LEFT of the whole chain, with a
+  // C-shaped elbow pointing from each parent's picture down to the child.
   const threadPosts = [...parentChain, post];
   const threadPosition = (index: number): FeedPostThreadPosition => {
     if (threadPosts.length === 1) return undefined;
@@ -58,13 +59,34 @@ const PostPage = () => {
         </div>
       </header>
 
-      {/* Conversation: ancestors (furthest-first) + the current post, using the
-          same FeedPost cards as the rest of the app, with a C-shaped gutter
-          connector between each adjacent pair. */}
+      {/* Conversation: ancestors (furthest-first) + the current post. The cards are
+          the same FeedPost cards used everywhere; the C-shaped connector lives
+          in a gutter on the left of the whole chain. */}
       <div className="mt-2">
-        {threadPosts.map((threadPost, index) => (
-          <FeedPost key={threadPost.id} post={threadPost} thread={threadPosition(index)} />
-        ))}
+        {threadPosts.map((threadPost, index) => {
+          const position = threadPosition(index);
+          return (
+            <div key={threadPost.id} className={position ? "flex gap-x-1.5" : ""}>
+              {position && (
+                <div aria-hidden className="relative w-6 shrink-0">
+                  {position !== 'first' && (
+                    <div className="absolute top-[43px] left-1/2 w-4 h-0.5 bg-border" />
+                  )}
+                  <div
+                    className={`absolute left-1/2 -translate-x-1/2 w-0.5 bg-border ${
+                      position === 'first' ? 'top-6 bottom-0' :
+                      position === 'last' ? 'top-0 h-16' :
+                      'top-0 bottom-0'
+                    }`}
+                  />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <FeedPost post={threadPost} />
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Reply composer */}
