@@ -1,3 +1,88 @@
+# SUMMARY — cloud-deploy-email-analysis
+
+Analysis spike (no code changes): assessed cloud-readiness of the current
+stack and researched email-verification alternatives for the domain-buying /
+cloud-deployment plan.
+
+## What the analysis found
+
+**Stack is already cloud-friendly.** Two custom Dockerfiles (`server/`,
+`web/`), `docker compose` single-origin stack, config 100% env-var driven
+(`server/pkg/config/config.go`), static cgo-free Go binaries on `alpine`
+(portable across AWS/GCP/etc.), migrations applied on container start
+(`scripts/docker-entrypoint.sh`).
+
+**What must change before production deployment** (blockers / risks):
+- Production secrets live in repo defaults — compose hardcodes
+  `JWT_SECRET=dev-secret-change-me` and `.env.example` ships
+  `DB_PASSWORD=teeth`. Must come from a secret manager (e.g. AWS Secrets
+  Manager) with NO shipping default.
+- `COOKIE_SECURE=false` (compose.yaml:78) — the refresh-token auth cookie
+  would be sent over plain HTTP in prod. Needs to be `true` behind TLS and
+  `X-Forwarded-Proto` honored by the auth middleware (currently reads
+  `RemoteAddr`, see `internal/auth/auth_service.go`).
+- `POSTGRES_URL` with `sslmode=disable` and hardcoded
+  `postgres://white:teeth@db:5432/social` in compose; cloud-managed DBs
+  (RDS/Cloud SQL) need real credentials / SSL.
+- Redis has no password (`REDIS_PASSWORD` is wired through config but the
+  compose service starts unauthenticated) — fine behind a VPC, bad if
+  exposed.
+- Media is stored on a local docker volume (`api_media`); deployable as-is
+  (`MEDIA_DIR` is config) but a managed object store (S3/Cloud Storage) is the
+  right production answer.
+- Logs go to a file (`LOGGING_FILENAME=logs/logs.log`) — for cloud log
+  aggregation (CloudWatch / GCP Logging) they should go to stdout/stderr.
+- `MIGRATE_ON_START=true` runs migrations on every API instance start —
+  acceptable at single-instance scale, but should be pulled out into a
+  dedicated step (or use the DB job) before scaling horizontally.
+
+**Email verification does NOT exist yet.** No SMTP/mail dependency, no
+verification flow — `AuthService.Register` creates the user and issues tokens
+immediately (`service/auth_service.go:223`), no signup email is sent, no
+`email_verified` column. Emails are only collected+validated for uniqueness.
+The `.env.example` even notes `GEMINI_API_KEY` is "currently unused".
+
+**Email options recommended (in order):**
+1. AWS SES (+ Route 53) — free tier, full AWS integration, cheap at scale,
+   needs domain + Easy DKIM via Route 53. Most work to wire up and manage
+   reputation/limits, best fit if they commit to AWS.
+2. Resend — best DX, generous free tier (3k/mo), great delivery + analytics,
+   React email templates, SDK is trivial. If not married to AWS, this is the
+   easiest path.
+3. Others (SendGrid / Postmark / Mailgun) — all viable, mostly worse DX or
+   pricing tiers.
+
+All ESPs work fine behind the domain they buy. Implementation shape (future
+work): add `email_verified_at` + signed-token verification links, then a tiny
+`mailer` service interface (SES vs Resend are drop-in behind it).
+
+**Domain recommendation.** Cloudflare for registration + DNS (~$10/yr, at-cost
+DNS, free tunnel/TLS, one place for DNS records that SES/Resend need: SPF,
+DKIM, route) — unless they want single-vendor simplicity with AWS, in which
+case Route 53 (registration enforced from handful of TLDs) + ACM for the
+TLS cert. Cheapest real deploy path: `docker compose` services on a small
+VPS with Cloudflare Tunnel in front (no EIP/LB needed, still HTTPS).
+
+## Files touched
+- None (analysis-only spike; changes left for a follow-up implementation task).
+
+## Verification
+- No code changed — nothing to test. Findings are grounded in
+  `compose.yaml`, `server/pkg/config/config.go`, `server/scripts/docker-entrypoint.sh`,
+  `web/nginx.conf`, `server/internal/service/auth_service.go`, `internal/store/user_store.go`,
+  and the `.env.example` files.
+- Note: the shared Docker stack was NOT rebuilt; this branch is tied to the
+  shared compose project like every other agent-branch worktree.
+
+## Things a reviewer should double-check
+- Confirm the interpretation that "add email sending" is a follow-up task and
+  not part of this spike.
+- If implementing: lean on the `service` layer already used everywhere —
+  an `EmailService` behind an interface (SES/Resend impls) matches the
+  repo's existing service/store pattern.
+
+---
+
 # SUMMARY — ui-responsiveness-fixes
 
 Batch of UI responsiveness bugs, fixed across the Go API and the React client.
