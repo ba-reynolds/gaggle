@@ -116,14 +116,14 @@ export default function SocialMediaLayout({
         <div className="grid grid-cols-12 gap-4">
 
           {/* Left Sidebar */}
-          <div className="col-span-2 md:col-span-3 lg:col-span-2">
-            <div className="sticky top-4 space-y-6">
+          <div className="col-span-2 md:col-span-3 lg:col-span-2 min-w-0">
+            <div className="sticky top-4 space-y-6 min-w-0">
               {/* App Logo */}
-              <div className="flex items-center mb-6">
+              <div className="flex items-center gap-2 mb-6 min-w-0">
                 <div className="w-10 h-10 shrink-0 aspect-square bg-primary rounded-full flex items-center justify-center">
                   <span className="text-primary-foreground font-bold text-xl">G</span>
                 </div>
-                <span className="text-xl font-bold ml-2 hidden md:inline text-primary">GopherSocial</span>
+                <span className="text-xl font-bold flex-1 min-w-0 truncate hidden md:inline text-primary">GopherSocial</span>
               </div>
 
               {/* Navigation */}

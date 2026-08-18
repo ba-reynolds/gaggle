@@ -63,6 +63,7 @@ type Store struct {
 		GetBookmarkedPostsFeed(ctx context.Context, userID int, categoryIDs []int, limit int, cursor string) (*models.PostFeed, error)
 		GetLikedPostsFeed(ctx context.Context, userID int, limit int, cursor string) (*models.PostFeed, error)
 		GetQuotesFeed(ctx context.Context, postID int, limit int, cursor string) (*models.PostFeed, error)
+		GetParentInfo(ctx context.Context, postIDs []int) (map[int]*models.PostParentInfo, error)
 		Search(ctx context.Context, query string, limit int, cursor string) (*models.PostFeed, error)
 		ListByHashtag(ctx context.Context, name string, limit int, cursor string) (*models.PostFeed, error)
 		GetListFeed(ctx context.Context, listID int, limit int, cursor string) (*models.PostFeed, error)

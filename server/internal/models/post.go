@@ -116,6 +116,16 @@ type PostEdit struct {
 	EditedAt      time.Time `json:"edited_at"`
 }
 
+// PostParentInfo describes the post a reply is replying to. Replies carry it
+// so the UI can render a "Replying to @author" line without an extra request;
+// a reply whose parent was soft-deleted (or is missing) reports Deleted=true
+// and no Author so the UI degrades gracefully.
+type PostParentInfo struct {
+	ID      int         `json:"id"`
+	Deleted bool        `json:"deleted"`
+	Author  *PostAuthor `json:"author,omitempty"`
+}
+
 type PostEditHistory struct {
 	Items []PostEdit `json:"items"`
 }
@@ -137,6 +147,7 @@ type FullPost struct {
 	Media      []PostMedia     `json:"media"`
 	Engagement *PostEngagement `json:"engagement"`
 	Poll       *Poll           `json:"poll,omitempty"`
+	Parent     *PostParentInfo `json:"parent,omitempty"`
 }
 
 // PostChain represents a chain of parent posts up to a certain limit

@@ -62,8 +62,39 @@ func (s *PostService) GetFullPostByID(ctx context.Context, id int, viewerID int)
 	if err := hydrateEngagement(ctx, s.store, s.logger, []*models.FullPost{post}, viewerID); err != nil {
 		return nil, err
 	}
+	if err := hydrateParents(ctx, s.store, []*models.FullPost{post}); err != nil {
+		return nil, err
+	}
 
 	return post, nil
+}
+
+// hydrateParents populates each reply's Parent summary (id + author) using a
+// single batched query, so the UI can render "Replying to @author" without
+// needing the parent post in the payload.
+func hydrateParents(ctx context.Context, st *store.Store, posts []*models.FullPost) error {
+	ids := make([]int, 0, len(posts))
+	for _, p := range posts {
+		if p != nil {
+			ids = append(ids, p.ID)
+		}
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	infos, err := st.Posts.GetParentInfo(ctx, ids)
+	if err != nil {
+		return err
+	}
+	for _, p := range posts {
+		if p == nil {
+			continue
+		}
+		if info, ok := infos[p.ID]; ok {
+			p.Parent = info
+		}
+	}
+	return nil
 }
 
 // hydrateEngagement populates each post's Engagement object with the counts
@@ -180,6 +211,9 @@ func (s *PostService) GetDescendants(ctx context.Context, postID int, viewerID i
 		return nil, err
 	}
 	if err := hydratePolls(ctx, s.store, descendants.Items, viewerID); err != nil {
+		return nil, err
+	}
+	if err := hydrateParents(ctx, s.store, descendants.Items); err != nil {
 		return nil, err
 	}
 
@@ -461,6 +495,9 @@ func (s *PostService) GetPinned(ctx context.Context, authorID, viewerID int) (*m
 	if err := hydrateEngagement(ctx, s.store, s.logger, []*models.FullPost{full}, viewerID); err != nil {
 		return nil, err
 	}
+	if err := hydrateParents(ctx, s.store, []*models.FullPost{full}); err != nil {
+		return nil, err
+	}
 	return full, nil
 }
 
@@ -535,6 +572,9 @@ func (s *PostService) GetParentChain(ctx context.Context, postID int, viewerID i
 	if err := hydratePolls(ctx, s.store, chain.Items, viewerID); err != nil {
 		return nil, err
 	}
+	if err := hydrateParents(ctx, s.store, chain.Items); err != nil {
+		return nil, err
+	}
 
 	return chain, nil
 }
@@ -568,6 +608,9 @@ func (s *PostService) GetHomeFeed(ctx context.Context, userID int, limit int, cu
 		return nil, err
 	}
 	if err := hydratePolls(ctx, s.store, feed.Items, userID); err != nil {
+		return nil, err
+	}
+	if err := hydrateParents(ctx, s.store, feed.Items); err != nil {
 		return nil, err
 	}
 
@@ -605,6 +648,9 @@ func (s *PostService) GetUserFeed(ctx context.Context, userID int, viewerID int,
 	if err := hydratePolls(ctx, s.store, feed.Items, viewerID); err != nil {
 		return nil, err
 	}
+	if err := hydrateParents(ctx, s.store, feed.Items); err != nil {
+		return nil, err
+	}
 
 	return feed, nil
 }
@@ -624,6 +670,9 @@ func (s *PostService) GetBookmarkedPostsFeed(ctx context.Context, userID int, vi
 	if err := hydratePolls(ctx, s.store, feed.Items, viewerID); err != nil {
 		return nil, err
 	}
+	if err := hydrateParents(ctx, s.store, feed.Items); err != nil {
+		return nil, err
+	}
 	s.logger.Info("bookmarked posts feed fetched", "userID", userID, "categoryIDs", categoryIDs, "count", len(feed.Items))
 	return feed, nil
 }
@@ -641,6 +690,9 @@ func (s *PostService) GetLikedPostsFeed(ctx context.Context, userID int, viewerI
 		return nil, err
 	}
 	if err := hydratePolls(ctx, s.store, feed.Items, viewerID); err != nil {
+		return nil, err
+	}
+	if err := hydrateParents(ctx, s.store, feed.Items); err != nil {
 		return nil, err
 	}
 	s.logger.Info("liked posts feed fetched", "userID", userID, "count", len(feed.Items))
@@ -665,6 +717,9 @@ func (s *PostService) GetQuotesFeed(ctx context.Context, postID int, viewerID in
 		return nil, err
 	}
 	if err := hydratePolls(ctx, s.store, feed.Items, viewerID); err != nil {
+		return nil, err
+	}
+	if err := hydrateParents(ctx, s.store, feed.Items); err != nil {
 		return nil, err
 	}
 	return feed, nil

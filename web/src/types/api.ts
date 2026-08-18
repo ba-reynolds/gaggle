@@ -170,6 +170,12 @@ export interface PostAuthor {
   profile_picture_uuid?: string;
 }
 
+export interface PostParent {
+  id: number;
+  deleted: boolean;
+  author?: PostAuthor;
+}
+
 export interface PostEngagementBookmarkCategory {
   id: number;
   name: string;
@@ -201,6 +207,7 @@ export interface Post {
   edited_at?: string;
   is_pinned: boolean;
   poll?: Poll;
+  parent?: PostParent;
 }
 
 export interface PollOption {
