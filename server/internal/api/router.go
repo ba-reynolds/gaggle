@@ -93,12 +93,16 @@ func NewRouter(
 				r.Route("/{username}", func(r chi.Router) {
 					r.Get("/", userHandler.GetUserProfileByUsername)
 					r.Get("/posts", postHandler.GetUserFeed)
+					r.Get("/replies", postHandler.GetUserRepliesFeed)
+					r.Get("/media", postHandler.GetUserMediaFeed)
 					r.Get("/followers", userRelationshipHandler.GetFollowers)
 					r.Get("/following", userRelationshipHandler.GetFollowing)
 					r.Post("/follow", userRelationshipHandler.FollowUser)
 					r.Delete("/follow", userRelationshipHandler.UnfollowUser)
 					r.Post("/block", userRelationshipHandler.BlockUser)
 					r.Delete("/block", userRelationshipHandler.UnblockUser)
+					r.Post("/mute", userRelationshipHandler.MuteUser)
+					r.Delete("/mute", userRelationshipHandler.UnmuteUser)
 					// Change likes feed for user to use username instead of userID
 					r.Get("/likes", postHandler.LikedPostsFeed)
 					r.Get("/pinned", postHandler.GetPinned)

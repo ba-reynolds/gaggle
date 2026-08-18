@@ -3,22 +3,25 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { CustomDialogContent } from "@/components/ui/custom-dialog";
 import { Dialog, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useUser } from "@/contexts/UserContext";
 import { useMediaUpload } from "@/hooks/useMediaUpload";
-import { useGetUserPosts } from "@/hooks/usePost";
-import { useFetchProfile, usePinnedPost, useUpdateProfile } from "@/hooks/useUser";
+import { useGetUserMedia, useGetUserPosts, useGetUserReplies } from "@/hooks/usePost";
+import { useFetchProfile, useFollowUser, useMuteUser, usePinnedPost, useUnblockUser, useUnfollowUser, useUnmuteUser, useUpdateProfile, useBlockUser } from "@/hooks/useUser";
 import { useUserLists } from "@/hooks/useLists";
 import UserBadges from "@/components/UserBadges";
 import { getMediaUrl } from "@/util/media";
 import { format, parseISO } from "date-fns";
-import { Calendar, Camera, Link as LinkIcon, Loader2, MapPin, MessageSquare } from "lucide-react";
+import { Calendar, Camera, Link as LinkIcon, Loader2, MapPin, MessageSquare, MoreHorizontal, ShieldBan, ShieldCheck, UserMinus, UserPlus, Volume2, VolumeX } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useInView } from "react-intersection-observer";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import type { InfiniteData } from "@tanstack/react-query";
+import type { Envelope, PaginatedFeedResponse } from "@/types/api";
 import { toast } from "sonner";
 
 const ProfilePage: React.FC = () => {
@@ -30,6 +33,12 @@ const ProfilePage: React.FC = () => {
   const profileUpdateMutation = useUpdateProfile();
   const pinnedPost = usePinnedPost(safeUsername);
   const mediaUpload = useMediaUpload();
+  const followMutation = useFollowUser();
+  const unfollowMutation = useUnfollowUser();
+  const muteMutation = useMuteUser();
+  const unmuteMutation = useUnmuteUser();
+  const blockMutation = useBlockUser();
+  const unblockMutation = useUnblockUser();
   const [profileEditOpen, setProfileEditOpen] = useState(false);
 
   const [displayName, setDisplayName] = useState("");
@@ -56,6 +65,9 @@ const ProfilePage: React.FC = () => {
     hasNextPage,
     isFetchingNextPage
   } = useGetUserPosts(safeUsername);
+
+  const repliesQuery = useGetUserReplies(safeUsername);
+  const mediaQuery = useGetUserMedia(safeUsername);
 
   useEffect(() => {
     if (inView && hasNextPage && !isFetchingNextPage) {
@@ -86,6 +98,43 @@ const ProfilePage: React.FC = () => {
   }
 
   const isCurrentUser = user.username === username;
+
+  const handleFollowToggle = () => {
+    if (profile?.is_following) {
+      unfollowMutation.mutate(safeUsername, {
+        onError: () => toast.error(`Failed to unfollow @${safeUsername}.`),
+      });
+    } else {
+      followMutation.mutate(safeUsername, {
+        onError: () => toast.error(`Failed to follow @${safeUsername}.`),
+      });
+    }
+  };
+
+  const handleMuteToggle = () => {
+    if (profile?.is_muted) {
+      unmuteMutation.mutate(safeUsername, {
+        onError: () => toast.error(`Failed to unmute @${safeUsername}.`),
+      });
+    } else {
+      muteMutation.mutate(safeUsername, {
+        onError: () => toast.error(`Failed to mute @${safeUsername}.`),
+      });
+    }
+  };
+
+  const handleBlockToggle = () => {
+    if (profile?.is_blocked) {
+      unblockMutation.mutate(safeUsername, {
+        onError: () => toast.error(`Failed to unblock @${safeUsername}.`),
+      });
+    } else {
+      blockMutation.mutate(safeUsername, {
+        onSuccess: () => toast.success(`Blocked @${safeUsername}.`),
+        onError: () => toast.error(`Failed to block @${safeUsername}.`),
+      });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -204,17 +253,59 @@ const ProfilePage: React.FC = () => {
           </Avatar>
         </div>
 
-        {/* Edit profile button */}
+        {/* Profile action buttons */}
         <div className="flex justify-end items-center gap-2 mt-2">
           {!isCurrentUser && (
-            <Button
-              variant="outline"
-              className="text-foreground"
-              onClick={() => navigate(`/messages?user=${encodeURIComponent(safeUsername)}`)}
-            >
-              <MessageSquare className="h-4 w-4 mr-2" />
-              Message
-            </Button>
+            <>
+              <Button
+                variant={profile?.is_following ? "outline" : "default"}
+                className={profile?.is_following ? "text-foreground" : ""}
+                onClick={handleFollowToggle}
+                disabled={followMutation.isPending || unfollowMutation.isPending}
+              >
+                {profile?.is_following ? (
+                  <>
+                    <UserMinus className="h-4 w-4 mr-2" />
+                    Unfollow
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Follow
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                className="text-foreground"
+                onClick={() => navigate(`/messages?user=${encodeURIComponent(safeUsername)}`)}
+              >
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Message
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="text-foreground">
+                    <MoreHorizontal className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 border border-muted">
+                  <DropdownMenuItem onClick={handleMuteToggle} disabled={muteMutation.isPending || unmuteMutation.isPending}>
+                    {profile?.is_muted ? <Volume2 className="h-4 w-4 mr-2" /> : <VolumeX className="h-4 w-4 mr-2" />}
+                    {profile?.is_muted ? `Unmute @${safeUsername}` : `Mute @${safeUsername}`}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleBlockToggle}
+                    disabled={blockMutation.isPending || unblockMutation.isPending}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    {profile?.is_blocked ? <ShieldCheck className="h-4 w-4 mr-2" /> : <ShieldBan className="h-4 w-4 mr-2" />}
+                    {profile?.is_blocked ? `Unblock @${safeUsername}` : `Block @${safeUsername}`}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
           )}
           <Button
             variant="outline"
@@ -263,16 +354,14 @@ const ProfilePage: React.FC = () => {
             </div>
 
             <div className="flex gap-4 mt-3">
-              <span>
-                <span className="font-semibold text-foreground">{profile?.following_count ?? 0}</span>
-                {" "}
+              <Link to={`/profile/${encodeURIComponent(safeUsername)}/following`} className="hover:underline">
+                <span className="font-semibold text-foreground">{profile?.following_count ?? 0}</span>{" "}
                 <span className="text-muted-foreground">Following</span>
-              </span>
-              <span>
-                <span className="font-semibold text-foreground">{profile?.followers_count ?? 0}</span>
-                {" "}
+              </Link>
+              <Link to={`/profile/${encodeURIComponent(safeUsername)}/followers`} className="hover:underline">
+                <span className="font-semibold text-foreground">{profile?.followers_count ?? 0}</span>{" "}
                 <span className="text-muted-foreground">Followers</span>
-              </span>
+              </Link>
             </div>
           </div>
         </div>
@@ -318,16 +407,12 @@ const ProfilePage: React.FC = () => {
           )}
         </TabsContent>
 
-        <TabsContent value="replies" className="mt-4">
-          <div className="text-center py-8 text-muted-foreground">
-            No replies yet
-          </div>
+        <TabsContent value="replies" className="flex flex-col items-center mt-2 space-y-4">
+          <ProfileFeedTab query={repliesQuery} emptyText="No replies yet" />
         </TabsContent>
 
-        <TabsContent value="media" className="mt-4">
-          <div className="text-center py-8 text-muted-foreground">
-            No media yet
-          </div>
+        <TabsContent value="media" className="flex flex-col items-center mt-2 space-y-4">
+          <ProfileFeedTab query={mediaQuery} emptyText="No media yet" />
         </TabsContent>
 
         <TabsContent value="lists" className="mt-4 space-y-2">
@@ -537,6 +622,51 @@ function ProfileLists({ username }: { username: string }) {
           <p className="text-xs text-muted-foreground mt-1">{list.member_count} members</p>
         </Link>
       ))}
+    </>
+  );
+}
+
+interface InfiniteFeedQuery {
+  data?: InfiniteData<Envelope<PaginatedFeedResponse>>;
+  isLoading: boolean;
+  fetchNextPage: () => void;
+  hasNextPage?: boolean;
+  isFetchingNextPage: boolean;
+}
+
+// Renders an infinitely-scrolling FeedPost list for a paginated feed query.
+function ProfileFeedTab({ query, emptyText }: { query: InfiniteFeedQuery; emptyText: string }) {
+  const { ref, inView } = useInView();
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = query;
+
+  useEffect(() => {
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const posts = data?.pages.flatMap(page => page.data.items) ?? [];
+
+  if (isLoading) {
+    return (
+      <div className="w-full flex items-center justify-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (posts.length === 0) {
+    return <div className="w-full text-center py-8 text-muted-foreground">{emptyText}</div>;
+  }
+
+  return (
+    <>
+      {posts.map(post => (
+        <FeedPost key={post.id} post={post} />
+      ))}
+      <div ref={ref} className="w-full flex justify-center py-4">
+        {isFetchingNextPage && <Loader2 className="h-8 w-8 animate-spin text-primary" />}
+      </div>
     </>
   );
 }

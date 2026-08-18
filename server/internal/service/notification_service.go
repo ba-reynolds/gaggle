@@ -42,6 +42,15 @@ func (s *NotificationService) Create(ctx context.Context, actorID, recipientID i
 	if err != nil && !apperrors.Is(err, apperrors.NotFound) {
 		return err
 	}
+	// Muting silences the muted user's notifications (likes, replies,
+	// mentions, follows) without blocking their content.
+	muted, err := s.store.UserRelationships.Exists(ctx, recipientID, actorID, "mute")
+	if err != nil {
+		return err
+	}
+	if muted {
+		return nil
+	}
 	if notificationType == "mention" {
 		settings, err := s.store.Users.GetSettings(ctx, recipientID)
 		if err != nil {

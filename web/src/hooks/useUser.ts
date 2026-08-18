@@ -1,7 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { blockUser, fetchPinnedPost, fetchProfile, fetchUserFollowers, fetchUserFollowing, followUser, unblockUser, unfollowUser, updateProfile } from '@/api/user';
+import { blockUser, fetchPinnedPost, fetchProfile, fetchUserFollowers, fetchUserFollowing, followUser, muteUser, unblockUser, unfollowUser, unmuteUser, updateProfile } from '@/api/user';
 import type { Envelope, UpdateProfilePayload, UserProfileResponse } from '@/types/api';
 import { updateAuthorInPostQueries } from './usePost';
+
+const invalidateRelationshipQueries = (queryClient: ReturnType<typeof useQueryClient>, username: string) => {
+  void queryClient.invalidateQueries({ queryKey: ['profile', username] });
+  void queryClient.invalidateQueries({ queryKey: ['user-followers', username] });
+  void queryClient.invalidateQueries({ queryKey: ['user-following', username] });
+};
 
 export const useUpdateProfile = () => {
   const queryClient = useQueryClient();
@@ -44,7 +50,7 @@ export const useFollowUser = () => {
   return useMutation<Envelope<{ success: boolean }>, Error, string>({
     mutationFn: followUser,
     onSuccess: (_data, username) => {
-      queryClient.invalidateQueries({ queryKey: ['profile', username] });
+      invalidateRelationshipQueries(queryClient, username);
     },
   });
 };
@@ -55,20 +61,52 @@ export const useUnfollowUser = () => {
   return useMutation<Envelope<{ success: boolean }>, Error, string>({
     mutationFn: unfollowUser,
     onSuccess: (_data, username) => {
-      queryClient.invalidateQueries({ queryKey: ['profile', username] });
+      invalidateRelationshipQueries(queryClient, username);
     },
   });
 };
 
 export const useBlockUser = () => {
+  const queryClient = useQueryClient();
+
   return useMutation<Envelope<{ success: boolean }>, Error, string>({
     mutationFn: blockUser,
+    onSuccess: (_data, username) => {
+      invalidateRelationshipQueries(queryClient, username);
+    },
   });
 };
 
 export const useUnblockUser = () => {
+  const queryClient = useQueryClient();
+
   return useMutation<Envelope<{ success: boolean }>, Error, string>({
     mutationFn: unblockUser,
+    onSuccess: (_data, username) => {
+      invalidateRelationshipQueries(queryClient, username);
+    },
+  });
+};
+
+export const useMuteUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<Envelope<{ success: boolean }>, Error, string>({
+    mutationFn: muteUser,
+    onSuccess: (_data, username) => {
+      invalidateRelationshipQueries(queryClient, username);
+    },
+  });
+};
+
+export const useUnmuteUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<Envelope<{ success: boolean }>, Error, string>({
+    mutationFn: unmuteUser,
+    onSuccess: (_data, username) => {
+      invalidateRelationshipQueries(queryClient, username);
+    },
   });
 };
 

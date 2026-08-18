@@ -1291,7 +1291,174 @@ func (store *postStore) GetUserFeed(ctx context.Context, userID int, includeRepl
 	}, nil
 }
 
-// GetBookmarkedPostsFeed fetches posts bookmarked by a user, optionally filtered by category IDs, paginated by created_at DESC
+// buildFeedFromPostIDs hydrates full posts for the given IDs and produces a
+// paginated PostFeed response with a next cursor when more rows exist.
+func (store *postStore) buildFeedFromPostIDs(ctx context.Context, postIDs []int, limit int) (*models.PostFeed, error) {
+	fullPosts := make([]*models.FullPost, 0, len(postIDs))
+	for _, id := range postIDs {
+		fullPost, err := store.GetFullPostByID(ctx, id)
+		if err != nil {
+			// Don't log here - GetFullPostByID already logs database errors
+			return nil, err
+		}
+		fullPosts = append(fullPosts, fullPost)
+	}
+
+	var nextCursor string
+	if len(postIDs) == limit && len(postIDs) > 0 {
+		lastPost, err := store.GetByID(ctx, postIDs[len(postIDs)-1])
+		if err == nil {
+			cursorData, err := util.CreateTimestampCursor(lastPost.ID, lastPost.CreatedAt.Format(time.RFC3339Nano))
+			if err == nil {
+				if encodedCursor, err := util.EncodeCursor(*cursorData); err == nil {
+					nextCursor = encodedCursor
+				}
+			}
+		}
+	}
+
+	return &models.PostFeed{
+		Items:      fullPosts,
+		HasMore:    len(postIDs) == limit,
+		NextCursor: nextCursor,
+	}, nil
+}
+
+// buildUserFeedQuery compiles the row-selection query for a user's feed with an
+// optional mode: "all" (top-level only), "replies" (replies only), or "media"
+// (posts carrying media). When cursor != "" the query is paginated.
+func (store *postStore) buildUserFeedQuery(userID int, mode string, limit int, cursor string) (string, []interface{}, error) {
+	compiled := `
+		SELECT
+			p.post_id, p.content, p.author_id, p.parent_id, p.soft_deleted, p.soft_deleted_at, p.created_at, p.updated_at,
+			p.likes_count, p.reposts_count, p.quotes_count, p.bookmarks_count, p.views_count, p.replies_count
+		FROM posts p
+		WHERE p.author_id = $1
+		AND p.soft_deleted = FALSE
+	`
+	args := []interface{}{userID}
+	argIdx := 2
+
+	switch mode {
+	case "replies":
+		compiled += "\nAND p.parent_id IS NOT NULL"
+	case "media":
+		compiled += "\nAND EXISTS (SELECT 1 FROM post_media pm WHERE pm.post_id = p.post_id)"
+	default:
+		compiled += "\nAND p.parent_id IS NULL"
+	}
+
+	if cursor != "" {
+		cursorData, err := util.DecodeCursor(cursor)
+		if err != nil {
+			store.logger.Error("failed to decode cursor",
+				"operation", "build_user_feed_query",
+				"userID", userID,
+				"cursor", cursor,
+				"error", err,
+			)
+			return "", nil, apperrors.BadRequestError("invalid cursor", err)
+		}
+		if cursorData == nil || cursorData.Timestamp == "" {
+			store.logger.Error("invalid cursor data",
+				"operation", "build_user_feed_query",
+				"userID", userID,
+				"cursor", cursor,
+			)
+			return "", nil, apperrors.BadRequestError("invalid cursor data", nil)
+		}
+		compiled += "\nAND (p.created_at, p.post_id) < ($2, $3)"
+		args = append(args, cursorData.Timestamp, cursorData.ID)
+		argIdx = 4
+	}
+
+	compiled += "\nORDER BY p.created_at DESC, p.post_id DESC\nLIMIT $" + fmt.Sprintf("%d", argIdx)
+	args = append(args, limit+1)
+
+	return compiled, args, nil
+}
+
+// runUserFeedQuery executes a mode-specific user feed query and hydrates the
+// post IDs into a paginated PostFeed.
+func (store *postStore) runUserFeedQuery(ctx context.Context, userID int, mode string, limit int, cursor string) (*models.PostFeed, error) {
+	query, args, err := store.buildUserFeedQuery(userID, mode, limit, cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := store.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		store.logger.Error("database query failed",
+			"operation", "user_feed_query",
+			"userID", userID,
+			"mode", mode,
+			"limit", limit,
+			"cursor", cursor,
+			"query", query,
+			"error", err,
+		)
+		return nil, apperrors.InternalServerError(err)
+	}
+	defer rows.Close()
+
+	var postIDs []int
+	count := 0
+	for rows.Next() {
+		var post models.Post
+		err := rows.Scan(
+			&post.ID,
+			&post.Content,
+			&post.AuthorID,
+			&post.ParentID,
+			&post.SoftDeleted,
+			&post.SoftDeletedAt,
+			&post.CreatedAt,
+			&post.UpdatedAt,
+			&post.LikesCount,
+			&post.RepostsCount,
+			&post.QuotesCount,
+			&post.BookmarksCount,
+			&post.ViewsCount,
+			&post.RepliesCount,
+		)
+		if err != nil {
+			store.logger.Error("failed to scan user feed post",
+				"operation", "user_feed_query",
+				"userID", userID,
+				"mode", mode,
+				"error", err,
+			)
+			return nil, apperrors.InternalServerError(err)
+		}
+
+		count++
+		if count > limit {
+			break
+		}
+		postIDs = append(postIDs, post.ID)
+	}
+	if err := rows.Err(); err != nil {
+		store.logger.Error("error iterating over user feed rows",
+			"operation", "user_feed_query",
+			"userID", userID,
+			"mode", mode,
+			"error", err,
+		)
+		return nil, apperrors.InternalServerError(err)
+	}
+
+	return store.buildFeedFromPostIDs(ctx, postIDs, limit)
+}
+
+// GetUserReplies fetches the replies (posts with a parent) made by a specific user
+func (store *postStore) GetUserReplies(ctx context.Context, userID int, limit int, cursor string) (*models.PostFeed, error) {
+	return store.runUserFeedQuery(ctx, userID, "replies", limit, cursor)
+}
+
+// GetUserMediaFeed fetches posts with media made by a specific user
+func (store *postStore) GetUserMediaFeed(ctx context.Context, userID int, limit int, cursor string) (*models.PostFeed, error) {
+	return store.runUserFeedQuery(ctx, userID, "media", limit, cursor)
+}
 func (store *postStore) GetBookmarkedPostsFeed(ctx context.Context, userID int, categoryIDs []int, limit int, cursor string) (*models.PostFeed, error) {
 	var query string
 	var args []interface{}

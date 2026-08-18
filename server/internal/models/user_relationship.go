@@ -26,16 +26,16 @@ type UserRelationshipResponse struct {
 
 // UserFollowersResponse represents a paginated response of followers
 type UserFollowersResponse struct {
-	Followers  []UserWithProfile `json:"followers"`
-	HasMore    bool              `json:"has_more"`
-	NextCursor string            `json:"next_cursor,omitempty"`
+	Items      []UserProfileResponse `json:"items"`
+	HasMore    bool                  `json:"has_more"`
+	NextCursor string                `json:"next_cursor,omitempty"`
 }
 
 // UserFollowingResponse represents a paginated response of following users
 type UserFollowingResponse struct {
-	Following  []UserWithProfile `json:"following"`
-	HasMore    bool              `json:"has_more"`
-	NextCursor string            `json:"next_cursor,omitempty"`
+	Items      []UserProfileResponse `json:"items"`
+	HasMore    bool                  `json:"has_more"`
+	NextCursor string                `json:"next_cursor,omitempty"`
 }
 
 // Implement PaginatedResponse interface
@@ -59,4 +59,5 @@ func (ufr *UserFollowingResponse) GetNextCursor() string {
 type RelationshipStatus struct {
 	IsFollowing bool `json:"is_following"`
 	IsBlocked   bool `json:"is_blocked"`
+	IsMuted     bool `json:"is_muted"`
 }

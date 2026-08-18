@@ -655,6 +655,52 @@ func (s *PostService) GetUserFeed(ctx context.Context, userID int, viewerID int,
 	return feed, nil
 }
 
+// GetUserRepliesFeed retrieves the replies made by a specific user.
+func (s *PostService) GetUserRepliesFeed(ctx context.Context, userID int, viewerID int, limit int, cursor string) (*models.PostFeed, error) {
+	return s.userModeFeed(ctx, userID, viewerID, "replies", limit, cursor)
+}
+
+// GetUserMediaFeed retrieves posts with media made by a specific user.
+func (s *PostService) GetUserMediaFeed(ctx context.Context, userID int, viewerID int, limit int, cursor string) (*models.PostFeed, error) {
+	return s.userModeFeed(ctx, userID, viewerID, "media", limit, cursor)
+}
+
+// userModeFeed validates the user and hydrates a mode-specific feed
+// ("replies" or "media") with media, engagement, polls and parent summaries.
+func (s *PostService) userModeFeed(ctx context.Context, userID int, viewerID int, mode string, limit int, cursor string) (*models.PostFeed, error) {
+	_, err := s.store.Users.GetByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	normalizedLimit := s.validateAndNormalizeLimit(limit)
+
+	var feed *models.PostFeed
+	if mode == "replies" {
+		feed, err = s.store.Posts.GetUserReplies(ctx, userID, normalizedLimit, cursor)
+	} else {
+		feed, err = s.store.Posts.GetUserMediaFeed(ctx, userID, normalizedLimit, cursor)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.store.Media.FetchPostMedia(ctx, feed.Items); err != nil {
+		return nil, err
+	}
+	if err := hydrateEngagement(ctx, s.store, s.logger, feed.Items, viewerID); err != nil {
+		return nil, err
+	}
+	if err := hydratePolls(ctx, s.store, feed.Items, viewerID); err != nil {
+		return nil, err
+	}
+	if err := hydrateParents(ctx, s.store, feed.Items); err != nil {
+		return nil, err
+	}
+
+	return feed, nil
+}
+
 func (s *PostService) GetBookmarkedPostsFeed(ctx context.Context, userID int, viewerID int, categoryIDs []int, limit int, cursor string) (*models.PostFeed, error) {
 	feed, err := s.store.Posts.GetBookmarkedPostsFeed(ctx, userID, categoryIDs, limit, cursor)
 	if err != nil {

@@ -68,6 +68,9 @@ export interface UserProfileResponse {
   following_count: number;
   created_at: string;
   is_admin?: boolean;
+  is_following?: boolean;
+  is_blocked?: boolean;
+  is_muted?: boolean;
   badges: UserBadge[];
 }
 

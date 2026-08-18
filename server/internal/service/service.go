@@ -63,6 +63,8 @@ type Service struct {
 		GetDescendants(ctx context.Context, postID int, viewerID int, limit int, cursor string) (*models.PostDescendants, error)
 		GetHomeFeed(ctx context.Context, userID int, limit int, cursor string) (*models.PostFeed, error)
 		GetUserFeed(ctx context.Context, userID int, viewerID int, includeReplies bool, limit int, cursor string) (*models.PostFeed, error)
+		GetUserRepliesFeed(ctx context.Context, userID int, viewerID int, limit int, cursor string) (*models.PostFeed, error)
+		GetUserMediaFeed(ctx context.Context, userID int, viewerID int, limit int, cursor string) (*models.PostFeed, error)
 		GetBookmarkedPostsFeed(ctx context.Context, userID int, viewerID int, categoryIDs []int, limit int, cursor string) (*models.PostFeed, error)
 		GetLikedPostsFeed(ctx context.Context, userID int, viewerID int, limit int, cursor string) (*models.PostFeed, error)
 		GetQuotesFeed(ctx context.Context, postID int, viewerID int, limit int, cursor string) (*models.PostFeed, error)
@@ -83,10 +85,11 @@ type Service struct {
 	}
 	UserRelationships interface {
 		CreateRelationship(ctx context.Context, followerID, followingID int, relationshipType string) (*models.UserRelationship, error)
-		DeleteRelationship(ctx context.Context, followerID, followingID int) error
+		DeleteRelationship(ctx context.Context, followerID, followingID int, relationshipType string) error
 		GetFollowers(ctx context.Context, userID int, limit int, cursor string) (*models.UserFollowersResponse, error)
 		GetFollowing(ctx context.Context, userID int, limit int, cursor string) (*models.UserFollowingResponse, error)
 		GetRelationshipStatus(ctx context.Context, followerID, followingID int) (*models.RelationshipStatus, error)
+		GetRelationshipStatuses(ctx context.Context, viewerID int, targetIDs []int) (map[int]*models.RelationshipStatus, error)
 		GetFollowerIDs(ctx context.Context, userID int) ([]int, error)
 	}
 	Notifications interface {

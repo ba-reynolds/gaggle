@@ -328,8 +328,13 @@ func (store *userRelationshipStore) GetFollowers(ctx context.Context, userID int
 		}
 	}
 
+	items := make([]models.UserProfileResponse, len(followers))
+	for i, f := range followers {
+		items[i] = f.ToProfileResponse()
+	}
+
 	return &models.UserFollowersResponse{
-		Followers:  followers,
+		Items:      items,
 		HasMore:    hasMore,
 		NextCursor: nextCursor,
 	}, nil
@@ -473,8 +478,13 @@ func (store *userRelationshipStore) GetFollowing(ctx context.Context, userID int
 		}
 	}
 
+	items := make([]models.UserProfileResponse, len(following))
+	for i, f := range following {
+		items[i] = f.ToProfileResponse()
+	}
+
 	return &models.UserFollowingResponse{
-		Following:  following,
+		Items:      items,
 		HasMore:    hasMore,
 		NextCursor: nextCursor,
 	}, nil
@@ -505,35 +515,180 @@ func (store *userRelationshipStore) GetFollowerIDs(ctx context.Context, userID i
 	return ids, nil
 }
 
-// GetRelationshipStatus gets the relationship status between two users
-func (store *userRelationshipStore) GetRelationshipStatus(ctx context.Context, followerID, followingID int) (*models.RelationshipStatus, error) {
+// DeleteByType deletes relationships of a specific type between two users
+func (store *userRelationshipStore) DeleteByType(ctx context.Context, tx *sql.Tx, followerID, followingID int, relationshipType string) error {
 	query := `
-		SELECT relationship_type
-		FROM user_relationships
-		WHERE follower_id = $1 AND following_id = $2
+		DELETE FROM user_relationships
+		WHERE follower_id = $1 AND following_id = $2 AND relationship_type = $3
 	`
 
-	var relationshipType string
-	err := store.db.QueryRowContext(ctx, query, followerID, followingID).Scan(&relationshipType)
+	exec := store.db.ExecContext
+	if tx != nil {
+		exec = tx.ExecContext
+	}
+
+	result, err := exec(ctx, query, followerID, followingID, relationshipType)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			// No relationship exists
-			return &models.RelationshipStatus{IsFollowing: false, IsBlocked: false}, nil
-		}
+		store.logger.Error("database delete failed",
+			"operation", "delete_user_relationship_by_type",
+			"follower_id", followerID,
+			"following_id", followingID,
+			"relationship_type", relationshipType,
+			"query", query,
+			"error", err,
+		)
+		return apperrors.InternalServerError(err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		store.logger.Error("failed to get rows affected",
+			"operation", "delete_user_relationship_by_type",
+			"error", err,
+		)
+		return apperrors.InternalServerError(err)
+	}
+
+	if rowsAffected == 0 {
+		return apperrors.NotFoundError("relationship not found between these users", nil)
+	}
+
+	return nil
+}
+
+// Exists reports whether a relationship of the given type exists between two users
+func (store *userRelationshipStore) Exists(ctx context.Context, followerID, followingID int, relationshipType string) (bool, error) {
+	var exists bool
+	err := store.db.QueryRowContext(ctx,
+		`SELECT EXISTS (
+			SELECT 1 FROM user_relationships
+			WHERE follower_id = $1 AND following_id = $2 AND relationship_type = $3
+		)`,
+		followerID, followingID, relationshipType,
+	).Scan(&exists)
+	if err != nil {
+		store.logger.Error("database query failed",
+			"operation", "exists_user_relationship",
+			"follower_id", followerID,
+			"following_id", followingID,
+			"relationship_type", relationshipType,
+			"error", err,
+		)
+		return false, apperrors.InternalServerError(err)
+	}
+	return exists, nil
+}
+
+// GetRelationshipStatus gets the relationship status between two users. Because
+// a pair may hold several relationship types at once (e.g. follow + mute), every
+// row is read.
+func (store *userRelationshipStore) GetRelationshipStatus(ctx context.Context, followerID, followingID int) (*models.RelationshipStatus, error) {
+	rows, err := store.db.QueryContext(ctx,
+		`SELECT relationship_type FROM user_relationships
+		 WHERE follower_id = $1 AND following_id = $2`,
+		followerID, followingID,
+	)
+	if err != nil {
 		store.logger.Error("database query failed",
 			"operation", "get_relationship_status",
 			"follower_id", followerID,
 			"following_id", followingID,
-			"query", query,
+			"query", "get_relationship_types",
+			"error", err,
+		)
+		return nil, apperrors.InternalServerError(err)
+	}
+	defer rows.Close()
+
+	status := &models.RelationshipStatus{}
+	for rows.Next() {
+		var relationshipType string
+		if err := rows.Scan(&relationshipType); err != nil {
+			store.logger.Error("failed to scan relationship status row",
+				"operation", "get_relationship_status",
+				"error", err,
+			)
+			return nil, apperrors.InternalServerError(err)
+		}
+		switch relationshipType {
+		case "follow":
+			status.IsFollowing = true
+		case "block":
+			status.IsBlocked = true
+		case "mute":
+			status.IsMuted = true
+		}
+	}
+	if err := rows.Err(); err != nil {
+		store.logger.Error("error iterating relationship status rows",
+			"operation", "get_relationship_status",
 			"error", err,
 		)
 		return nil, apperrors.InternalServerError(err)
 	}
 
-	status := &models.RelationshipStatus{
-		IsFollowing: relationshipType == "follow",
-		IsBlocked:   relationshipType == "block",
+	return status, nil
+}
+
+// GetRelationshipStatuses returns the relationship status between the viewer and
+// each target user, keyed by target user ID.
+func (store *userRelationshipStore) GetRelationshipStatuses(ctx context.Context, viewerID int, targetIDs []int) (map[int]*models.RelationshipStatus, error) {
+	if len(targetIDs) == 0 {
+		return map[int]*models.RelationshipStatus{}, nil
 	}
 
-	return status, nil
+	statusMap := make(map[int]*models.RelationshipStatus, len(targetIDs))
+	for _, id := range targetIDs {
+		statusMap[id] = &models.RelationshipStatus{}
+	}
+
+	rows, err := store.db.QueryContext(ctx,
+		`SELECT following_id, relationship_type FROM user_relationships
+		 WHERE follower_id = $1 AND following_id = ANY($2)`,
+		viewerID, pq.Array(targetIDs),
+	)
+	if err != nil {
+		store.logger.Error("database query failed",
+			"operation", "get_relationship_statuses",
+			"viewer_id", viewerID,
+			"target_ids", targetIDs,
+			"error", err,
+		)
+		return nil, apperrors.InternalServerError(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var targetID int
+		var relationshipType string
+		if err := rows.Scan(&targetID, &relationshipType); err != nil {
+			store.logger.Error("failed to scan relationship statuses row",
+				"operation", "get_relationship_statuses",
+				"error", err,
+			)
+			return nil, apperrors.InternalServerError(err)
+		}
+		status := statusMap[targetID]
+		if status == nil {
+			status = &models.RelationshipStatus{}
+			statusMap[targetID] = status
+		}
+		switch relationshipType {
+		case "follow":
+			status.IsFollowing = true
+		case "block":
+			status.IsBlocked = true
+		case "mute":
+			status.IsMuted = true
+		}
+	}
+	if err := rows.Err(); err != nil {
+		store.logger.Error("error iterating relationship statuses rows",
+			"operation", "get_relationship_statuses",
+			"error", err,
+		)
+		return nil, apperrors.InternalServerError(err)
+	}
+
+	return statusMap, nil
 }
