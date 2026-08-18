@@ -1,3 +1,113 @@
+# SUMMARY — google-oauth-analysis
+
+Analysis only (no code changes): how much trouble to add Google OAuth so users
+can register/login with it.
+
+## Verdict
+
+**Low-to-medium effort — roughly 3/10 on the trouble scale.** The codebase is
+already well set up for this: complete JWT access/refresh token machinery,
+a refresh-token cookie, a `users.email` unique index, and a clean service/
+handler/store layering. OAuth plugs straight into the existing
+`AuthService.CreateRefreshToken` + `GenerateAccessToken` flow. The real work is
+OAuth-specific edge cases (username generation, account linking, CSRF state,
+testing), not fighting this repo.
+
+Estimate: ~1 focused dev day for a minimal login-only flow; ~2–4 days for a
+production-grade version (schema migration, account linking, collision
+handling, tests, avatar). Broken down below by concrete repo touchpoints.
+
+## What OAuth actually requires (mapped to this codebase)
+
+### 1. Schema migration — MUST (medium)
+- `users.password` is `NOT NULL` (`server/cmd/migrate/migrations/000001_create-users.up.sql:6`),
+  but OAuth users have no password. Need migration #16:
+  `ALTER TABLE users ALTER COLUMN password DROP NOT NULL` (cleanest) or a
+  sentinel password. Notably, `store.userStore.Create` inserts a
+  `user_profiles` row too — still works, profile defaults are empty strings.
+- Add `google_id TEXT` (the `sub` claim) with a unique index, and treat it
+  as the identity key. Falls back to lookup-by-email only if you skip this;
+  storing `google_id` survives Google account/email recovery swaps.
+- The existing case-insensitive unique index on email
+  (`unique_email_case_insensitive`) is free leverage for matching existing
+  users.
+
+### 2. Config — trivial
+- Add `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`,
+  `PUBLIC_BASE_URL` to `server/pkg/config/config.go`, `server/.env.example`,
+  and `compose.yaml:53`. 2–3 lines each.
+
+### 3. Dependencies — trivial
+- `golang.org/x/oauth2` for the code exchange (endpoint
+  `google.Endpoint`). For ID-token verification you can reuse the already-
+  vendored `github.com/golang-jwt/jwt/v5` to verify Google's RS256 token
+  against Google's JWKS, avoiding a new oidc dependency. Verify: issuer
+  `accounts.google.com`, `aud` == client id, `email_verified`, signature.
+
+### 4. Backend endpoints — medium, but slots in cleanly
+- New handler methods on `AuthHandler` (or a `GoogleOAuthHandler`) mounted in
+  `server/internal/api/router.go:63` under `/api/v1/auth`:
+  - `GET /auth/google` — build consent URL with a random `state` (stored in a
+    short-lived httpOnly cookie, SameSite=Lax, for CSRF), 302 to Google.
+  - `GET /auth/google/callback` — validate state cookie, exchange code, verify
+    ID token, then:
+    - existing user by `google_id` → issue session;
+    - existing user by email → **account-link decision** (see #6);
+    - new user → derive username from email-prefix/given_name, sanitize to
+      `^[a-zA-Z0-9_]+$`, ≤16 chars (`models.RegisterRequest` rules), retry with
+      a numeric suffix on `unique_username` collision.
+  - On success: reuse `AuthService.CreateRefreshToken` +
+    `GenerateAccessToken` and `setRefreshTokenCookie`, then 302 back to the SPA
+    root. **Zero new session logic.**
+- Resulting session behaves like a normal login, so everything downstream
+  (auth middleware `server/internal/middleware/token.go`, refresh, logout) works
+  unchanged.
+
+### 5. Frontend — easy
+- "Continue with Google" buttons on `web/src/pages/LoginPage.tsx` and
+  `SignupPage.tsx` as a plain `<a href="/api/v1/auth/google">`. No fetch/axios.
+- The redirect loop lands back at `/`; the existing `AuthContext` bootstrap
+  (`refresh-token` cookie → `/users/me`, `web/src/contexts/AuthContext.tsx:67`)
+  restores the session automatically. Same-origin via nginx
+  (`web/nginx.conf:15`) or the vite dev proxy (`web/vite.config.ts:19`) — no CORS.
+
+### 6. The genuinely fiddly bits
+- **Account linking:** a user who signed up with password+same email then logs
+  in with Google — merge into the existing account, or reject? Product decision;
+  either choice adds code + test surface.
+- **Google Cloud Console setup** (manual, unautomatable): create OAuth client,
+  authorize redirect URIs that must match the deployed URL exactly
+  (`http://localhost:5173/...` dev vs `https://...` prod). Real friction, not a
+  code problem.
+- **Username generation:** unique-lower index will reject derived handles; need
+  a bounded retry/append-counter loop.
+- **`email_verified=false`** policy (reject or allow).
+- **Testing:** the code exchange hits Google and can't run in a normal test.
+  Best approach: hide "exchange code → verified identity" behind a small
+  interface and unit-test the callback logic with a fake — consistent with the
+  existing `server/internal/handlers/integration_test.go` style. Moderate.
+- **Avatar:** pulling the Google avatar into the existing media/profile-picture
+  system is extra work (download + store via `MediaService`); easiest to skip for
+  v1 and leave the avatar unset.
+
+## Files that would be touched for a real implementation
+- `server/cmd/migrate/migrations/000016_*.{up,down}.sql` (new migration)
+- `server/internal/models/auth.go` (OAuth callback/state models)
+- `server/internal/store/user_store.go` (+`GetByGoogleID`, nullable-password `Create`)
+- `server/internal/service/auth_service.go` (+`LoginWithGoogle`)
+- `server/internal/handlers/auth_handler.go`, `server/internal/api/router.go`
+- `server/pkg/config/config.go`, `server/.env.example`, `compose.yaml`
+- `web/src/pages/LoginPage.tsx`, `web/src/pages/SignupPage.tsx`
+
+## Reviewer checkpoints
+- No code was changed in this branch — it is analysis-only.
+- Confirm the account-linking policy (merge vs reject) before starting, as it
+  dominates the design.
+- During dev, the Google redirect URI must exactly match what nginx/vite are
+  listening on.
+
+---
+
 # SUMMARY — ui-responsiveness-fixes
 
 Batch of UI responsiveness bugs, fixed across the Go API and the React client.
