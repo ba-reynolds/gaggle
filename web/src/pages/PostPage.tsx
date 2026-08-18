@@ -69,16 +69,15 @@ const PostPage = () => {
             <div key={threadPost.id} className={position ? "flex gap-x-1.5" : ""}>
               {position && (
                 <div aria-hidden className="relative w-6 shrink-0">
-                  {position !== 'first' && (
-                    <div className="absolute top-[43px] left-1/2 w-4 h-0.5 bg-border" />
+                  {position === 'first' && (
+                    <div className="absolute left-1/2 -translate-x-1/2 top-6 bottom-0 w-0.5 rounded-t-full bg-border" />
                   )}
-                  <div
-                    className={`absolute left-1/2 -translate-x-1/2 w-0.5 bg-border ${
-                      position === 'first' ? 'top-6 bottom-0' :
-                      position === 'last' ? 'top-0 h-16' :
-                      'top-0 bottom-0'
-                    }`}
-                  />
+                  {position !== 'first' && (
+                    <div className="absolute top-0 left-[11px] right-[-4px] h-[45px] border-l-2 border-b-2 border-border rounded-b-[6px]" />
+                  )}
+                  {position === 'middle' && (
+                    <div className="absolute left-1/2 -translate-x-1/2 top-[45px] bottom-0 w-0.5 bg-border" />
+                  )}
                 </div>
               )}
               <div className="flex-1 min-w-0">

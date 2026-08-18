@@ -37,6 +37,11 @@ working end-to-end in the browser.
     continuous (gutter cells are flush).
 - `FeedPost` is back to its original, untouched form — no connector prop, no
   overlay, so other pages using it are pixel-identical.
+- The elbows are **rounded** (6px `border-bottom-left/right-radius` drawn with a
+  `border-l-2 border-b-2` C element per child): no more sharp L corners. The
+  topmost post's spine has a rounded cap, middle posts continue the rail below
+  the elbow, and the last post's vertical line **stops at the horizontal elbow**
+  (no line extending below it).
 - Earlier experimental approaches (gutter rail on FeedPost, a dedicated
   `ThreadPanel`, `Separator` dividers, an in-card elbow overlay) were all
   removed in favor of this left-gutter connector.
