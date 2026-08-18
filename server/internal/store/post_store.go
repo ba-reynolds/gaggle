@@ -727,11 +727,11 @@ func (store *postStore) GetHomeFeed(ctx context.Context, userID int, limit int, 
 				p.post_id, p.content, p.author_id, p.parent_id, p.soft_deleted, p.soft_deleted_at, p.created_at, p.updated_at,
 				p.likes_count, p.reposts_count, p.quotes_count, p.bookmarks_count, p.views_count, p.replies_count
 			FROM posts p
-			INNER JOIN user_relationships ur ON p.author_id = ur.following_id
-			WHERE ur.follower_id = $1 
-			AND ur.relationship_type = 'follow'
-			AND p.soft_deleted = FALSE
-			AND p.parent_id IS NULL  -- Only top-level posts (not replies)
+			LEFT JOIN user_relationships ur
+			  ON p.author_id = ur.following_id AND ur.follower_id = $1 AND ur.relationship_type = 'follow'
+			WHERE p.soft_deleted = FALSE
+			  AND p.parent_id IS NULL  -- Only top-level posts (not replies)
+			  AND (ur.follower_id IS NOT NULL OR p.author_id = $1)  -- followed users + own posts
 			ORDER BY p.created_at DESC, p.post_id DESC
 			LIMIT $2
 		`
@@ -764,12 +764,12 @@ func (store *postStore) GetHomeFeed(ctx context.Context, userID int, limit int, 
 				p.post_id, p.content, p.author_id, p.parent_id, p.soft_deleted, p.soft_deleted_at, p.created_at, p.updated_at,
 				p.likes_count, p.reposts_count, p.quotes_count, p.bookmarks_count, p.views_count, p.replies_count
 			FROM posts p
-			INNER JOIN user_relationships ur ON p.author_id = ur.following_id
-			WHERE ur.follower_id = $1 
-			AND ur.relationship_type = 'follow'
-			AND p.soft_deleted = FALSE
-			AND p.parent_id IS NULL  -- Only top-level posts (not replies)
-			AND (p.created_at, p.post_id) < ($2, $3)
+			LEFT JOIN user_relationships ur
+			  ON p.author_id = ur.following_id AND ur.follower_id = $1 AND ur.relationship_type = 'follow'
+			WHERE p.soft_deleted = FALSE
+			  AND p.parent_id IS NULL  -- Only top-level posts (not replies)
+			  AND (ur.follower_id IS NOT NULL OR p.author_id = $1)  -- followed users + own posts
+			  AND (p.created_at, p.post_id) < ($2, $3)
 			ORDER BY p.created_at DESC, p.post_id DESC
 			LIMIT $4
 		`

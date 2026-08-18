@@ -615,6 +615,9 @@ func TestHomeFeedShowsFollowedUsers(t *testing.T) {
 	// B posts
 	app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/posts/", Token: tokenB, Body: map[string]string{"content": "from b"}})
 
+	// A posts (their own home feed must include their own post too).
+	app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/posts/", Token: tokenA, Body: map[string]string{"content": "from a"}})
+
 	// A follows B
 	rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/users/feedb/follow", Token: tokenA})
 	if rec.Code != http.StatusOK {
@@ -622,8 +625,19 @@ func TestHomeFeedShowsFollowedUsers(t *testing.T) {
 	}
 
 	feed, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/posts/feed", Token: tokenA}))
-	if len(feed["items"].([]any)) != 1 {
-		t.Fatalf("home feed should have 1 post from followed user, got %v", feed["items"])
+	items := feed["items"].([]any)
+	if len(items) != 2 {
+		t.Fatalf("home feed should have 2 posts (own + followed user), got %v", feed["items"])
+	}
+	// "from a" must be present (author's own post stays in their home feed).
+	foundOwn := false
+	for _, it := range items {
+		if it.(map[string]any)["content"] == "from a" {
+			foundOwn = true
+		}
+	}
+	if !foundOwn {
+		t.Fatalf("own post missing from home feed: %v", feed["items"])
 	}
 }
 
