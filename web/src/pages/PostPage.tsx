@@ -69,15 +69,20 @@ const PostPage = () => {
             <div key={threadPost.id} className={position ? "flex gap-x-1.5" : ""}>
               {position && (
                 <div aria-hidden className="relative w-6 shrink-0">
-                  {position === 'first' && (
-                    <div className="absolute left-1/2 -translate-x-1/2 top-6 bottom-0 w-0.5 rounded-t-full bg-border" />
-                  )}
-                  {position !== 'first' && (
-                    <div className="absolute top-0 left-[11px] right-[-4px] h-[45px] border-l-2 border-b-2 border-border rounded-b-[6px]" />
-                  )}
-                  {position === 'middle' && (
-                    <div className="absolute left-1/2 -translate-x-1/2 top-[45px] bottom-0 w-0.5 bg-border" />
-                  )}
+                  {/* Straight vertical rail. Starts at the top post's avatar,
+                      runs through, and stops at the last post's elbow. */}
+                  <div
+                    className={`absolute left-[11px] w-0.5 bg-border ${
+                      position === 'first' ? 'top-6 bottom-0 rounded-t-full' :
+                      position === 'last' ? 'top-0 h-[45px]' :
+                      'top-0 bottom-0'
+                    }`}
+                  />
+                  {/* Straight horizontal tick, at every post's avatar level,
+                      pointing right toward the profile picture. */}
+                  <div className="absolute top-[43px] left-[11px] w-[17px] h-0.5 rounded-full bg-border" />
+                  {/* Small rounded fillet where the rail meets the tick. */}
+                  <div className="absolute top-[42px] left-[10px] w-[5px] h-[5px] rounded-full bg-border" />
                 </div>
               )}
               <div className="flex-1 min-w-0">
