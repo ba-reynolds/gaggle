@@ -100,6 +100,9 @@ func (s *ListService) GetListFeed(ctx context.Context, viewerID, listID, limit i
 	if err := hydratePolls(ctx, s.store, feed.Items, viewerID); err != nil {
 		return nil, err
 	}
+	if err := hydrateParents(ctx, s.store, feed.Items); err != nil {
+		return nil, err
+	}
 	return feed, nil
 }
 

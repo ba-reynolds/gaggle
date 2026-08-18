@@ -105,6 +105,10 @@ func (s *SearchService) hydrateFeed(ctx context.Context, feed *models.PostFeed, 
 		eng.QuoteCount = item.QuotesCount
 		item.Engagement = eng
 	}
+	if err := hydrateParents(ctx, s.store, feed.Items); err != nil {
+		s.logger.Error("search parent hydration failed", "error", err)
+		return nil, err
+	}
 	return feed, nil
 }
 

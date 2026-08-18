@@ -254,7 +254,15 @@ export function useDeletePost() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ postId }: { postId: number; username?: string }) => deletePost(postId),
-    onSuccess: (_, variables) => invalidatePostQueries(queryClient, variables.postId, variables.username),
+    onSuccess: (_, variables) => {
+      // Deleting the currently pinned post must clear the pinned-post cache
+      // entry. Relying on a refetch here does not work: React Query keeps the
+      // last successful data when the follow-up refetch 404s.
+      if (variables.username) {
+        queryClient.removeQueries({ queryKey: ['pinned-post', variables.username] });
+      }
+      invalidatePostQueries(queryClient, variables.postId, variables.username);
+    },
   });
 }
 
@@ -262,7 +270,19 @@ export function usePinPost() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ postId, pinned }: { postId: number; pinned: boolean; username?: string }) => pinned ? unpinPost(postId) : pinPost(postId),
-    onSuccess: (_, variables) => invalidatePostQueries(queryClient, variables.postId, variables.username),
+    onSuccess: (_, variables) => {
+      if (variables.username) {
+        if (variables.pinned) {
+          // Unpinned: the pinned-post query now 404s, but React Query retains
+          // the previous data on a failed refetch, so purge the cache instead
+          // of relying on invalidation.
+          queryClient.removeQueries({ queryKey: ['pinned-post', variables.username] });
+        } else {
+          void queryClient.invalidateQueries({ queryKey: ['pinned-post', variables.username] });
+        }
+      }
+      invalidatePostQueries(queryClient, variables.postId, variables.username);
+    },
   });
 }
 
@@ -314,28 +334,100 @@ export function useUnrepostPost() {
   );
 }
 
-export function useBookmarkPost() {
-  return useEngagementMutation(
-    ({ postId, categoryId }: { postId: number; categoryId?: number }) => bookmarkPost(postId, categoryId),
-    ({ postId }) => postId,
-    ({ categoryId }) => ({
-      is_bookmarked: true,
-      bookmark_count: categoryId ? 1 : 1,
-    }),
-    ({ categoryId }) => ({
-      is_bookmarked: false,
-      bookmark_count: categoryId ? -1 : -1,
-    })
+// Bookmark mutations need to keep the bookmarks page and the category filter
+// badges in sync, so they bypass the generic engagement mutation.
+const invalidateBookmarkQueries = (
+  queryClient: ReturnType<typeof useQueryClient>,
+  postId: number
+) => {
+  void queryClient.invalidateQueries({ queryKey: ['post', postId] });
+  void queryClient.invalidateQueries({ queryKey: ['feed'] });
+  void queryClient.invalidateQueries({ queryKey: ['bookmarked'] });
+  void queryClient.invalidateQueries({ queryKey: ['user-posts'] });
+  void queryClient.invalidateQueries({ queryKey: ['search-posts'] });
+  void queryClient.invalidateQueries({ queryKey: ['hashtag-posts'] });
+  void queryClient.invalidateQueries({ queryKey: ['bookmark-categories'] });
+};
+
+// Optimistically drop the post from every bookmarked feed. Used on unbookmark
+// so the bookmarks page reacts immediately instead of waiting for the refetch.
+const removePostFromBookmarkedFeeds = (
+  queryClient: ReturnType<typeof useQueryClient>,
+  postId: number
+) => {
+  queryClient.setQueriesData<InfinitePages>(
+    { queryKey: ['bookmarked'] },
+    (old) => {
+      if (!old) return old;
+      return {
+        ...old,
+        pages: old.pages.map(page => ({
+          ...page,
+          data: {
+            ...page.data,
+            items: page.data.items.filter(post => post.id !== postId),
+          },
+        })),
+      };
+    }
   );
+};
+
+export function useBookmarkPost() {
+  const queryClient = useQueryClient();
+
+  return useMutation<Envelope<BookmarkActionResponse>, Error, { postId: number; categoryId?: number }>({
+    mutationFn: ({ postId, categoryId }) => bookmarkPost(postId, categoryId),
+    onMutate: async ({ postId }) => {
+      await queryClient.cancelQueries({ queryKey: ['post', postId] });
+      updatePostInAllQueries(queryClient, postId, (post) => ({
+        ...post,
+        engagement: applyEngagementMerge(post.engagement, {
+          is_bookmarked: true,
+          bookmark_count: post.engagement.is_bookmarked ? 0 : 1,
+        }),
+      }));
+    },
+    onSuccess: (_data, { postId }) => invalidateBookmarkQueries(queryClient, postId),
+    onError: (_err, { postId }) => {
+      updatePostInAllQueries(queryClient, postId, (post) => ({
+        ...post,
+        engagement: applyEngagementMerge(post.engagement, {
+          is_bookmarked: false,
+          bookmark_count: post.engagement.is_bookmarked ? -1 : 0,
+        }),
+      }));
+    },
+  });
 }
 
 export function useUnbookmarkPost() {
-  return useEngagementMutation(
-    unbookmarkPost,
-    (postId) => postId,
-    () => ({ is_bookmarked: false, bookmark_count: -1 }),
-    () => ({ is_bookmarked: true, bookmark_count: 1 })
-  );
+  const queryClient = useQueryClient();
+
+  return useMutation<Envelope<BookmarkActionResponse>, Error, number>({
+    mutationFn: unbookmarkPost,
+    onMutate: async (postId) => {
+      await queryClient.cancelQueries({ queryKey: ['post', postId] });
+      updatePostInAllQueries(queryClient, postId, (post) => ({
+        ...post,
+        engagement: applyEngagementMerge(post.engagement, {
+          is_bookmarked: false,
+          bookmark_count: post.engagement.is_bookmarked ? -1 : 0,
+        }),
+      }));
+      removePostFromBookmarkedFeeds(queryClient, postId);
+    },
+    onSuccess: (_data, postId) => invalidateBookmarkQueries(queryClient, postId),
+    onError: (_err, postId) => {
+      updatePostInAllQueries(queryClient, postId, (post) => ({
+        ...post,
+        engagement: applyEngagementMerge(post.engagement, {
+          is_bookmarked: true,
+          bookmark_count: post.engagement.is_bookmarked ? 0 : 1,
+        }),
+      }));
+    },
+  });
 }
 
 export function useQuotePost(postId: number) {

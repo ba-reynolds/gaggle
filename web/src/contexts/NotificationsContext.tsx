@@ -1,7 +1,10 @@
 import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { getUnreadNotificationCount, markAllNotificationsRead, markNotificationRead } from '@/api/notifications';
 import { useAuth } from '@/contexts/AuthContext';
+import type { Envelope, Notification, PaginatedFeedResponse } from '@/types/api';
+
+type NotificationEnvelope = Envelope<PaginatedFeedResponse<Notification>>;
 
 interface NotificationsContextValue {
   unreadCount: number;
@@ -60,6 +63,29 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       await queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
     markAllRead: async () => {
+      // Optimistically mark everything read so the page responds instantly;
+      // the refetch below reconciles with the server.
+      queryClient.setQueryData(['notifications-unread-count'], { count: 0 });
+      queryClient.setQueriesData<InfiniteData<NotificationEnvelope>>(
+        { queryKey: ['notifications'] },
+        (old) => {
+          if (!old) return old;
+          const now = new Date().toISOString();
+          return {
+            ...old,
+            pages: old.pages.map(page => ({
+              ...page,
+              data: {
+                ...page.data,
+                items: page.data.items.map(n => ({
+                  ...n,
+                  read_at: n.read_at ?? now,
+                })),
+              },
+            })),
+          };
+        }
+      );
       await markAllNotificationsRead();
       await queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] });
       await queryClient.invalidateQueries({ queryKey: ['notifications'] });

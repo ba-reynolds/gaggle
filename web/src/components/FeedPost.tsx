@@ -31,6 +31,7 @@ import { formatViews } from "@/util/number";
 import {
   Bookmark,
   Check,
+  CornerUpLeft,
   Eye,
   Heart,
   Loader2,
@@ -371,9 +372,29 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                 </DropdownMenu>
               </div>
 
+              {post.parent_id != null && (
+                <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                  <CornerUpLeft className="h-3.5 w-3.5 shrink-0" />
+                  {post.parent && !post.parent.deleted && post.parent.author ? (
+                    <>
+                      <span>Replying to</span>
+                      <Link
+                        to={`/post/${post.parent.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-blue-500 hover:underline"
+                      >
+                        @{post.parent.author.username}
+                      </Link>
+                    </>
+                  ) : (
+                    <span>Replying to a deleted post</span>
+                  )}
+                </div>
+              )}
+
               <p className="mt-2 whitespace-pre-wrap text-sm text-primary"><HashtagText content={content} /></p>
               {post.poll && <PollCard poll={post.poll} postId={id} />}
-              {isOwnPost && <button className="mt-2 text-xs text-muted-foreground hover:underline" onClick={(event) => { event.stopPropagation(); setHistoryOpen((open) => !open); }}>
+              {isOwnPost && post.edited_at && <button className="mt-2 text-xs text-muted-foreground hover:underline" onClick={(event) => { event.stopPropagation(); setHistoryOpen((open) => !open); }}>
                 {historyOpen ? "Hide edit history" : "View edit history"}
               </button>}
               {historyOpen && edits.data?.data.items.map((edit) => <div key={edit.id} className="mt-1 rounded border border-border p-2 text-xs text-muted-foreground">{edit.content_before}</div>)}

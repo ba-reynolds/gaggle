@@ -1,12 +1,14 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useGetPost } from "@/hooks/usePost";
 import FeedPost from "@/components/FeedPost";
-import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, ArrowLeft } from "lucide-react";
 import ComposeContent from "@/components/ComposeContent";
 
 const PostPage = () => {
   const { id } = useParams<{ id: string }>();
   const postId = parseInt(id || "0", 10);
+  const navigate = useNavigate();
 
   const { data: postData, isLoading: isLoadingPost, isError } = useGetPost(postId);
 
@@ -34,6 +36,16 @@ const PostPage = () => {
 
   return (
     <div className="w-full max-w-xl mx-auto">
+      {/* Sticky page header */}
+      <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-border p-4 backdrop-blur">
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(-1)} aria-label="Go back">
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div>
+          <h1 className="text-lg font-bold leading-tight text-primary">Post</h1>
+        </div>
+      </header>
+
       {/* Main post */}
       <FeedPost post={post} />
 

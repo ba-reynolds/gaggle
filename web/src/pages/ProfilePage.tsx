@@ -278,11 +278,6 @@ const ProfilePage: React.FC = () => {
         </div>
       </div>
 
-      {pinnedPost.data?.data && <div className="border-y border-border bg-primary/5 p-4">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Pinned post</p>
-        <FeedPost post={pinnedPost.data.data} />
-      </div>}
-
       {/* Tabs for posts, replies, media, etc. */}
       <Tabs defaultValue="posts" className="mt-4">
         <TabsList className="w-full grid grid-cols-4">
@@ -293,6 +288,12 @@ const ProfilePage: React.FC = () => {
         </TabsList>
 
         <TabsContent value="posts" className="flex flex-col items-center mt-2 space-y-4">
+          {pinnedPost.data?.data && (
+            <div className="w-full max-w-xl rounded-lg border border-border bg-primary/5 p-3">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Pinned post</p>
+              <FeedPost post={pinnedPost.data.data} />
+            </div>
+          )}
           {isLoadingPosts ? (
             <div className="w-full flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />

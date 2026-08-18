@@ -123,6 +123,67 @@ func (store *postStore) GetFullPostByID(ctx context.Context, id int) (*models.Fu
 	return &post, nil
 }
 
+// GetParentInfo returns, for each reply post ID, a summary of the post it is
+// replying to (the parent's ID and author). Parents that were soft-deleted or
+// are otherwise missing are reported with Deleted=true and no author. Posts
+// that are not replies are absent from the map.
+func (store *postStore) GetParentInfo(ctx context.Context, postIDs []int) (map[int]*models.PostParentInfo, error) {
+	result := make(map[int]*models.PostParentInfo, len(postIDs))
+	if len(postIDs) == 0 {
+		return result, nil
+	}
+
+	rows, err := store.db.QueryContext(ctx, `
+		SELECT p.post_id,
+		       parent.post_id,
+		       parent.soft_deleted,
+		       au.username,
+		       ap.display_name,
+		       ap.profile_picture_uuid::text
+		FROM posts p
+		LEFT JOIN posts parent ON parent.post_id = p.parent_id
+		LEFT JOIN users au ON au.user_id = parent.author_id
+		LEFT JOIN user_profiles ap ON ap.user_id = parent.author_id
+		WHERE p.post_id = ANY($1) AND p.parent_id IS NOT NULL
+	`, postIDs)
+	if err != nil {
+		store.logger.Error("database query failed", "operation", "get_parent_info", "postIDs", postIDs, "error", err)
+		return nil, apperrors.InternalServerError(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var postID int
+		var parentID sql.NullInt64
+		var parentSoftDeleted sql.NullBool
+		var username, displayName, profilePicture sql.NullString
+		if err := rows.Scan(&postID, &parentID, &parentSoftDeleted, &username, &displayName, &profilePicture); err != nil {
+			store.logger.Error("failed to scan parent info", "operation", "get_parent_info", "error", err)
+			return nil, apperrors.InternalServerError(err)
+		}
+		if !parentID.Valid {
+			continue
+		}
+		info := &models.PostParentInfo{ID: int(parentID.Int64)}
+		if parentSoftDeleted.Valid && !parentSoftDeleted.Bool {
+			parsed, err := uuid.Parse(profilePicture.String)
+			if err != nil {
+				parsed = uuid.Nil
+			}
+			author := models.ToPostAuthor(username.String, displayName.String, parsed)
+			info.Author = &author
+		} else {
+			info.Deleted = true
+		}
+		result[postID] = info
+	}
+	if err := rows.Err(); err != nil {
+		store.logger.Error("row iteration failed", "operation", "get_parent_info", "error", err)
+		return nil, apperrors.InternalServerError(err)
+	}
+	return result, nil
+}
+
 // Create inserts a new post into the database
 func (store *postStore) Create(ctx context.Context, tx *sql.Tx, post *models.Post) error {
 	query := `
@@ -499,6 +560,15 @@ func (store *postStore) GetParentChain(ctx context.Context, postID int, limit in
 				"error", err,
 			)
 			return nil, apperrors.InternalServerError(err)
+		}
+
+		// Skip soft-deleted parents — they are gone from the timeline and
+		// GetFullPostByID would fail on them, breaking the whole chain (e.g.
+		// viewing a reply whose parent was deleted). The reply itself still
+		// carries its `parent` summary so the UI can say "replying to a
+		// deleted post".
+		if post.SoftDeleted {
+			continue
 		}
 
 		postIDs = append(postIDs, post.ID)

@@ -31,7 +31,7 @@ function notificationIcon(type: string) {
 
 export default function NotificationsPage() {
   const navigate = useNavigate();
-  const { markRead, markAllRead } = useNotifications();
+  const { unreadCount, markRead, markAllRead } = useNotifications();
   const query = useInfiniteQuery({
     queryKey: ['notifications'],
     queryFn: ({ pageParam }) => getNotifications(pageParam),
@@ -47,9 +47,11 @@ export default function NotificationsPage() {
           <h1 className="text-xl font-bold text-primary">Notifications</h1>
           <p className="text-sm text-muted-foreground">Stay close to what is happening.</p>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => void markAllRead()}>
-          <CheckCheck className="mr-2 h-4 w-4" /> Mark all read
-        </Button>
+        {unreadCount > 0 && (
+          <Button variant="ghost" size="sm" onClick={() => void markAllRead()}>
+            <CheckCheck className="mr-2 h-4 w-4" /> Mark all read
+          </Button>
+        )}
       </header>
       {query.isLoading ? (
         <div className="space-y-3 p-4">{[1, 2, 3].map((item) => <Skeleton key={item} className="h-20 w-full" />)}</div>
