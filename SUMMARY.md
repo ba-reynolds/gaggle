@@ -24,10 +24,15 @@ working end-to-end in the browser.
 - Fix: `web/src/pages/PostPage.tsx` now renders the parent chain above the
   current post (furthest-first), with the current post anchoring the bottom of
   the conversation — Twitter-style.
-- Added a `thread` prop to `FeedPost` (`'first' | 'middle' | 'last'`) that draws
-  a 2px vertical connector in the avatar gutter (behind the avatar, so it reads
-  as connecting avatar to avatar). Thread cards use `mb-0` so the segments form
-  one continuous line. Non-thread usages are unaffected.
+- The thread is styled as one seamless X-style panel via the `thread` prop on
+  `FeedPost` (`'first' | 'middle' | 'last'`): rows are flush (`mb-0`) with the
+  middle rows `rounded-none`/`border-b-0` so adjacent borders collapse into 1px
+  hairlines, the first row is `rounded-t-lg` and the last `rounded-b-lg`, and a
+  thin (`w-px`) muted (`bg-foreground/10`) gutter rail runs continuously from
+  below the first avatar to the last avatar. Non-thread usages are unaffected.
+- A follow-up polish pass from review feedback replaced the original
+  `w-0.5 bg-border` full-height line (which read as "connecting the profile
+  pictures") and the cramped `mb-0` box stacking with this unified panel look.
 
 **3. Bookmarks category counter (already fixed on main → verified)**
 - Re-categorizing a bookmarked post through the bookmark popover calls

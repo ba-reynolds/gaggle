@@ -274,8 +274,14 @@ const FeedPost: React.FC<PostProps> = ({ post, thread }) => {
   return (
     <>
       <Card
-        className={`w-full max-w-xl border border-border rounded-lg overflow-hidden cursor-pointer transition-colors hover:bg-accent py-2 gap-2 ${
-          thread ? "relative mb-0" : "mb-2"
+        className={`w-full max-w-xl border border-border overflow-hidden cursor-pointer transition-colors hover:bg-accent py-2 gap-2 ${
+          thread === 'first'
+            ? "relative mb-0 rounded-t-lg rounded-b-none border-b-0"
+            : thread === 'middle'
+              ? "relative mb-0 rounded-none border-b-0"
+              : thread === 'last'
+                ? "relative mb-0 rounded-t-none rounded-b-lg"
+                : "mb-2"
         }`}
         onClick={handlePostClick}
         tabIndex={0}
@@ -286,7 +292,7 @@ const FeedPost: React.FC<PostProps> = ({ post, thread }) => {
           {thread && (
             <div
               aria-hidden
-              className={`absolute left-[35px] w-0.5 bg-border pointer-events-none z-0 ${
+              className={`absolute left-[35px] w-px bg-foreground/10 pointer-events-none z-0 ${
                 thread === 'first' ? 'top-16 bottom-0' :
                 thread === 'last' ? 'top-0 h-16' :
                 'top-0 bottom-0'
