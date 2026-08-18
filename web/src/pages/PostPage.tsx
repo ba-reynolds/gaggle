@@ -31,7 +31,8 @@ const PostPage = () => {
   const post = postData.data.post;
   const ancestors = postData.data.ancestors?.items ?? [];
   const replies = postData.data.descendants?.items ?? [];
-  // Ancestors arrive nearest-parent-first; display them furthest-first.
+  // Ancestors arrive nearest-parent-first; display them furthest-first so the
+  // current post anchors the bottom of the conversation.
   const parentChain = [...ancestors].reverse();
 
   return (
@@ -46,16 +47,21 @@ const PostPage = () => {
         </div>
       </header>
 
-      {/* Main post */}
-      <FeedPost post={post} />
-
-      {/* Parent chain */}
-      {parentChain.length > 0 && (
+      {/* Conversation thread: parent chain above, current post anchoring the
+          bottom, connected with Twitter-style gutter lines. */}
+      {parentChain.length > 0 ? (
         <div className="mt-2">
-          {parentChain.map((parent) => (
-            <FeedPost key={parent.id} post={parent} />
+          {parentChain.map((parent, index) => (
+            <FeedPost
+              key={parent.id}
+              post={parent}
+              thread={index === 0 ? 'first' : 'middle'}
+            />
           ))}
+          <FeedPost post={post} thread="last" />
         </div>
+      ) : (
+        <FeedPost post={post} />
       )}
 
       {/* Reply composer */}

@@ -60,9 +60,13 @@ import { useDebounce } from "@/hooks/useDebounce";
 
 interface PostProps {
   post: Post;
+  /** Draws a Twitter-style vertical connector on the avatar gutter. 'first'
+   *  starts the thread (segment below the avatar), 'last' terminates it at
+   *  the avatar, 'middle' is a continuous segment for posts in between. */
+  thread?: 'first' | 'middle' | 'last';
 }
 
-const FeedPost: React.FC<PostProps> = ({ post }) => {
+const FeedPost: React.FC<PostProps> = ({ post, thread }) => {
   const { id, author, content, media, created_at, engagement } = post;
   const { user } = useUser();
   const isOwnPost = user.username === author.username;
@@ -270,14 +274,26 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
   return (
     <>
       <Card
-        className="w-full max-w-xl border border-border rounded-lg overflow-hidden mb-2 cursor-pointer transition-colors hover:bg-accent py-2 gap-2"
+        className={`w-full max-w-xl border border-border rounded-lg overflow-hidden cursor-pointer transition-colors hover:bg-accent py-2 gap-2 ${
+          thread ? "relative mb-0" : "mb-2"
+        }`}
         onClick={handlePostClick}
         tabIndex={0}
         role="link"
         aria-label={`Post by ${author.display_name}: ${content}`}
       >
         <CardContent className="p-4 pb-0">
-          <div className="flex items-start space-x-3">
+          {thread && (
+            <div
+              aria-hidden
+              className={`absolute left-[35px] w-0.5 bg-border pointer-events-none z-0 ${
+                thread === 'first' ? 'top-16 bottom-0' :
+                thread === 'last' ? 'top-0 h-16' :
+                'top-0 bottom-0'
+              }`}
+            />
+          )}
+          <div className="flex items-start space-x-3 relative z-10">
             <UserHoverCard
               name={author.display_name}
               username={author.username}

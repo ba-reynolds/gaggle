@@ -2,6 +2,25 @@
 
 Tricky things learned while working on this repo (newest on top).
 
+## Post thread / verification
+- `postStore.GetDescendants` sorts replies `created_at DESC` (newest first)
+  since the post-thread-and-bookmark-fixes change; the paged query uses
+  `created_at < $cursor`. Only the single-post endpoint consumes it.
+- Profile route is `/profile/:username` — NOT `/:username`. `/alice` renders
+  nothing ("No routes matched").
+- **`POST /auth/refresh-token` returns 500 when the cookie is missing**
+  (`auth_handler.go` maps `http.ErrNoCookie` to `InternalServerError`), so every
+  fresh page load with no refresh cookie logs a 500. The frontend swallows it
+  during AuthContext bootstrap. Ideally return 401. (Not task-related, observed
+  while testing.)
+- Browser verify recipe: `nix shell nixpkgs#nodejs_22` + `npm i playwright-core`
+  into a scratch dir, launch host `google-chrome-stable` with
+  `chromiumSandbox:false` + `--no-sandbox`. Login via the "Test sign in" button.
+- The CornerUpLeft "Replying to @user" indicator text is split across
+  `<span>Replying to</span><Link>@user</Link>` — playwright `text=/Replying to
+  @/i` does NOT match (separate text nodes); count cards by `hasText: 'Replying
+  to'`.
+
 ## Theme system (current work, uncommitted)
 - Themes swap via CSS variables: `theme-themes.css` holds scoped blocks
   `:root[data-theme="..."]` / `.dark[data-theme="..."]` setting shadcn tokens
