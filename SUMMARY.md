@@ -1,3 +1,106 @@
+# SUMMARY — fix-profile-tabs-and-user-relations
+
+Profile tabs, follow lists, and user-management (block/mute) for the profile page.
+
+## What was changed and why
+
+**1. Replies & Media profile tabs now work**
+- The tabs existed but always rendered "No replies yet" / "No media yet" — there
+  was no backend feed for them and the frontend never fetched anything.
+- Server: `postStore.runUserFeedQuery`/`buildUserFeedQuery` centralize the
+  user-feed SQL with three modes: top-level ("all"), replies-only
+  (`parent_id IS NOT NULL`), and media (`EXISTS (SELECT 1 FROM post_media …)`).
+  New endpoints `GET /users/{username}/replies` and `GET /users/{username}/media`
+  (handlers `GetUserRepliesFeed`/`GetUserMediaFeed`, service
+  `GetUserRepliesFeed`/`GetUserMediaFeed`), keyset-paginated like the posts feed
+  and hydrated with media/engagement/polls/parents.
+- Frontend: `getUserReplies`/`getUserMedia` + `useGetUserReplies`/`useGetUserMedia`
+  infinite queries. `ProfilePage` wires both tabs through a new `ProfileFeedTab`
+  component (infinite scroll, loading + empty states). The shared
+  `POST_QUERY_KEYS`/`invalidatePostQueries`/`invalidateBookmarkQueries` and
+  `useCreatePost` now invalidate `user-replies`/`user-media` so engagement
+  toggles and new posts refresh those tabs.
+
+**2. Following / Followers view**
+- API + hooks for followers/following already existed but no page used them, and
+  the backend response shape didn't match the frontend type: it returned
+  `{followers: [UserWithProfile…]}` while `fetchUserFollowers` typed
+  `{items: UserProfileResponse[]…}`.
+- Server: `UserFollowersResponse`/`UserFollowingResponse` now return flat
+  `items: UserProfileResponse[]` (converted via `ToProfileResponse`), matching
+  the app-wide "paginated feeds use `items`" convention. `GetFollowers`/
+  `GetFollowing` hydrate viewer-relative relationship flags (see #3).
+- Frontend: new `FollowListPage` (`/profile/:username/followers` and
+  `/profile/:username/following` routes) lists users with avatar/name/bio and
+  Follow/Unfollow buttons + Load-more pagination. `ProfilePage` Following/
+  Followers counts are now links to those routes.
+
+**3. Profile user-management menu (three dots: follow, mute, block)**
+- `UserProfileResponse` gained viewer-relative `is_following` / `is_blocked` /
+  `is_muted`. `GetUserProfileByUsername` (and `GetMe`) hydrate them via
+  `handler.hydrateProfileRelationship`; `GetFollowers`/`GetFollowing` hydrate
+  them via the new batched `store.GetRelationshipStatuses`.
+- Server mute support: migration `000016` adds `'mute'` to the
+  `user_relationships.relationship_type` CHECK. `GetRelationshipStatus` now reads
+  ALL rows for a pair (follow+mute coexist), returns `is_muted`. New
+  `POST/DELETE /users/{username}/mute` handlers (`MuteUser`/`UnmuteUser`);
+  `CreateRelationship` gained a mute branch (idempotent) and follow is now
+  type-safe (`Exists` instead of a single-row read that previously would have
+  clobbered a coexisting mute row). Unfollow/unblock/unmute delete only their own
+  relationship type (`DeleteByType`) — previously unfollow/unblock deleted every
+  row between the pair.
+- Mute is meaningful: `notification_service.Create` now drops notifications whose
+  actor the recipient has muted (suppresses replies/likes/reposts/follows/mentions
+  without hiding content).
+- Frontend: `muteUser`/`unmuteUser` + `useMuteUser`/`useUnmuteUser`. `ProfilePage`
+  header (non-self) now has a Follow button, Message button, and a `MoreHorizontal`
+  DropdownMenu with Mute/Unmute and Block/Unblock. All relationship mutations
+  (`useFollowUser`/`useUnblockUser`/new mute hooks) invalidate
+  `profile`+`user-followers`+`user-following` via a shared helper.
+
+## Files touched
+- `server/cmd/migrate/migrations/000016_add-mute-relationship.{up,down}.sql` — new
+- `server/internal/models/user_relationship.go` — `RelationshipStatus.IsMuted`; followers/following → `Items []UserProfileResponse`
+- `server/internal/models/user.go` — `UserProfileResponse` relationship flags
+- `server/internal/store/store.go` — `UserRelationships` + `Posts` interfaces
+- `server/internal/store/user_relationship_store.go` — multi-row status, `GetRelationshipStatuses`, `Exists`, `DeleteByType`, flat followers/following
+- `server/internal/store/post_store.go` — `GetUserReplies`, `GetUserMediaFeed`, shared query builder/runner
+- `server/internal/service/service.go`, `user_relationship_service.go`, `post_service.go` — mute flow, type-scoped delete, replies/media feeds, statuses passthrough
+- `server/internal/service/notification_service.go` — mute suppresses notifications
+- `server/internal/handlers/user_relationship_handler.go` — Mute/Unmute + viewer status hydration on lists + unfollow/unblock type-scoped
+- `server/internal/handlers/post_handler.go` — replies/media feed handlers
+- `server/internal/handlers/user_handler.go` — profile relationship hydration
+- `server/internal/api/router.go` — 4 new routes
+- `server/docs/*` — regenerated swagger
+- `server/internal/handlers/integration_test.go` — new end-to-end test
+- `web/src/types/api.ts` — relationship flags
+- `web/src/api/user.ts`, `web/src/api/posts.ts` — mute/unmute/replies/media calls
+- `web/src/hooks/useUser.ts`, `web/src/hooks/usePost.ts` — new hooks + invalidation scope
+- `web/src/pages/ProfilePage.tsx` — replies/media tabs, follow/mute/block menu, counts links
+- `web/src/pages/FollowListPage.tsx` — new
+- `web/src/App.tsx` — followers/following routes
+
+## Things a reviewer should double-check
+- **`GetRelationshipStatus`/`DeleteByType` behavior change**: the old single-row
+  `GetRelationshipStatus` + pair-wide `Delete` worked only because follow and block
+  were mutually exclusive. With mute coexisting, delete must be type-scoped. Unblock
+  no longer deletes a follow row (block already removed it at block time). Block
+  still clears ALL rows between the pair in both directions (existing, deliberate).
+- **Mute notification suppression** covers notifications created through
+  `notification_service.Create` (likes/reposts/replies/follows/quotes/mentions).
+  DM unread badges are not muted.
+- **`Users with is_following=false by default`**: relationship flags default to
+  false on every profile-shaped response; only the profile and followers/following
+  endpoints hydrate them. Search/suggested/likers/reposters intentionally still
+  return false — do not rely on the flag there without hydrating.
+- **Swagger** regenerated with `make swag` — new endpoints (`/users/{u}/mute`,
+  `/replies`, `/media`) are present in `docs`.
+- **Frontend lists** (`FollowListPage`) use raw API calls + local state rather
+  than React Query, so follow/unfollow there only updates the local row; the
+  ProfilePage counts refresh on navigation (invalidation is query-key based).
+
+---
+
 # SUMMARY — ui-responsiveness-fixes
 
 Batch of UI responsiveness bugs, fixed across the Go API and the React client.

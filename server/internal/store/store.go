@@ -60,6 +60,8 @@ type Store struct {
 		GetDescendants(ctx context.Context, postID int, limit int, cursor string) (*models.PostDescendants, error)
 		GetHomeFeed(ctx context.Context, userID int, limit int, cursor string) (*models.PostFeed, error)
 		GetUserFeed(ctx context.Context, userID int, includeReplies bool, limit int, cursor string) (*models.PostFeed, error)
+		GetUserReplies(ctx context.Context, userID int, limit int, cursor string) (*models.PostFeed, error)
+		GetUserMediaFeed(ctx context.Context, userID int, limit int, cursor string) (*models.PostFeed, error)
 		GetBookmarkedPostsFeed(ctx context.Context, userID int, categoryIDs []int, limit int, cursor string) (*models.PostFeed, error)
 		GetLikedPostsFeed(ctx context.Context, userID int, limit int, cursor string) (*models.PostFeed, error)
 		GetQuotesFeed(ctx context.Context, postID int, limit int, cursor string) (*models.PostFeed, error)
@@ -88,9 +90,12 @@ type Store struct {
 		GetByIDs(context.Context, int, int) (*models.UserRelationship, error)
 		Update(context.Context, *sql.Tx, *models.UserRelationship) error
 		Delete(context.Context, *sql.Tx, int, int) error
+		DeleteByType(context.Context, *sql.Tx, int, int, string) error
+		Exists(context.Context, int, int, string) (bool, error)
 		GetFollowers(context.Context, int, int, string) (*models.UserFollowersResponse, error)
 		GetFollowing(context.Context, int, int, string) (*models.UserFollowingResponse, error)
 		GetRelationshipStatus(context.Context, int, int) (*models.RelationshipStatus, error)
+		GetRelationshipStatuses(context.Context, int, []int) (map[int]*models.RelationshipStatus, error)
 		GetFollowerIDs(ctx context.Context, userID int) ([]int, error)
 	}
 	Notifications interface {

@@ -14,6 +14,8 @@ import {
   votePoll,
   getPost,
   getUserPosts,
+  getUserReplies,
+  getUserMedia,
   likePost,
   quotePost,
   repostPost,
@@ -38,7 +40,7 @@ import type {
 type PostUpdater = (post: Post) => Post;
 
 // Common query keys that contain posts
-const POST_QUERY_KEYS = ['feed', 'bookmarked', 'user-posts'] as const;
+const POST_QUERY_KEYS = ['feed', 'bookmarked', 'user-posts', 'user-replies', 'user-media'] as const;
 
 interface InfinitePages {
   pages: Envelope<PaginatedFeedResponse>[];
@@ -214,6 +216,8 @@ export function useCreatePost() {
       }
       // New content can show up in profile / search / hashtag feeds.
       void queryClient.invalidateQueries({ queryKey: ['user-posts'] });
+      void queryClient.invalidateQueries({ queryKey: ['user-replies'] });
+      void queryClient.invalidateQueries({ queryKey: ['user-media'] });
       void queryClient.invalidateQueries({ queryKey: ['search-posts'] });
       void queryClient.invalidateQueries({ queryKey: ['hashtag-posts'] });
     },
@@ -235,6 +239,8 @@ function invalidatePostQueries(queryClient: ReturnType<typeof useQueryClient>, p
   void queryClient.invalidateQueries({ queryKey: ['post', postId] });
   void queryClient.invalidateQueries({ queryKey: ['feed'] });
   void queryClient.invalidateQueries({ queryKey: ['user-posts'] });
+  void queryClient.invalidateQueries({ queryKey: ['user-replies'] });
+  void queryClient.invalidateQueries({ queryKey: ['user-media'] });
   void queryClient.invalidateQueries({ queryKey: ['search-posts'] });
   void queryClient.invalidateQueries({ queryKey: ['hashtag-posts'] });
   if (username) {
@@ -344,6 +350,8 @@ const invalidateBookmarkQueries = (
   void queryClient.invalidateQueries({ queryKey: ['feed'] });
   void queryClient.invalidateQueries({ queryKey: ['bookmarked'] });
   void queryClient.invalidateQueries({ queryKey: ['user-posts'] });
+  void queryClient.invalidateQueries({ queryKey: ['user-replies'] });
+  void queryClient.invalidateQueries({ queryKey: ['user-media'] });
   void queryClient.invalidateQueries({ queryKey: ['search-posts'] });
   void queryClient.invalidateQueries({ queryKey: ['hashtag-posts'] });
   void queryClient.invalidateQueries({ queryKey: ['bookmark-categories'] });
@@ -493,6 +501,24 @@ export function useGetUserPosts(username: string, limit: number = 20) {
   return useInfiniteQuery({
     queryKey: ['user-posts', username],
     queryFn: ({ pageParam }) => getUserPosts(username, pageParam, limit),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.data.next_cursor,
+  });
+}
+
+export function useGetUserReplies(username: string, limit: number = 20) {
+  return useInfiniteQuery({
+    queryKey: ['user-replies', username],
+    queryFn: ({ pageParam }) => getUserReplies(username, pageParam, limit),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.data.next_cursor,
+  });
+}
+
+export function useGetUserMedia(username: string, limit: number = 20) {
+  return useInfiniteQuery({
+    queryKey: ['user-media', username],
+    queryFn: ({ pageParam }) => getUserMedia(username, pageParam, limit),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.data.next_cursor,
   });

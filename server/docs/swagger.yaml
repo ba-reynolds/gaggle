@@ -215,6 +215,8 @@ definitions:
         items:
           $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostMedia'
         type: array
+      parent:
+        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostParentInfo'
       parent_id:
         type: integer
       poll:
@@ -471,6 +473,15 @@ definitions:
     required:
     - uuid
     type: object
+  github_com_ba-reynolds_gophersocial_internal_models.PostParentInfo:
+    properties:
+      author:
+        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostAuthor'
+      deleted:
+        type: boolean
+      id:
+        type: integer
+    type: object
   github_com_ba-reynolds_gophersocial_internal_models.PostWithAncestorsAndDescendants:
     properties:
       ancestors:
@@ -631,23 +642,23 @@ definitions:
     type: object
   github_com_ba-reynolds_gophersocial_internal_models.UserFollowersResponse:
     properties:
-      followers:
-        items:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserWithProfile'
-        type: array
       has_more:
         type: boolean
+      items:
+        items:
+          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserProfileResponse'
+        type: array
       next_cursor:
         type: string
     type: object
   github_com_ba-reynolds_gophersocial_internal_models.UserFollowingResponse:
     properties:
-      following:
-        items:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserWithProfile'
-        type: array
       has_more:
         type: boolean
+      items:
+        items:
+          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserProfileResponse'
+        type: array
       next_cursor:
         type: string
     type: object
@@ -714,6 +725,12 @@ definitions:
       following_count:
         type: integer
       is_admin:
+        type: boolean
+      is_blocked:
+        type: boolean
+      is_following:
+        type: boolean
+      is_muted:
         type: boolean
       location:
         type: string
@@ -2029,6 +2046,94 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Get a list
+      tags:
+      - lists
+    patch:
+      consumes:
+      - application/json
+      description: Edits a list's name and description (owner only).
+      parameters:
+      - description: List ID
+        in: path
+        name: listID
+        required: true
+        type: integer
+      - description: List details
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.CreateListPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.List'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "403":
+          description: Forbidden
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "409":
+          description: Conflict
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Update a list
       tags:
       - lists
   /lists/{listID}/feed:
@@ -4022,6 +4127,184 @@ paths:
       summary: Get a user's lists
       tags:
       - lists
+  /users/{username}/media:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a paginated feed of posts with media made by a specific
+        user
+      parameters:
+      - description: Username of the user
+        in: path
+        name: username
+        required: true
+        type: string
+      - description: Maximum number of posts to retrieve (uses default if invalid
+          or missing)
+        in: query
+        name: limit
+        type: integer
+      - description: Cursor for pagination
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostFeed'
+                error:
+                  type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get user media feed
+      tags:
+      - posts
+  /users/{username}/mute:
+    delete:
+      consumes:
+      - application/json
+      description: Unmutes a previously muted user
+      parameters:
+      - description: Username of the user to unmute
+        in: path
+        name: username
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Unmute a user
+      tags:
+      - relationships
+    post:
+      consumes:
+      - application/json
+      description: Mutes a user so their notifications are silenced
+      parameters:
+      - description: Username of the user to mute
+        in: path
+        name: username
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserRelationshipResponse'
+                error:
+                  type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Mute a user
+      tags:
+      - relationships
   /users/{username}/pinned:
     get:
       description: Returns the full post currently pinned to the given user's profile,
@@ -4140,6 +4423,79 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Get user feed
+      tags:
+      - posts
+  /users/{username}/replies:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a paginated feed of replies (posts with a parent) made
+        by a specific user
+      parameters:
+      - description: Username of the user
+        in: path
+        name: username
+        required: true
+        type: string
+      - description: Maximum number of posts to retrieve (uses default if invalid
+          or missing)
+        in: query
+        name: limit
+        type: integer
+      - description: Cursor for pagination
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostFeed'
+                error:
+                  type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get user replies
       tags:
       - posts
   /users/me:

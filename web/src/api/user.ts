@@ -42,6 +42,16 @@ export const unblockUser = async (username: string): Promise<Envelope<{ success:
     return response.data;
 };
 
+export const muteUser = async (username: string): Promise<Envelope<{ success: boolean }>> => {
+    const response = await api.post<Envelope<{ success: boolean }>>(`/users/${username}/mute`);
+    return response.data;
+};
+
+export const unmuteUser = async (username: string): Promise<Envelope<{ success: boolean }>> => {
+    const response = await api.delete<Envelope<{ success: boolean }>>(`/users/${username}/mute`);
+    return response.data;
+};
+
 export const fetchUserFollowers = async (username: string, cursor?: string, limit?: number): Promise<Envelope<{ items: UserProfileResponse[]; next_cursor: string | null; has_more: boolean }>> => {
     const response = await api.get<Envelope<{ items: UserProfileResponse[]; next_cursor: string | null; has_more: boolean }>>(`/users/${username}/followers`, {
         params: { limit, cursor },

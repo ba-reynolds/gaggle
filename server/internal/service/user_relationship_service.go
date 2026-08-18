@@ -80,11 +80,11 @@ func (s *UserRelationshipService) CreateRelationship(ctx context.Context, follow
 	} else if relationshipType == "follow" {
 		// When following, check if the target user has blocked you
 		// If they have blocked you, you can't follow them
-		blockedByTarget, err := s.store.UserRelationships.GetByIDs(ctx, followingID, followerID)
-		if err != nil && !apperrors.Is(err, apperrors.NotFound) {
+		blockedByTarget, err := s.store.UserRelationships.Exists(ctx, followingID, followerID, "block")
+		if err != nil {
 			return nil, err
 		}
-		if blockedByTarget != nil && blockedByTarget.RelationshipType == "block" {
+		if blockedByTarget {
 			s.logger.Warn("attempted to follow user who has blocked you",
 				"follower_id", followerID,
 				"following_id", followingID,
@@ -92,21 +92,14 @@ func (s *UserRelationshipService) CreateRelationship(ctx context.Context, follow
 			return nil, apperrors.ForbiddenError("cannot follow this user", nil)
 		}
 
-		// Check if relationship already exists
-		existingRelationship, err := s.store.UserRelationships.GetByIDs(ctx, followerID, followingID)
-		if err != nil && !apperrors.Is(err, apperrors.NotFound) {
+		existing, err := s.store.UserRelationships.Exists(ctx, followerID, followingID, "follow")
+		if err != nil {
 			return nil, err
 		}
 
-		if existingRelationship != nil {
-			// Update existing relationship to follow
-			existingRelationship.RelationshipType = relationshipType
-			if err := s.store.UserRelationships.Update(ctx, tx, existingRelationship); err != nil {
-				return nil, err
-			}
-			relationship = existingRelationship
-		} else {
-			// Create new follow relationship
+		if !existing {
+			// Create new follow relationship (a mute row may already exist; the
+			// two types coexist).
 			relationship = &models.UserRelationship{
 				FollowerID:       followerID,
 				FollowingID:      followingID,
@@ -114,6 +107,36 @@ func (s *UserRelationshipService) CreateRelationship(ctx context.Context, follow
 			}
 			if err := s.store.UserRelationships.Create(ctx, tx, relationship); err != nil {
 				return nil, err
+			}
+		} else {
+			relationship = &models.UserRelationship{
+				FollowerID:       followerID,
+				FollowingID:      followingID,
+				RelationshipType: relationshipType,
+			}
+		}
+	} else if relationshipType == "mute" {
+		// Muting is idempotent: it coexists with a follow relationship and
+		// simply silences the target's notifications.
+		existing, err := s.store.UserRelationships.Exists(ctx, followerID, followingID, "mute")
+		if err != nil {
+			return nil, err
+		}
+
+		if !existing {
+			relationship = &models.UserRelationship{
+				FollowerID:       followerID,
+				FollowingID:      followingID,
+				RelationshipType: relationshipType,
+			}
+			if err := s.store.UserRelationships.Create(ctx, tx, relationship); err != nil {
+				return nil, err
+			}
+		} else {
+			relationship = &models.UserRelationship{
+				FollowerID:       followerID,
+				FollowingID:      followingID,
+				RelationshipType: relationshipType,
 			}
 		}
 	}
@@ -135,14 +158,19 @@ func (s *UserRelationshipService) CreateRelationship(ctx context.Context, follow
 		"follower_id", followerID,
 		"following_id", followingID,
 		"relationship_type", relationshipType,
-		"relationship_id", relationship.RelationshipID,
+		"relationship_id", func() int {
+			if relationship != nil {
+				return relationship.RelationshipID
+			}
+			return 0
+		}(),
 	)
 
 	return relationship, nil
 }
 
-// DeleteRelationship deletes a relationship between two users
-func (s *UserRelationshipService) DeleteRelationship(ctx context.Context, followerID, followingID int) error {
+// DeleteRelationship deletes a relationship of the given type between two users
+func (s *UserRelationshipService) DeleteRelationship(ctx context.Context, followerID, followingID int, relationshipType string) error {
 	// Start a transaction for relationship deletion
 	tx, err := s.store.DB.BeginTx(ctx, nil)
 	if err != nil {
@@ -150,6 +178,7 @@ func (s *UserRelationshipService) DeleteRelationship(ctx context.Context, follow
 			"operation", "delete_relationship",
 			"follower_id", followerID,
 			"following_id", followingID,
+			"relationship_type", relationshipType,
 			"error", err,
 		)
 		return apperrors.InternalServerError(err)
@@ -157,7 +186,7 @@ func (s *UserRelationshipService) DeleteRelationship(ctx context.Context, follow
 	defer tx.Rollback()
 
 	// Delete the relationship
-	if err := s.store.UserRelationships.Delete(ctx, tx, followerID, followingID); err != nil {
+	if err := s.store.UserRelationships.DeleteByType(ctx, tx, followerID, followingID, relationshipType); err != nil {
 		// Storage layer already logged the actual database error
 		return err
 	}
@@ -168,6 +197,7 @@ func (s *UserRelationshipService) DeleteRelationship(ctx context.Context, follow
 			"operation", "delete_relationship",
 			"follower_id", followerID,
 			"following_id", followingID,
+			"relationship_type", relationshipType,
 			"error", err,
 		)
 		return apperrors.InternalServerError(err)
@@ -177,6 +207,7 @@ func (s *UserRelationshipService) DeleteRelationship(ctx context.Context, follow
 	s.logger.Info("user relationship deleted successfully",
 		"follower_id", followerID,
 		"following_id", followingID,
+		"relationship_type", relationshipType,
 	)
 
 	return nil
@@ -283,6 +314,12 @@ func (s *UserRelationshipService) GetRelationshipStatus(ctx context.Context, fol
 	}
 
 	return status, nil
+}
+
+// GetRelationshipStatuses returns the relationship status between the viewer and
+// each target user, keyed by target user ID.
+func (s *UserRelationshipService) GetRelationshipStatuses(ctx context.Context, viewerID int, targetIDs []int) (map[int]*models.RelationshipStatus, error) {
+	return s.store.UserRelationships.GetRelationshipStatuses(ctx, viewerID, targetIDs)
 }
 
 func (s *UserRelationshipService) GetFollowerIDs(ctx context.Context, userID int) ([]int, error) {

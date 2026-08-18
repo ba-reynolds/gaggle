@@ -52,6 +52,9 @@ type UserProfileResponse struct {
 	FollowingCount     int         `json:"following_count"`
 	CreatedAt          time.Time   `json:"created_at"`
 	IsAdmin            bool        `json:"is_admin,omitempty"`
+	IsFollowing        bool        `json:"is_following"`
+	IsBlocked          bool        `json:"is_blocked"`
+	IsMuted            bool        `json:"is_muted"`
 	Badges             []UserBadge `json:"badges"`
 }
 

@@ -136,6 +136,20 @@ export const getUserPosts = async (username: string, cursor?: string, limit?: nu
   return response.data;
 };
 
+export const getUserReplies = async (username: string, cursor?: string, limit?: number): Promise<Envelope<PaginatedFeedResponse>> => {
+  const response = await api.get<Envelope<PaginatedFeedResponse>>(`/users/${username}/replies`, {
+    params: { limit, cursor },
+  });
+  return response.data;
+};
+
+export const getUserMedia = async (username: string, cursor?: string, limit?: number): Promise<Envelope<PaginatedFeedResponse>> => {
+  const response = await api.get<Envelope<PaginatedFeedResponse>>(`/users/${username}/media`, {
+    params: { limit, cursor },
+  });
+  return response.data;
+};
+
 export const getUserLikes = async (username: string, cursor?: string, limit?: number): Promise<Envelope<PaginatedFeedResponse>> => {
   const response = await api.get<Envelope<PaginatedFeedResponse>>(`/users/${username}/likes`, {
     params: { limit, cursor },

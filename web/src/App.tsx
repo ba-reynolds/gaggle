@@ -9,6 +9,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import SocialMediaLayout from '@/layout/SocialMediaLayout';
 import FeedPage from './pages/FeedPage';
 import ProfilePage from './pages/ProfilePage';
+import FollowListPage from './pages/FollowListPage';
 import BookmarksPage from './pages/BookmarksPage';
 import SettingsPage from './pages/SettingsPage';
 import PostPage from './pages/PostPage';
@@ -50,6 +51,8 @@ function App() {
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/signup" element={<SignupPage />} />
                   <Route path="/profile/:username" element={<SocialMediaLayout><ProfilePage /></SocialMediaLayout>} />
+                  <Route path="/profile/:username/followers" element={<SocialMediaLayout><FollowListPage listType="followers" /></SocialMediaLayout>} />
+                  <Route path="/profile/:username/following" element={<SocialMediaLayout><FollowListPage listType="following" /></SocialMediaLayout>} />
                   <Route path="/bookmarks" element={<SocialMediaLayout><BookmarksPage /></SocialMediaLayout>} />
                   <Route path="/lists" element={<SocialMediaLayout><ListsPage /></SocialMediaLayout>} />
                   <Route path="/lists/:id" element={<SocialMediaLayout><ListPage /></SocialMediaLayout>} />

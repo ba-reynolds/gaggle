@@ -24,6 +24,18 @@ type PostHandler struct {
 	rdb     *cache.Client
 }
 
+// parseFeedPagination reads the limit/cursor query params, defaulting the
+// limit to 0 (the service applies its configured default).
+func parseFeedPagination(r *http.Request) (int, string) {
+	limit := 0
+	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+		if parsedLimit, err := strconv.Atoi(limitStr); err == nil {
+			limit = parsedLimit
+		}
+	}
+	return limit, r.URL.Query().Get("cursor")
+}
+
 func NewPostHandler(service *service.Service, logger *slog.Logger, rdb *cache.Client) *PostHandler {
 	return &PostHandler{
 		service: service,
@@ -652,6 +664,142 @@ func (h *PostHandler) GetUserFeed(w http.ResponseWriter, r *http.Request) {
 	)
 
 	feed, err := h.service.Posts.GetUserFeed(r.Context(), user.ID, viewer.ID, includeReplies, limit, cursor)
+	if err != nil {
+		if appErr, ok := err.(*apperrors.AppError); ok {
+			util.RespondWithAppError(w, appErr)
+			return
+		}
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+
+	if err := util.RespondWithJson(w, http.StatusOK, feed); err != nil {
+		h.logger.Error("failed to write HTTP response",
+			"error", err,
+			"username", username,
+			"userID", user.ID,
+			"status", http.StatusOK,
+		)
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+}
+
+// GetUserRepliesFeed godoc
+//
+//	@Summary		Get user replies
+//	@Description	Retrieves a paginated feed of replies (posts with a parent) made by a specific user
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			username	path		string	true	"Username of the user"
+//	@Param			limit		query		int		false	"Maximum number of posts to retrieve (uses default if invalid or missing)"
+//	@Param			cursor		query		string	false	"Cursor for pagination"
+//	@Success		200			{object}	models.Envelope{data=models.PostFeed,error=nil}
+//	@Failure		400			{object}	models.Envelope{data=nil,error=apperrors.AppError}
+//	@Failure		404			{object}	models.Envelope{data=nil,error=apperrors.AppError}
+//	@Failure		500			{object}	models.Envelope{data=nil,error=apperrors.AppError}
+//	@Security		ApiKeyAuth
+//	@Router			/users/{username}/replies [get]
+func (h *PostHandler) GetUserRepliesFeed(w http.ResponseWriter, r *http.Request) {
+	username := r.PathValue("username")
+	if username == "" {
+		util.RespondWithAppError(w, apperrors.BadRequestError("username is required", nil))
+		return
+	}
+
+	viewer, err := middleware.GetAuthenticatedUserFromContext(r)
+	if err != nil {
+		h.logger.Error("authentication middleware error",
+			"error", err,
+			"path", r.URL.Path,
+			"method", r.Method,
+		)
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+
+	user, err := h.service.Users.GetByUsername(r.Context(), username)
+	if err != nil {
+		if appErr, ok := err.(*apperrors.AppError); ok {
+			util.RespondWithAppError(w, appErr)
+			return
+		}
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+
+	limit, cursor := parseFeedPagination(r)
+
+	feed, err := h.service.Posts.GetUserRepliesFeed(r.Context(), user.ID, viewer.ID, limit, cursor)
+	if err != nil {
+		if appErr, ok := err.(*apperrors.AppError); ok {
+			util.RespondWithAppError(w, appErr)
+			return
+		}
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+
+	if err := util.RespondWithJson(w, http.StatusOK, feed); err != nil {
+		h.logger.Error("failed to write HTTP response",
+			"error", err,
+			"username", username,
+			"userID", user.ID,
+			"status", http.StatusOK,
+		)
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+}
+
+// GetUserMediaFeed godoc
+//
+//	@Summary		Get user media feed
+//	@Description	Retrieves a paginated feed of posts with media made by a specific user
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			username	path		string	true	"Username of the user"
+//	@Param			limit		query		int		false	"Maximum number of posts to retrieve (uses default if invalid or missing)"
+//	@Param			cursor		query		string	false	"Cursor for pagination"
+//	@Success		200			{object}	models.Envelope{data=models.PostFeed,error=nil}
+//	@Failure		400			{object}	models.Envelope{data=nil,error=apperrors.AppError}
+//	@Failure		404			{object}	models.Envelope{data=nil,error=apperrors.AppError}
+//	@Failure		500			{object}	models.Envelope{data=nil,error=apperrors.AppError}
+//	@Security		ApiKeyAuth
+//	@Router			/users/{username}/media [get]
+func (h *PostHandler) GetUserMediaFeed(w http.ResponseWriter, r *http.Request) {
+	username := r.PathValue("username")
+	if username == "" {
+		util.RespondWithAppError(w, apperrors.BadRequestError("username is required", nil))
+		return
+	}
+
+	viewer, err := middleware.GetAuthenticatedUserFromContext(r)
+	if err != nil {
+		h.logger.Error("authentication middleware error",
+			"error", err,
+			"path", r.URL.Path,
+			"method", r.Method,
+		)
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+
+	user, err := h.service.Users.GetByUsername(r.Context(), username)
+	if err != nil {
+		if appErr, ok := err.(*apperrors.AppError); ok {
+			util.RespondWithAppError(w, appErr)
+			return
+		}
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+
+	limit, cursor := parseFeedPagination(r)
+
+	feed, err := h.service.Posts.GetUserMediaFeed(r.Context(), user.ID, viewer.ID, limit, cursor)
 	if err != nil {
 		if appErr, ok := err.(*apperrors.AppError); ok {
 			util.RespondWithAppError(w, appErr)

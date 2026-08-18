@@ -2,6 +2,28 @@
 
 Tricky things learned while working on this repo (newest on top).
 
+## User relationships & profile lists
+- `user_relationships` allows a pair to hold SEVERAL relationship rows
+  (UNIQUE on follower_id+following_id+relationship_type), so follow + mute
+  coexist. `GetRelationshipStatus` must read ALL rows for the pair (now returns
+  `is_muted` too). Type-scoped delete (`DeleteByType`) is required for
+  unfollow/unblock/unmute — the pair-wide `Delete` is used ONLY by the block flow
+  (which intentionally clears everything in both directions).
+- `GET /users/{username}/followers` and `/following` return flat
+  `items: UserProfileResponse[]` (NOT `followers: UserWithProfile`) — the
+  app-wide "paginated responses use `items`" convention. They also carry
+  viewer-relative `is_following/is_blocked/is_muted` (batch-hydrated).
+- `UserProfileResponse` now always serializes `is_following/is_blocked/is_muted`
+  (false by default). Only the profile + followers/following endpoints hydrate
+  them; search/suggested/likers/reposters do NOT — don't read those flags there.
+- Mute silences notifications via `notification_service.Create` (actor muted →
+  drop). It does NOT filter feeds/DMs.
+- `postStore.GetUserFeed` mode variants live in `runUserFeedQuery`/
+  `buildUserFeedQuery` (modes: all/replies/media) — reuse for user-feed SQL.
+- **`FetchPostMedia` scans `alt_text` into a `string`**: a `NULL` alt_text row
+  500s the media feed. API posts always insert `''` (never NULL); hand-written
+  test inserts must set `alt_text` explicitly.
+
 ## Theme system (current work, uncommitted)
 - Themes swap via CSS variables: `theme-themes.css` holds scoped blocks
   `:root[data-theme="..."]` / `.dark[data-theme="..."]` setting shadcn tokens

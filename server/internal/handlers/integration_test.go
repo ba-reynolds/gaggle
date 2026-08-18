@@ -1090,3 +1090,152 @@ func TestDMs(t *testing.T) {
 		t.Fatalf("alice message count = %d, want 2", len(messages["items"].([]any)))
 	}
 }
+
+func TestProfileRelationshipManageAndFeeds(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+	aliceToken := app.RegisterUser(t, "relalice", "relalice@example.com")
+	bobToken := app.RegisterUser(t, "relbob", "relbob@example.com")
+
+	// Alice creates a top-level post and a reply to it.
+	root, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/posts/",
+		Token:  aliceToken,
+		Body:   map[string]string{"content": "top level"},
+	}))
+	app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/posts/",
+		Token:  aliceToken,
+		Body:   map[string]any{"content": "a reply", "parent_id": int(root["id"].(float64))},
+	})
+
+	profileOf := func() map[string]any {
+		d, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/users/relalice", Token: bobToken}))
+		return d
+	}
+
+	// Bob follows Alice -> profile reflects is_following.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/users/relalice/follow", Token: bobToken}); rec.Code != http.StatusOK {
+		t.Fatalf("follow failed: %d %s", rec.Code, rec.Body.String())
+	}
+	if p := profileOf(); p["is_following"] != true {
+		t.Fatalf("profile after follow: is_following = %v, want true", p["is_following"])
+	}
+
+	// Muting coexists with following and flips is_muted.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/users/relalice/mute", Token: bobToken}); rec.Code != http.StatusOK {
+		t.Fatalf("mute failed: %d %s", rec.Code, rec.Body.String())
+	}
+	if p := profileOf(); p["is_following"] != true || p["is_muted"] != true {
+		t.Fatalf("profile after mute: is_following=%v is_muted=%v, want true/true", p["is_following"], p["is_muted"])
+	}
+
+	// Muting twice is idempotent.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/users/relalice/mute", Token: bobToken}); rec.Code != http.StatusOK {
+		t.Fatalf("re-mute failed: %d %s", rec.Code, rec.Body.String())
+	}
+
+	// While muted, alice's likes must not notify bob.
+	bobPostOne, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/posts/", Token: bobToken, Body: map[string]string{"content": "bob post one"}}))
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/posts/" + itoa(int(bobPostOne["id"].(float64))) + "/like", Token: aliceToken}); rec.Code != http.StatusOK {
+		t.Fatalf("alice like while muted failed: %d %s", rec.Code, rec.Body.String())
+	}
+	bobNotifs, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/notifications", Token: bobToken}))
+	if len(bobNotifs["items"].([]any)) != 0 {
+		t.Fatalf("bob notifications while alice muted = %v, want none", bobNotifs["items"])
+	}
+
+	// Unmute clears is_muted but keeps is_following.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodDelete, Path: "/api/v1/users/relalice/mute", Token: bobToken}); rec.Code != http.StatusNoContent {
+		t.Fatalf("unmute failed: %d %s", rec.Code, rec.Body.String())
+	}
+	if p := profileOf(); p["is_following"] != true || p["is_muted"] == true {
+		t.Fatalf("profile after unmute: is_following=%v is_muted=%v, want true/false", p["is_following"], p["is_muted"])
+	}
+
+	// After unmute a like from alice does notify bob.
+	bobPostTwo, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/posts/", Token: bobToken, Body: map[string]string{"content": "bob post two"}}))
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/posts/" + itoa(int(bobPostTwo["id"].(float64))) + "/like", Token: aliceToken}); rec.Code != http.StatusOK {
+		t.Fatalf("alice like after unmute failed: %d %s", rec.Code, rec.Body.String())
+	}
+	bobNotifsAfter, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/notifications", Token: bobToken}))
+	afterItems := bobNotifsAfter["items"].([]any)
+	if len(afterItems) != 1 {
+		t.Fatalf("bob notifications after unmute = %d, want 1", len(afterItems))
+	}
+	if afterItems[0].(map[string]any)["actor"].(map[string]any)["username"] != "relalice" {
+		t.Fatalf("bob notification actor = %v, want relalice", afterItems[0])
+	}
+
+	// Following list uses the flat `items` shape and carries viewer status.
+	following, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/users/relbob/following", Token: bobToken}))
+	followingItems := following["items"].([]any)
+	if len(followingItems) != 1 {
+		t.Fatalf("bob following count = %d, want 1", len(followingItems))
+	}
+	f := followingItems[0].(map[string]any)
+	if f["username"] != "relalice" || f["is_following"] != true {
+		t.Fatalf("following item = %v", f)
+	}
+	if f["display_name"] == nil {
+		t.Fatalf("following item missing flat profile fields: %v", f)
+	}
+
+	// Followers list matches too (bob is alice's only follower).
+	followers, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/users/relalice/followers", Token: bobToken}))
+	followersItems := followers["items"].([]any)
+	if len(followersItems) != 1 || followersItems[0].(map[string]any)["username"] != "relbob" {
+		t.Fatalf("alice followers = %v", followers["items"])
+	}
+
+	// Blocking removes the follow and exposes is_blocked.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/users/relalice/block", Token: bobToken}); rec.Code != http.StatusOK {
+		t.Fatalf("block failed: %d %s", rec.Code, rec.Body.String())
+	}
+	if p := profileOf(); p["is_blocked"] != true || p["is_following"] == true {
+		t.Fatalf("profile after block: is_blocked=%v is_following=%v, want true/false", p["is_blocked"], p["is_following"])
+	}
+
+	// Unblock clears it.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodDelete, Path: "/api/v1/users/relalice/block", Token: bobToken}); rec.Code != http.StatusNoContent {
+		t.Fatalf("unblock failed: %d %s", rec.Code, rec.Body.String())
+	}
+	if p := profileOf(); p["is_blocked"] == true {
+		t.Fatalf("profile after unblock still blocked: %v", p["is_blocked"])
+	}
+
+	// Replies feed contains only replies.
+	replies, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/users/relalice/replies", Token: bobToken}))
+	replyItems := replies["items"].([]any)
+	if len(replyItems) != 1 || replyItems[0].(map[string]any)["content"] != "a reply" {
+		t.Fatalf("replies feed = %v", replies["items"])
+	}
+
+	// Default user feed contains only the top-level post.
+	posts, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/users/relalice/posts", Token: bobToken}))
+	postItems := posts["items"].([]any)
+	if len(postItems) != 1 || postItems[0].(map[string]any)["id"].(float64) != root["id"].(float64) {
+		t.Fatalf("user feed = %v", posts["items"])
+	}
+
+	// Media feed: attach media to the top-level post directly, then assert the
+	// media endpoint only returns that post.
+	postID := int(root["id"].(float64))
+	var mediaUUID string
+	if err := app.DB.QueryRow(`INSERT INTO media (media_uuid, mime_type, filename) VALUES (gen_random_uuid(), 'image/png', 'pic.png') RETURNING media_uuid::text`).Scan(&mediaUUID); err != nil {
+		t.Fatalf("insert media: %v", err)
+	}
+	if _, err := app.DB.Exec(`INSERT INTO post_media (post_id, media_uuid, position, alt_text) VALUES ($1, $2::uuid, 1, '')`, postID, mediaUUID); err != nil {
+		t.Fatalf("link media to post: %v", err)
+	}
+
+	mediaFeed, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/users/relalice/media", Token: bobToken}))
+	mediaItems := mediaFeed["items"].([]any)
+	if len(mediaItems) != 1 || int(mediaItems[0].(map[string]any)["id"].(float64)) != postID {
+		t.Fatalf("media feed = %v", mediaFeed["items"])
+	}
+	if len(mediaItems[0].(map[string]any)["media"].([]any)) != 1 {
+		t.Fatalf("media feed item missing media attachments: %v", mediaItems[0])
+	}
+}

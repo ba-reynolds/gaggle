@@ -163,7 +163,7 @@ func (h *UserRelationshipHandler) UnfollowUser(w http.ResponseWriter, r *http.Re
 	}
 
 	// Delete follow relationship
-	if err := h.service.UserRelationships.DeleteRelationship(r.Context(), authUser.ID, targetUser.ID); err != nil {
+	if err := h.service.UserRelationships.DeleteRelationship(r.Context(), authUser.ID, targetUser.ID, "follow"); err != nil {
 		if appErr, ok := err.(*apperrors.AppError); ok {
 			util.RespondWithAppError(w, appErr)
 			return
@@ -300,7 +300,7 @@ func (h *UserRelationshipHandler) UnblockUser(w http.ResponseWriter, r *http.Req
 	}
 
 	// Delete block relationship
-	if err := h.service.UserRelationships.DeleteRelationship(r.Context(), authUser.ID, targetUser.ID); err != nil {
+	if err := h.service.UserRelationships.DeleteRelationship(r.Context(), authUser.ID, targetUser.ID, "block"); err != nil {
 		if appErr, ok := err.(*apperrors.AppError); ok {
 			util.RespondWithAppError(w, appErr)
 			return
@@ -310,6 +310,132 @@ func (h *UserRelationshipHandler) UnblockUser(w http.ResponseWriter, r *http.Req
 	}
 
 	h.logger.Info("user unblocked successfully",
+		"userID", authUser.ID,
+		"target_userID", targetUser.ID,
+	)
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// MuteUser godoc
+//
+//	@Summary		Mute a user
+//	@Description	Mutes a user so their notifications are silenced
+//	@Tags			relationships
+//	@Accept			json
+//	@Produce		json
+//	@Param			username	path		string	true	"Username of the user to mute"
+//	@Success		200	{object}	models.Envelope{data=models.UserRelationshipResponse,error=nil}
+//	@Failure		400	{object}	models.Envelope{data=nil,error=apperrors.AppError}
+//	@Failure		404	{object}	models.Envelope{data=nil,error=apperrors.AppError}
+//	@Failure		500	{object}	models.Envelope{data=nil,error=apperrors.AppError}
+//	@Security		ApiKeyAuth
+//	@Router			/users/{username}/mute [post]
+func (h *UserRelationshipHandler) MuteUser(w http.ResponseWriter, r *http.Request) {
+	authUser, err := middleware.GetAuthenticatedUserFromContext(r)
+	if err != nil {
+		h.logger.Error("authentication middleware error",
+			"error", err,
+			"path", r.URL.Path,
+			"method", r.Method,
+		)
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+
+	username := r.PathValue("username")
+	if username == "" {
+		util.RespondWithAppError(w, apperrors.BadRequestError("username is required", nil))
+		return
+	}
+
+	targetUser, err := h.service.Users.GetByUsername(r.Context(), username)
+	if err != nil {
+		if appErr, ok := err.(*apperrors.AppError); ok {
+			util.RespondWithAppError(w, appErr)
+			return
+		}
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+
+	_, err = h.service.UserRelationships.CreateRelationship(r.Context(), authUser.ID, targetUser.ID, "mute")
+	if err != nil {
+		if appErr, ok := err.(*apperrors.AppError); ok {
+			util.RespondWithAppError(w, appErr)
+			return
+		}
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+
+	h.logger.Info("user muted successfully",
+		"userID", authUser.ID,
+		"target_userID", targetUser.ID,
+	)
+
+	if err := util.RespondWithJson(w, http.StatusOK, models.UserRelationshipResponse{Success: true}); err != nil {
+		h.logger.Error("failed to write HTTP response",
+			"error", err,
+			"userID", authUser.ID,
+			"status", http.StatusOK,
+		)
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+}
+
+// UnmuteUser godoc
+//
+//	@Summary		Unmute a user
+//	@Description	Unmutes a previously muted user
+//	@Tags			relationships
+//	@Accept			json
+//	@Produce		json
+//	@Param			username	path		string	true	"Username of the user to unmute"
+//	@Success		204	{object}	nil
+//	@Failure		404	{object}	models.Envelope{data=nil,error=apperrors.AppError}
+//	@Failure		500	{object}	models.Envelope{data=nil,error=apperrors.AppError}
+//	@Security		ApiKeyAuth
+//	@Router			/users/{username}/mute [delete]
+func (h *UserRelationshipHandler) UnmuteUser(w http.ResponseWriter, r *http.Request) {
+	authUser, err := middleware.GetAuthenticatedUserFromContext(r)
+	if err != nil {
+		h.logger.Error("authentication middleware error",
+			"error", err,
+			"path", r.URL.Path,
+			"method", r.Method,
+		)
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+
+	username := r.PathValue("username")
+	if username == "" {
+		util.RespondWithAppError(w, apperrors.BadRequestError("username is required", nil))
+		return
+	}
+
+	targetUser, err := h.service.Users.GetByUsername(r.Context(), username)
+	if err != nil {
+		if appErr, ok := err.(*apperrors.AppError); ok {
+			util.RespondWithAppError(w, appErr)
+			return
+		}
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+
+	if err := h.service.UserRelationships.DeleteRelationship(r.Context(), authUser.ID, targetUser.ID, "mute"); err != nil {
+		if appErr, ok := err.(*apperrors.AppError); ok {
+			util.RespondWithAppError(w, appErr)
+			return
+		}
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+
+	h.logger.Info("user unmuted successfully",
 		"userID", authUser.ID,
 		"target_userID", targetUser.ID,
 	)
@@ -336,6 +462,17 @@ func (h *UserRelationshipHandler) GetFollowers(w http.ResponseWriter, r *http.Re
 	username := r.PathValue("username")
 	if username == "" {
 		util.RespondWithAppError(w, apperrors.BadRequestError("username is required", nil))
+		return
+	}
+
+	viewer, err := middleware.GetAuthenticatedUserFromContext(r)
+	if err != nil {
+		h.logger.Error("authentication middleware error",
+			"error", err,
+			"path", r.URL.Path,
+			"method", r.Method,
+		)
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
 		return
 	}
 
@@ -372,11 +509,18 @@ func (h *UserRelationshipHandler) GetFollowers(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	if err := h.service.Badges.HydrateUserWithProfiles(r.Context(), followers.Followers); err != nil {
+	if err := h.service.Badges.HydrateProfiles(r.Context(), followers.Items); err != nil {
 		h.logger.Error("failed to hydrate badges", "error", err, "username", username)
 		util.RespondWithAppError(w, apperrors.InternalServerError(err))
 		return
 	}
+
+	if err := h.hydrateRelationshipStatuses(r, viewer.ID, followers.Items); err != nil {
+		h.logger.Error("failed to hydrate relationship statuses", "error", err, "username", username)
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+
 	if err := util.RespondWithJson(w, http.StatusOK, followers); err != nil {
 		h.logger.Error("failed to write HTTP response",
 			"error", err,
@@ -407,6 +551,17 @@ func (h *UserRelationshipHandler) GetFollowing(w http.ResponseWriter, r *http.Re
 	username := r.PathValue("username")
 	if username == "" {
 		util.RespondWithAppError(w, apperrors.BadRequestError("username is required", nil))
+		return
+	}
+
+	viewer, err := middleware.GetAuthenticatedUserFromContext(r)
+	if err != nil {
+		h.logger.Error("authentication middleware error",
+			"error", err,
+			"path", r.URL.Path,
+			"method", r.Method,
+		)
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
 		return
 	}
 
@@ -443,11 +598,18 @@ func (h *UserRelationshipHandler) GetFollowing(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	if err := h.service.Badges.HydrateUserWithProfiles(r.Context(), following.Following); err != nil {
+	if err := h.service.Badges.HydrateProfiles(r.Context(), following.Items); err != nil {
 		h.logger.Error("failed to hydrate badges", "error", err, "username", username)
 		util.RespondWithAppError(w, apperrors.InternalServerError(err))
 		return
 	}
+
+	if err := h.hydrateRelationshipStatuses(r, viewer.ID, following.Items); err != nil {
+		h.logger.Error("failed to hydrate relationship statuses", "error", err, "username", username)
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+
 	if err := util.RespondWithJson(w, http.StatusOK, following); err != nil {
 		h.logger.Error("failed to write HTTP response",
 			"error", err,
@@ -457,4 +619,30 @@ func (h *UserRelationshipHandler) GetFollowing(w http.ResponseWriter, r *http.Re
 		util.RespondWithAppError(w, apperrors.InternalServerError(err))
 		return
 	}
+}
+
+// hydrateRelationshipStatuses fills the viewer-relative is_following /
+// is_blocked / is_muted flags on a batch of flat profile responses.
+func (h *UserRelationshipHandler) hydrateRelationshipStatuses(r *http.Request, viewerID int, items []models.UserProfileResponse) error {
+	ids := make([]int, 0, len(items))
+	for _, it := range items {
+		if it.UserID != 0 {
+			ids = append(ids, it.UserID)
+		}
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	statuses, err := h.service.UserRelationships.GetRelationshipStatuses(r.Context(), viewerID, ids)
+	if err != nil {
+		return err
+	}
+	for i := range items {
+		if s, ok := statuses[items[i].UserID]; ok {
+			items[i].IsFollowing = s.IsFollowing
+			items[i].IsBlocked = s.IsBlocked
+			items[i].IsMuted = s.IsMuted
+		}
+	}
+	return nil
 }

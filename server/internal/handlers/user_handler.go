@@ -32,6 +32,27 @@ func (h *UserHandler) respondError(w http.ResponseWriter, err error) {
 	util.RespondWithAppError(w, apperrors.InternalServerError(err))
 }
 
+// hydrateProfileRelationship fills the viewer-relative is_following /
+// is_blocked / is_muted flags on the given user's profile response.
+func (h *UserHandler) hydrateProfileRelationship(r *http.Request, viewerID, targetID int, resp *models.UserProfileResponse) error {
+	if viewerID == targetID {
+		return nil
+	}
+	status, err := h.service.UserRelationships.GetRelationshipStatus(r.Context(), viewerID, targetID)
+	if err != nil {
+		h.logger.Error("failed to get relationship status",
+			"error", err,
+			"viewerID", viewerID,
+			"targetID", targetID,
+		)
+		return apperrors.InternalServerError(err)
+	}
+	resp.IsFollowing = status.IsFollowing
+	resp.IsBlocked = status.IsBlocked
+	resp.IsMuted = status.IsMuted
+	return nil
+}
+
 // UpdateUserProfile godoc
 //
 //	@Summary		Update user profile
@@ -199,6 +220,17 @@ func (h *UserHandler) GetUserProfileByUsername(w http.ResponseWriter, r *http.Re
 	// Log the request for debugging
 	h.logger.Debug("get user profile request", "username", username)
 
+	viewer, viewerErr := middleware.GetAuthenticatedUserFromContext(r)
+	if viewerErr != nil {
+		h.logger.Error("authentication middleware error",
+			"error", viewerErr,
+			"path", r.URL.Path,
+			"method", r.Method,
+		)
+		util.RespondWithAppError(w, apperrors.InternalServerError(viewerErr))
+		return
+	}
+
 	user, err := h.service.Users.GetUserProfileByUsername(r.Context(), username)
 	if err != nil {
 		// Don't log service errors - they're already logged at appropriate layer
@@ -216,7 +248,17 @@ func (h *UserHandler) GetUserProfileByUsername(w http.ResponseWriter, r *http.Re
 		util.RespondWithAppError(w, apperrors.InternalServerError(err))
 		return
 	}
-	if err := util.RespondWithJson(w, http.StatusOK, user.ToProfileResponse()); err != nil {
+
+	resp := user.ToProfileResponse()
+	if err := h.hydrateProfileRelationship(r, viewer.ID, user.ID, &resp); err != nil {
+		if appErr, ok := err.(*apperrors.AppError); ok {
+			util.RespondWithAppError(w, appErr)
+			return
+		}
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+	if err := util.RespondWithJson(w, http.StatusOK, resp); err != nil {
 		// Log HTTP response errors - these are HTTP layer concerns
 		h.logger.Error("failed to write HTTP response",
 			"error", err,
