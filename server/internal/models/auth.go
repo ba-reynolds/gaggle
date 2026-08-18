@@ -17,15 +17,24 @@ type Token struct {
 
 type RefreshToken struct {
 	RefreshTokenID uuid.UUID  `json:"refresh_token_id"`
+	SessionID      uuid.UUID  `json:"session_id"`
 	UserID         int        `json:"user_id"`
 	TokenHash      string     `json:"token_hash"`
 	IssuedAt       time.Time  `json:"issued_at"`
 	ExpiresAt      time.Time  `json:"expires_at"`
 	Revoked        bool       `json:"revoked"`
 	RevokedAt      *time.Time `json:"revoked_at"`
+	RevokedReason  *string    `json:"revoked_reason,omitempty"`
 	UserAgent      string     `json:"user_agent"`
 	IPAddress      string     `json:"ip_address"`
 }
+
+// Reasons recorded on revoked refresh tokens.
+var (
+	RevokedReasonRotated = "rotated" // replaced by a newer token in the same session family
+	RevokedReasonLogout  = "logout"  // the user ended the session explicitly
+	RevokedReasonTheft   = "theft"   // a rotated token was replayed; session is being killed
+)
 
 type LoginRequest struct {
 	Identifier string `json:"identifier" validate:"required"`

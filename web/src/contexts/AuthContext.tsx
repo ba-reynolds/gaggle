@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { type AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
+import { toast } from "sonner";
 import api from '@/lib/api';
 import type { Envelope, RefreshTokenResponse } from '@/types/api';
 import { useUser } from './UserContext';
@@ -17,6 +18,15 @@ interface AuthContextType {
   token: string | null | undefined;
   setToken: (token: string | null) => void;
 }
+
+// The server reports "your session is over" distinctly from a generic auth
+// failure so we can tell the user why they're being signed out.
+const isSessionExpired = (err: unknown) =>
+  (err as AxiosError<Envelope<unknown>> | undefined)?.response?.data?.error?.code === 'SESSION_EXPIRED';
+
+const notifySessionExpired = () => {
+  toast.error("Your session has expired. Please sign in again.");
+};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -80,7 +90,10 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
           profilePictureUUID: meResponse.data.data.profile_picture_uuid ?? '',
           isAdmin: meResponse.data.data.is_admin ?? false,
         });
-      } catch {
+      } catch (err) {
+        if (isSessionExpired(err)) {
+          notifySessionExpired();
+        }
         setToken(null);
       }
     };
@@ -130,7 +143,10 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
             originalRequest._retry = true;
             originalRequest.headers.Authorization = `Bearer ${accessToken}`;
             return api(originalRequest);
-          } catch {
+          } catch (refreshError) {
+            if (isSessionExpired(refreshError)) {
+              notifySessionExpired();
+            }
             setToken(null);
           }
         }

@@ -1,15 +1,222 @@
 package handlers_test
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"net/http/httptest"
 	"strconv"
 	"testing"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/ba-reynolds/gophersocial/internal/testutil"
 )
 
 func itoa(i int) string { return strconv.Itoa(i) }
+
+func refreshCookieFrom(rec *httptest.ResponseRecorder) string {
+	for _, c := range rec.Result().Cookies() {
+		if c.Name == "refresh_token" {
+			return c.Value
+		}
+	}
+	return ""
+}
+
+func doRefresh(t *testing.T, app *testutil.App, cookieValue string) *httptest.ResponseRecorder {
+	t.Helper()
+	return app.Do(t, testutil.Request{
+		Method:  http.MethodPost,
+		Path:    "/api/v1/auth/refresh-token",
+		Cookies: []*http.Cookie{{Name: "refresh_token", Value: cookieValue}},
+	})
+}
+
+// TestRefreshTokenRotation exercises rotation: each refresh issues a new
+// refresh token and revokes the previous one. Reusing an already-rotated token
+// is treated as theft and kills the whole session family.
+func TestRefreshTokenRotation(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+
+	reg := app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/auth/register",
+		Body:   map[string]string{"username": "rotator", "email": "rotator@example.com", "password": "password123"},
+	})
+	if reg.Code != http.StatusCreated {
+		t.Fatalf("register: status %d body %s", reg.Code, reg.Body.String())
+	}
+	r1 := refreshCookieFrom(reg)
+	if r1 == "" {
+		t.Fatal("register response missing refresh_token cookie")
+	}
+
+	// A refresh rotates the token: the response must hand back a NEW refresh
+	// cookie (this is the wiring the old code never did).
+	rec := doRefresh(t, app, r1)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("refresh: status %d body %s", rec.Code, rec.Body.String())
+	}
+	r2 := refreshCookieFrom(rec)
+	if r2 == "" || r2 == r1 {
+		t.Fatalf("refresh must rotate the refresh token (r1=%q)", r2)
+	}
+
+	// The rotated token should also still work (chain keeps extending).
+	rec = doRefresh(t, app, r2)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("refresh with r2: status %d body %s", rec.Code, rec.Body.String())
+	}
+	r3 := refreshCookieFrom(rec)
+	if r3 == r2 {
+		t.Fatal("second refresh did not rotate")
+	}
+
+	// Reusing the already-rotated r1 is a theft signal: 401 + SESSION_EXPIRED.
+	rec = doRefresh(t, app, r1)
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("reused rotated token: expected 401 got %d body %s", rec.Code, rec.Body.String())
+	}
+	data, errObj := testutil.Decode[map[string]any](t, rec)
+	_ = data
+	if errObj == nil || (*errObj)["code"] != "SESSION_EXPIRED" {
+		t.Fatalf("reused rotated token: expected SESSION_EXPIRED got %v", errObj)
+	}
+
+	// The whole family is dead, including the newest token r3.
+	for name, tok := range map[string]string{"r1": r1, "r2": r2, "r3": r3} {
+		rec := doRefresh(t, app, tok)
+		if rec.Code == http.StatusOK {
+			t.Fatalf("token %s should be dead after theft-revocation, got 200", name)
+		}
+	}
+}
+
+// TestRefreshTokenRotationChain verifies normal rotation keeps working across
+// many refreshes and that stream-style auth (which re-validates using the
+// refresh cookie) survives rotation because it checks the session family, not
+// the exact token.
+func TestRefreshTokenRotationChain(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+	reg := app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/auth/register",
+		Body:   map[string]string{"username": "chainer", "email": "chainer@example.com", "password": "password123"},
+	})
+	r := refreshCookieFrom(reg)
+	if r == "" {
+		t.Fatal("register response missing refresh_token cookie")
+	}
+	for i := 0; i < 3; i++ {
+		rec := doRefresh(t, app, r)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("refresh %d: status %d body %s", i, rec.Code, rec.Body.String())
+		}
+		next := refreshCookieFrom(rec)
+		if next == "" || next == r {
+			t.Fatalf("refresh %d did not rotate", i)
+		}
+		r = next
+	}
+
+	// An older-but-rotated token of a live session still authenticates the
+	// realtime stream (family check), so streams don't drop on refresh.
+	if _, err := app.Service.Auth.GetUserIDFromRefreshToken(context.Background(), refreshCookieFrom(reg)); err != nil {
+		t.Fatalf("stream auth should survive rotation, got %v", err)
+	}
+}
+
+// TestRefreshTokenLogoutRevokesFamily checks that logout revokes the whole
+// session family and that logging out with a stale/already-rotated or garbage
+// cookie stays idempotent (200).
+func TestRefreshTokenLogoutRevokesFamily(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+	reg := app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/auth/register",
+		Body:   map[string]string{"username": "logger", "email": "logger@example.com", "password": "password123"},
+	})
+	r1 := refreshCookieFrom(reg)
+	if r1 == "" {
+		t.Fatal("register response missing refresh_token cookie")
+	}
+
+	// Move the session forward one rotation.
+	rec := doRefresh(t, app, r1)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("refresh: status %d body %s", rec.Code, rec.Body.String())
+	}
+	r2 := refreshCookieFrom(rec)
+
+	// Logout with the current token (r2) revokes the family: r2 is dead.
+	rec = app.Do(t, testutil.Request{
+		Method:  http.MethodPost,
+		Path:    "/api/v1/auth/logout",
+		Cookies: []*http.Cookie{{Name: "refresh_token", Value: r2}},
+	})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("logout: status %d body %s", rec.Code, rec.Body.String())
+	}
+	if r1 != r2 {
+		rec = doRefresh(t, app, r1)
+		if rec.Code != http.StatusUnauthorized {
+			t.Fatalf("rotated r1 after logout: expected 401 got %d", rec.Code)
+		}
+	}
+	if rec = doRefresh(t, app, r2); rec.Code != http.StatusUnauthorized {
+		t.Fatalf("r2 after logout: expected 401 got %d", rec.Code)
+	}
+
+	// Logout with a garbage cookie stays idempotent.
+	rec = app.Do(t, testutil.Request{
+		Method:  http.MethodPost,
+		Path:    "/api/v1/auth/logout",
+		Cookies: []*http.Cookie{{Name: "refresh_token", Value: "not-a-real-token"}},
+	})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("logout with garbage cookie: expected 200 got %d body %s", rec.Code, rec.Body.String())
+	}
+}
+
+// TestRefreshTokenExpiredRejected checks that an expired refresh token yields a
+// distinct SESSION_EXPIRED code so the frontend can tell "session over" from a
+// generic auth error.
+func TestRefreshTokenExpiredRejected(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+	app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/auth/register",
+		Body:   map[string]string{"username": "expirer", "email": "expirer@example.com", "password": "password123"},
+	})
+
+	// Craft a well-signed refresh JWT that is already past its exp claim.
+	now := time.Now()
+	claims := jwt.MapClaims{
+		"sub": 1,
+		"exp": now.Add(-1 * time.Hour).Unix(),
+		"iat": now.Add(-48 * time.Hour).Unix(),
+		"nbf": now.Add(-48 * time.Hour).Unix(),
+		"iss": "gophersocial-test",
+		"aud": "gophersocial-test",
+		"typ": "refresh",
+	}
+	expired, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte("test-secret"))
+	if err != nil {
+		t.Fatalf("sign expired token: %v", err)
+	}
+
+	rec := doRefresh(t, app, expired)
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("expired refresh token: expected 401 got %d body %s", rec.Code, rec.Body.String())
+	}
+	data, errObj := testutil.Decode[map[string]any](t, rec)
+	_ = data
+	if errObj == nil || (*errObj)["code"] != "SESSION_EXPIRED" {
+		t.Fatalf("expired refresh token: expected SESSION_EXPIRED got %v", errObj)
+	}
+}
 
 func TestAuthFlow(t *testing.T) {
 	app := testutil.NewApp(t, testutil.Database(t))

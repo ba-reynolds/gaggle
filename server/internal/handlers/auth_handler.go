@@ -67,7 +67,7 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	// Log the request for debugging
 	h.logger.Debug("refresh token request", "path", r.URL.Path)
 
-	accessToken, apperr := h.service.Auth.RefreshToken(r.Context(), refreshTokenCookie.Value)
+	accessToken, refreshToken, apperr := h.service.Auth.RefreshToken(r.Context(), refreshTokenCookie.Value, r.RemoteAddr, r.UserAgent())
 	if apperr != nil {
 		// Don't log service errors - they're already logged at appropriate layer
 		// Just handle HTTP response mapping
@@ -78,6 +78,10 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		util.RespondWithAppError(w, apperrors.InternalServerError(apperr))
 		return
 	}
+
+	// Refresh tokens rotate on every use: hand the successor back via the same
+	// httpOnly cookie so the client never replays a revoked token.
+	h.setRefreshTokenCookie(w, refreshToken.TokenString)
 
 	// Create access token response
 	tokenResponse := models.RefreshTokenResponse{
