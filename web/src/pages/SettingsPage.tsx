@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSettings } from "@/hooks/useSettings";
+import ThemeCustomizer from "@/components/ThemeCustomizer";
 import { Bell, Eye, Globe, Palette } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -193,6 +194,9 @@ const SettingsPage = () => {
                                     <SelectItem value="large">Large</SelectItem>
                                 </SelectContent>
                             </Select>
+                        </div>
+                        <div className="mt-4 border-t border-border pt-4">
+                            <ThemeCustomizer />
                         </div>
                     </CardContent>
                 </Card>

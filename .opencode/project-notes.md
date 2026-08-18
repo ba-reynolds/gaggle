@@ -2,6 +2,46 @@
 
 Tricky things learned while working on this repo (newest on top).
 
+## Theme system (current work, uncommitted)
+- Themes swap via CSS variables: `theme-themes.css` holds scoped blocks
+  `:root[data-theme="..."]` / `.dark[data-theme="..."]` setting shadcn tokens
+  (`--background/--foreground/--primary/--border/--radius` …); Tailwind v4
+  `@theme inline` in `index.css` maps utilities to those vars, so setting
+  `data-theme` on `<html>` (ThemeContext) live re-themes everything.
+- **Tailwind v4 `@theme inline` emits `background-color: var(--background)`
+  verbatim** — HSL triplets like `240 21% 15%` need `hsl()`/`oklch()` wrapping or
+  they're invalid (Catppuccin "black and white" bug). Hex values are safest.
+- `ThemeContext` (web/src/contexts) drives `--app-font-sans`
+  (`FONT_STACKS[font]`, `--font-sans: var(--app-font-sans)` mapped in `@theme
+  inline`), `--radius` (user slider), and `data-theme`. `THEME_CATALOG` marks the
+  per-theme default font/radius (reset on theme switch).
+- Composite `[data-slot="…"]` + `[data-theme]` selectors (specificity 0,2,0) beat
+  single-class Tailwind utilities — used for scoped overrides in themes.
+- Comic theme (`fun-comic`, ground truth = showcase `.comic`/`.comicdark`):
+  reusable pattern for a "character" theme —
+  - *Light:* cream `#fef4e0` bg, black `#111` ink, yellow `#ffd93d` shell/sidebar
+    (`--sidebar`), sky-blue `#4dd2ff` primary pills, blush `#ff9e9e` muted/secondary,
+    pink `#ff4d6d` destructive/ring.
+  - *Dark:* purple `#161221` bg, lavender `#cfc4e8` card text, layered card purples
+    `#211a33/#2d2145/#33203a`, **yellow ink `#ffd93d` for borders/inputs (black
+    outlines vanish on dark)**, pink `#ff5c8a` shadows + stroke, sky-blue buttons
+    with `#161221` fg.
+  - Halftone dots = plain `radial-gradient(var(--comic-dot) 1.2px, transparent
+    1.2px)` + `background-size: 14px` on the feed column
+    `.bg-background\/25` (escaped `/`), `--comic-dot` is `#111` light /
+    `rgba(255,255,255,.08)` dark. Cards stay solid so text never fights dots.
+  - Inked look = `border: 3px solid var(--border)`, zero-blur hard shadows
+    (`6px 6px 0 0 var(--comic-shadow)`), pill buttons (`border-radius: 9999px` +
+    `5px 5px 0 0 var(--comic-btn-shadow)`), snappy `:active` 2px press.
+  - Headlines = Bangers font + `-webkit-text-stroke` (2px ink light / yellow dark)
+    on `h1` only; body stays Comic Neue (`FONT_STACKS['comic']`).
+- The old comic halftone used a fixed `[data-halftone]` div + `filter: contrast(24)`
+  + mask + rotate — **removed, replaced by the simple dot texture above**. Sliders
+  for dot opacity/color were removed with it; the pattern (halftone on one surface,
+  solid cards above) is the legible approach.
+- Sidebar nav item colors are hardcoded `text-gray-800 dark:text-gray-100` in
+  SocialMediaLayout NavItem — readable on comic's yellow/purple shell, no override.
+
 ## API contract
 - **Every** response is `{"data": ..., "error": null | {code, message}}`. The single
   success-path helper `internal/util/json.go:RespondWithJson` wraps everything, so
