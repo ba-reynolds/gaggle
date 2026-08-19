@@ -86,9 +86,40 @@ one of two ways:
    blast radius; keeps the write path used by the app intact.
 2. A dedicated seed-only raw-SQL insert path in `internal/seedgen`.
 
-Recommend 1 (preferred): explicit, testable, and the simulator (future cron)
-also benefits (it backdates nothing, but same seam). If avoiding touching the
-store is desired, option 2 is the fallback.
+**Option 1 (CHOSEN) — honor `post.CreatedAt` in the store via `COALESCE`:**
+
+`models.Post` already carries `CreatedAt time.Time` (post.go:42), so no model
+change. Change both INSERTs (`post_store.go:260-264` Create and `:289-293`
+CreateQuotedPost) to include `created_at, updated_at` and backfill via
+`COALESCE`:
+
+```sql
+INSERT INTO posts (content, author_id, parent_id, visibility, mentioned_user_ids, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, COALESCE($6, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP)
+RETURNING post_id, created_at, updated_at
+```
+
+Pass `nil` when `post.CreatedAt.IsZero()`, else the time:
+
+```go
+var createdAt any
+if !post.CreatedAt.IsZero() {
+	createdAt = post.CreatedAt
+}
+err := exec(ctx, query, post.Content, post.AuthorID, post.ParentID,
+	post.Visibility, pq.Array(nonNilIntSlice(post.MentionedUserIDs)), createdAt).
+	Scan(&post.ID, &post.CreatedAt, &post.UpdatedAt)
+```
+
+Safety: the only app call sites (`post_service.go:467` and `:1031`) build fresh
+`post` values that never set `CreatedAt` → always zero → `NULL` →
+`CURRENT_TIMESTAMP`, exactly today's behavior. Only the seed sets it, and the
+`RETURNING` scanner already copies the value back into `post.CreatedAt`. No
+migration, no model change, both create paths covered.
+
+Option 2 (seed-only raw SQL insert in `seedgen`, fallback) would duplicate the
+insert schema in seedgen and bypass store invariants — only considered if
+touching the store is ever unwanted.
 
 Engagement writes (likes / reposts / bookmarks via `post_engagement_store.go`)
 and followers already record their own `created_at`; those need the same

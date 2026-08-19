@@ -25,8 +25,10 @@ binary. This branch records the chosen strategy and the seam for a future
   timestamps, scheduled on the EC2 box via systemd/cron →
   `docker compose run --rm --no-deps --entrypoint /app/simulate api`.
 - **Found constraint**: `post_store.go:261` INSERT can't set `created_at`
-  (DB-default `now()`), so realistic backdating needs an optional `createdAt`
-  param on `post_store.Create` (preferred) or a seed-only raw-SQL path.
+  (DB-default `now()`). **Fix chosen**: honor `post.CreatedAt` in the store via
+  `COALESCE($n, CURRENT_TIMESTAMP)` on both Create INSERTs — app call sites pass a
+  zero value → `NULL` → `now()`, unchanged behavior; the seed sets it for
+  backdating. No migration/model change needed. See spec §"Backdating posts".
 
 ## Files touched
 
@@ -34,8 +36,9 @@ binary. This branch records the chosen strategy and the seam for a future
 
 ## Reviewer double-checks
 
-- Spec only — no code. Confirm the store `created_at` option-vs-raw-SQL choice
-  when implementing.
+- Spec only — no code. The store `created_at` fix choice is resolved (COALESCE
+  on both Create INSERTs, §"Backdating posts"); when implementing, confirm the
+  two app call sites still pass a zero `CreatedAt`.
 - The `cmd/simulate` binary: implement now (prove the seam) or defer — open
   question flagged in the spec.
 - No migration was added → no version-collision risk from this branch.

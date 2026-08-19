@@ -1,3 +1,13 @@
+## Seed backdating: created_at not settable through the store
+- `post_store.go:260` (`Create`) and `:288` (`CreateQuotedPost`) INSERTs omit
+  `created_at` (DB default `CURRENT_TIMESTAMP`), so a seed can't backdate
+  posts. **Fix (chosen in seed-data-strategy spec)**: add `created_at, updated_at`
+  to both INSERT columns and pass `COALESCE($6, CURRENT_TIMESTAMP)`, passing
+  `nil` when `post.CreatedAt.IsZero()`. App call sites (`post_service.go:467`,
+  `:1031`) build fresh posts with zero `CreatedAt` → `NULL` → `now()`, so
+  behavior is unchanged; `RETURNING` already fills `post.CreatedAt`.
+- `models.Post` already has `CreatedAt time.Time` (post.go:42) — no model change.
+
 ## GitHub / git on NixOS
 - `~/.config/git/config` is a read-only home-manager symlink into the nix
   store. Anything writing the *global* git config fails ("could not lock config
