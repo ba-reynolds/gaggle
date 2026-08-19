@@ -27,6 +27,14 @@
   over chart vars; because it's a custom-property reference it re-resolves per
   theme+mode automatically — no per-theme gradient edits needed.
 
+## Post search substring matching (fuzzy-search-results)
+- Post search no longer uses `to_tsvector @@ plainto_tsquery` (whole-lexeme
+  match — searching "e" never matched "hey"). It now matches user search:
+  `p.content ILIKE '%' || $1 || '%' ESCAPE '\'` with the same
+  `strings.NewReplacer(\,\,%,%_,_)` escaping in `post_store.go:Search`.
+  The GIN `posts_content_search_idx` (migration 000011) is now unused by the
+  search path but left in place (not harmful; removing would need a migration).
+
 ## Search filters (detailed-search-filters)
 - `GET /search?type=posts` filter params: `from`, `hashtag`, `has_media`,
   `min_likes`, `include_replies`, `since`, `until`. Frontend URL params are

@@ -1741,7 +1741,8 @@ func (store *postStore) GetQuotesFeed(ctx context.Context, postID int, limit int
 
 func (store *postStore) Search(ctx context.Context, query string, filters models.PostSearchFilters, limit int, cursor string) (*models.PostFeed, error) {
 	filters.Hashtag = strings.ToLower(strings.TrimPrefix(strings.TrimSpace(filters.Hashtag), "#"))
-	clauses := []string{`to_tsvector('simple', p.content) @@ plainto_tsquery('simple', $1)`}
+	query = strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(query)
+	clauses := []string{`p.content ILIKE '%' || $1 || '%' ESCAPE '\'`}
 	args := []any{query}
 	if filters.From != "" {
 		clauses = append(clauses, `EXISTS (SELECT 1 FROM users u WHERE u.username = $`+strconv.Itoa(len(args)+1)+` AND u.user_id = p.author_id)`)
