@@ -1,3 +1,17 @@
+## DM bubbles: global gradient via background-attachment: fixed
+- Every outgoing/incoming conversation bubble (`ConversationPage.tsx`) paints
+  ONE `--chat-gradient` (composed from per-theme `--chart-2/1/4/5`) with
+  `background-attachment: fixed`, so jointly they read as a single
+  viewport-global gradient (iMessage/Instagram "mask" trick). Bubbles must keep
+  NO `transform`/`filter`/`backdrop-filter` ancestor, or browsers switch fixed
+  attachment to scroll/local and the global continuity silently breaks.
+- iOS Safari does NOT support `background-attachment: fixed` → falls back to
+  scroll → each bubble shows the gradient from its own top-left (still gradient
+  bubbles, just not viewport-continuous).
+- `--chat-gradient` is defined ONCE at `:root` in `index.css` as a var chain
+  over chart vars; because it's a custom-property reference it re-resolves per
+  theme+mode automatically — no per-theme gradient edits needed.
+
 ## Search filters (detailed-search-filters)
 - `GET /search?type=posts` filter params: `from`, `hashtag`, `has_media`,
   `min_likes`, `include_replies`, `since`, `until`. Frontend URL params are

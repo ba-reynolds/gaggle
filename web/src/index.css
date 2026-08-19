@@ -79,6 +79,16 @@
   --sidebar-border: oklch(0.92 0.004 286.32);
   --sidebar-ring: oklch(0.705 0.015 286.067);
   --app-font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* One global gradient (resolved per-theme via the chart palette) that every
+     DM bubble paints with background-attachment: fixed — bubbles become
+     windows into a single viewport-wide gradient, iMessage/Instagram style. */
+  --chat-gradient: linear-gradient(
+    135deg,
+    var(--chart-2) 0%,
+    var(--chart-1) 40%,
+    var(--chart-4) 70%,
+    var(--chart-5) 100%
+  );
 }
 
 .dark {
@@ -137,4 +147,28 @@
 .composer-highlight::placeholder {
   color: var(--muted-foreground);
   -webkit-text-fill-color: var(--muted-foreground);
+}
+
+/* DM message bubbles: every bubble paints the SAME --chat-gradient with
+   background-attachment: fixed, so they read as one viewport-global gradient
+   (the iMessage/Instagram "mask into a global gradient" trick). Colors come
+   from the theme's chart palette and re-theme automatically. Outgoing bubbles
+   show the vivid gradient; incoming ones are "washed" / desaturated versions
+   of the identical gradient so the two sides stay distinguishable. */
+.chat-bubble-mine {
+  background-image: var(--chat-gradient);
+  background-attachment: fixed;
+  color: #fff;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
+}
+.chat-bubble-theirs {
+  background-image:
+    linear-gradient(rgb(255 255 255 / 0.72), rgb(255 255 255 / 0.72)),
+    var(--chat-gradient);
+  background-attachment: fixed, fixed;
+}
+.dark .chat-bubble-theirs {
+  background-image:
+    linear-gradient(rgb(0 0 0 / 0.62), rgb(0 0 0 / 0.62)),
+    var(--chat-gradient);
 }

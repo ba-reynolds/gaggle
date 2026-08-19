@@ -1,3 +1,86 @@
+# SUMMARY — message-gradient
+
+DM conversation bubbles now look like the iMessage/Instagram "global gradient"
+chat: **every message box paints the SAME gradient, anchored to the viewport
+(`background-attachment: fixed`), so the whole thread reads as one continuous
+gradient and each bubble acts as a mask/window into it.** The colors are driven
+by each theme's chart palette, so the effect re-themes automatically.
+
+## What was changed and why
+
+The conversation view (`ConversationPage.tsx`) styled outgoing bubbles with a
+flat `bg-primary` and incoming with `bg-muted`. The request: give the message
+boxes the iMessage/Instagram treatment where the gradient is *global* — the
+bubbles are windows into a single screen-wide gradient, not individually
+colored.
+
+- **One shared gradient, painted globally.** `index.css` defines a single
+  `--chat-gradient` (a 135° 4-stop gradient composed from the per-theme
+  `--chart-2/1/4/5` tokens). Because it is a `var(-)`-on-`var(-)` chain defined
+  once at `:root`, it resolves to each theme's own chart palette at use time
+  (light and dark), so there is literally one global gradient definition whose
+  colors swap with the active theme — no per-theme edits needed.
+- **Bubbles = masks into that gradient.** `.chat-bubble-mine` sets
+  `background-image: var(--chat-gradient); background-attachment: fixed`. With
+  fixed attachment each bubble paints the gradient relative to the *viewport*,
+  so as you scroll, bubbles slide through a stationary gradient and adjacent
+  bubbles show contiguous slices — the "mask into a global gradient" effect.
+  Border-radius clips the background to the bubble shape.
+- **Two-tone, both sides on the same gradient.** Outgoing bubbles show the vivid
+  gradient with white text + a soft drop shadow for contrast. Incoming bubbles
+  (.chat-bubble-theirs) use the *identical* gradient washed through a 72% white
+  overlay (62% black overlay under `.dark`) so the two sides share the same
+  continuous gradient while staying distinguishable, and their body text keeps
+  the theme's `text-primary`.
+- **Graceful degradation**: iOS Safari doesn't support `background-attachment:
+  fixed`, so there each bubble falls back to showing the full gradient from its
+  own top-left — still gradient bubbles, just not viewport-continuous.
+
+## Files touched
+
+- `web/src/index.css` — added `--chat-gradient` var to the base `:root` tokens;
+  added `.chat-bubble-mine`, `.chat-bubble-theirs`, and `.dark
+  .chat-bubble-theirs` classes.
+- `web/src/pages/ConversationPage.tsx:108-114` — bubbles now use
+  `chat-bubble-mine` / `chat-bubble-theirs text-primary`; outgoing timestamp is
+  `text-white/70` (was `text-primary-foreground/70`, which no longer derives
+  from the flat primary color).
+
+## Verification
+
+- `npm run build` (web-tools container) — tsc + vite pass.
+- `npm run lint` — 0 errors, only the same 14 pre-existing react-refresh
+  warnings as the base branch.
+- Inspected the compiled `dist` CSS: `--chat-gradient`, `.chat-bubble-mine`
+  (with `background-attachment:fixed`), `.chat-bubble-theirs`, and `.dark
+  .chat-bubble-theirs` all present with the expected values.
+- Not browser-verified: other agent worktrees share the single Docker compose
+  stack, and rebuilding `web` would clobber another session's running build, so
+  the shared containers were left untouched.
+
+## Things a reviewer should double-check
+
+- **Eyeball the effect** in a browser (rebuild `web` from this branch when the
+  stack is free): check a thread in light + dark mode and in a couple of themes
+  (e.g. zinc and fun-comic) — chart-palette colors vary a lot per theme, so the
+  gradient's vibe changes per theme by design. Confirm outgoing text stays
+  legible over the lightest chart colors (the `0 1px 2px rgb(0 0 0 / .35)`
+  shadow helps).
+- **`background-attachment: fixed` inside a scroll container**: the message
+  list is an `overflow-y-auto` div with no transform/opacity/filter ancestors,
+  so bubbles keep true viewport-fixed painting on desktop browsers. If a future
+  layout change adds a `transform`/`backdrop-filter` ancestor, the "global"
+  look silently degrades to per-bubble gradients — keep that in mind.
+- **Incoming-bubble wash values** (72% white light / 62% black dark) are
+  hand-tuned for readability; tweak if a theme's chart palette is unusually
+  light/dark.
+- The gradient intentionally applies only to DM conversation bubbles; the
+  Messages inbox list and other `bg-primary` surfaces (buttons, badges) are
+  untouched.
+
+---
+
+---
 # SUMMARY — detailed-search-filters
 
 Post search (`GET /search?type=posts`) now supports fine-grained filters, and
@@ -312,8 +395,7 @@ hashtag-parallel pieces.
    dummy (the settings_handler trick) — swag can't otherwise resolve
    `models.Envelope` in annotations.
 
----
-# SUMMARY — refresh-token-rotation
+---# SUMMARY — refresh-token-rotation
 
 Refresh tokens now rotate on every use, sessions are grouped into families,
 and replayed (theft) tokens kill the whole family. Daily-active users are no

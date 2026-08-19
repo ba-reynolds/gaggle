@@ -105,12 +105,12 @@ export default function ConversationPage() {
                     </div>
                   )}
                   <div className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${mine ? 'bg-primary text-primary-foreground' : 'bg-muted text-primary'}`}>
+                    <div className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${mine ? 'chat-bubble-mine' : 'chat-bubble-theirs text-primary'}`}>
                       {!mine && (
                         <p className="mb-0.5 text-xs text-muted-foreground">@{m.sender.username}</p>
                       )}
                       <p className="whitespace-pre-wrap">{m.body}</p>
-                      <p className={`mt-1 text-right text-[10px] ${mine ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                      <p className={`mt-1 text-right text-[10px] ${mine ? 'text-white/70' : 'text-muted-foreground'}`}>
                         {formatMessageHour(m.created_at)}
                       </p>
                     </div>
