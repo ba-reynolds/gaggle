@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AuthProvider from '@/contexts/AuthContext';
 import LoginPage from '@/pages/LoginPage';
+import { LoginLabPage } from '@/pages/login-lab/LoginLabPage';
 import SignupPage from '@/pages/SignupPage';
 import { UserProvider } from './contexts/UserContext';
 import { Toaster } from './components/ui/sonner';
@@ -50,6 +51,7 @@ function App() {
                 <Routes>
                   <Route path="/" element={<SocialMediaLayout><FeedPage /></SocialMediaLayout>} />
                   <Route path="/login" element={<LoginPage />} />
+                  <Route path="/login-lab" element={<LoginLabPage />} />
                   <Route path="/signup" element={<SignupPage />} />
                   <Route path="/profile/:username" element={<SocialMediaLayout><ProfilePage /></SocialMediaLayout>} />
                   <Route path="/profile/:username/followers" element={<SocialMediaLayout><FollowListPage listType="followers" /></SocialMediaLayout>} />

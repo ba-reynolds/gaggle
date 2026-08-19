@@ -2,28 +2,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useUser } from '@/contexts/UserContext';
-import { useLoginMutation } from '@/hooks/useAuth';
-import api from '@/lib/api';
-import type { Envelope, UserProfileResponse } from '@/types/api';
+import { useLoginFlow } from '@/hooks/useLoginFlow';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Eye, EyeOff, Lock, Mail, User } from "lucide-react";
+import { Eye, EyeOff, FlaskConical, Lock, Mail, User } from "lucide-react";
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { toast } from "sonner";
 import * as z from 'zod';
-
-const loginSchema = z.object({
-  identifier: z.string()
-    .min(1, 'Username or email is required')
-    .min(3, 'Username or email must be at least 3 characters long')
-    .max(96, 'Username or email must be at most 96 characters long'),
-  password: z.string()
-    .min(1, 'Password is required')
-    .min(8, 'Password must be at least 8 characters long')
-    .max(72, 'Password must be at most 72 characters long'),
-});
 
 // Form schema for password reset
 const resetSchema = z.object({
@@ -34,19 +20,7 @@ const resetSchema = z.object({
 const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [mode, setMode] = useState("login"); // login or forgotPassword
-  const navigate = useNavigate();
-  const { setUser } = useUser();
-  // Login mutation
-  const loginMutation = useLoginMutation();
-
-  // Login form
-  const loginForm = useForm<z.infer<typeof loginSchema>>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      identifier: '',
-      password: '',
-    },
-  });
+  const { form: loginForm, loginMutation, onSubmit: onLoginSubmit } = useLoginFlow();
 
   // Reset password form
   const resetForm = useForm<z.infer<typeof resetSchema>>({
@@ -55,28 +29,6 @@ const LoginPage: React.FC = () => {
       identifier: '',
     },
   });
-
-  // Handle login submission
-  const onLoginSubmit = async (values: z.infer<typeof loginSchema>) => {
-    try {
-      const loginResponse = await loginMutation.mutateAsync(values);
-      const meResponse = await api.get<Envelope<UserProfileResponse>>('/users/me', {
-        headers: {
-          Authorization: `Bearer ${loginResponse.data.access_token}`,
-        },
-      });
-      setUser({
-        username: meResponse.data.data.username,
-        displayName: meResponse.data.data.display_name,
-        profilePictureUUID: meResponse.data.data.profile_picture_uuid ?? '',
-        isAdmin: meResponse.data.data.is_admin ?? false,
-      });
-      toast.success("Login successful");
-      navigate('/'); // Redirect to home page after successful login
-    } catch {
-      toast.error("Login failed, invalid credentials");
-    }
-  };
 
   const handleTestSignIn = async () => {
     const testCredentials = {
@@ -213,7 +165,6 @@ const LoginPage: React.FC = () => {
                     {loginMutation.isPending ? "Logging in..." : "Test sign in"}
                   </Button>
 
-
                   <div className="text-center">
                     <p className="text-sm text-muted-foreground">
                       Don't have an account?{" "}
@@ -224,6 +175,16 @@ const LoginPage: React.FC = () => {
                   </div>
                 </form>
               </Form>
+
+              <div className="mt-4 text-center">
+                <Link
+                  to="/login-lab"
+                  className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <FlaskConical size={14} />
+                  Try other login designs
+                </Link>
+              </div>
             </CardContent>
           </>
         ) : (

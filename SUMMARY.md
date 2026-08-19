@@ -1,3 +1,86 @@
+# SUMMARY — login-experiments
+
+Frontend-only "login lab" for experimenting with login page designs: a new
+`/login-lab` route renders a sidebar of login design variants with a live
+full-height preview so the user can compare looks/flows and pick a keeper.
+No backend changes.
+
+## What was changed and why
+
+- **`/login-lab` route** (`web/src/App.tsx`): added outside the logged-in
+  layout, alongside `/login` and `/signup`.
+- **`web/src/pages/login-lab/LoginLabPage.tsx`** (new): sidebar of variants
+  (grouped Style vs Flow) + full-height live preview. Selection is persisted
+  via URL search param `?v=<id>` (defaults to the first variant) so a
+  favourite can be linked/bookmarked; sidebar buttons switch instantly.
+- **5 variants** under `web/src/pages/login-lab/variants/` (one
+  self-contained component each, registered in `variants/index.ts`):
+  - `SplitPanel` — brand/marketing panel on one side, form on the other.
+  - `Glassmorphism` — frosted card + animated gradient blobs (new
+    `login-lab-drift` keyframes in `web/src/index.css`).
+  - `CenteredBrand` — big wordmark + compact centered form.
+  - `Minimal` — quiet, underline inputs, lots of whitespace.
+  - `StepFlow` — flow variant: identifier first, then password, with
+    progress dots and back navigation.
+- **`web/src/hooks/useLoginFlow.ts`** (new): extracted the login submit flow
+  (zod schema, `useLoginMutation`, `/users/me` fetch, `setUser`, toast,
+  `navigate('/')`) out of `LoginPage.tsx:43-79` so every variant runs the
+  exact same authentication — the variants only change the chrome.
+- **`web/src/pages/LoginPage.tsx`**: refactored to use `useLoginFlow` (keeps
+  the forgot-password toggle and the "Test sign in" button); added a small
+  "Try other login designs" link to `/login-lab` under the form.
+
+## Why purely frontend
+
+The variants reuse the existing `POST /auth/login` + `GET /users/me` flow
+via the same hook — no API surface changed, so no server work or migration.
+
+## Files touched
+
+- `web/src/hooks/useLoginFlow.ts` (new)
+- `web/src/pages/login-lab/LoginLabPage.tsx` (new)
+- `web/src/pages/login-lab/variants/index.ts` (new)
+- `web/src/pages/login-lab/variants/SplitPanel.tsx` (new)
+- `web/src/pages/login-lab/variants/Glassmorphism.tsx` (new)
+- `web/src/pages/login-lab/variants/CenteredBrand.tsx` (new)
+- `web/src/pages/login-lab/variants/Minimal.tsx` (new)
+- `web/src/pages/login-lab/variants/StepFlow.tsx` (new)
+- `web/src/pages/LoginPage.tsx` (refactor to shared hook + lab link)
+- `web/src/index.css` (login-lab-drift keyframes)
+- `web/src/App.tsx` (route)
+
+## Verification
+
+- `npm run lint`: 0 errors (14 pre-existing warnings, none in new files).
+- `npm run build` (tsc -b + vite): passes.
+- Headless-browser smoke (vite dev :5199, host google-chrome, playwright):
+  `/login-lab` renders title + 5 sidebar variants + preview form; every
+  `?v=<id>` renders its form; sidebar click switches preview instantly;
+  `/login` still renders + links to the lab. StepFlow advanced correctly:
+  invalid identifier shows inline error and stays, valid identifier →
+  password step, Back returns, short password blocked with error. End-to-end
+  sign-in through SplitPanel with `alice@example.com`/`password123`
+  navigated to `/` (full auth flow works). The 500-hit console noise is the
+  known pre-existing `/auth/refresh-token` no-cookie 500 (project-notes).
+
+## Reviewer double-checks
+
+- **Visual QA could not be done screenshot-to-eyeball from this session** —
+  the variants' aesthetics (spacing, gradients, glass blur) should be
+  eyeballed at `http://localhost:5173/login-lab` before picking a keeper.
+- `FormItem` is used without a visible `FormLabel` in `CenteredBrand` and
+  `Minimal` (label is implied by placeholder) — error text still renders;
+  confirm that reads OK.
+- The StepFlow advance relies on `form.trigger('identifier')` directly
+  rather than `handleSubmit` (see project-notes: handleSubmit only fires
+  `onValid` when the whole form is valid). Confirmed working in browser.
+- `useLoginFlow` moved the zod schema out of `LoginPage.tsx`; the
+  forgot-password `resetSchema` stays local to the page.
+- No tests exist for the frontend in this repo (no test runner in
+  `web/package.json`) — lint + build + browser smoke are the verification.
+
+---
+
 # SUMMARY — gaggle-goose-branding
 
 Replaces the placeholder Vite favicon and the sidebar "G" text logo with the

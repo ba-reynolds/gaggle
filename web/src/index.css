@@ -172,3 +172,11 @@
     linear-gradient(rgb(0 0 0 / 0.62), rgb(0 0 0 / 0.62)),
     var(--chat-gradient);
 }
+
+@layer utilities {
+  @keyframes login-lab-drift {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(40px, -60px) scale(1.15); }
+    66% { transform: translate(-30px, 30px) scale(0.9); }
+  }
+}

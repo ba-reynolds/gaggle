@@ -1,3 +1,18 @@
+## Login lab + useLoginFlow (agent/login-experiments)
+- **react-hook-form `handleSubmit` only calls its `onValid` when the WHOLE
+  form is valid.** A multi-step flow whose step 1 only needs `identifier`
+  can't gate step-advance inside `handleSubmit` — the empty step-2
+  `password` keeps the form globally invalid, so advancing never fires
+  (observed at runtime in `StepFlow.tsx`). Fix: raw
+  `onSubmit={(e) => { e.preventDefault(); ... }}`, call
+  `form.trigger('identifier')` directly to advance, and only resort to
+  `form.handleSubmit(onSubmit)()` on the final step.
+- Login auth flow (zod schema, `useLoginMutation`, `setUser`, navigate '/')
+  is shared via `web/src/hooks/useLoginFlow.ts` — used by `LoginPage` AND
+  every `login-lab` variant so the real page and experiments can't drift.
+- Glassmorphism variant needs the `login-lab-drift` keyframes added to
+  `web/src/index.css` (`@layer utilities`) — remove if the variant goes.
+
 ## Goose branding assets (agent/gaggle-goose-branding)
 - `web/` had NO `public/` dir and `index.html` referenced a nonexistent
   `/vite.svg` → the favicon 404'd. This branch now ships
