@@ -1,0 +1,48 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    name: Deploy to EC2
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ship and run deploy
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          GAGGLE_JWT_SECRET: ${{ secrets.GAGGLE_JWT_SECRET }}
+          GAGGLE_DB_USER: ${{ secrets.GAGGLE_DB_USER }}
+          GAGGLE_DB_PASSWORD: ${{ secrets.GAGGLE_DB_PASSWORD }}
+          GAGGLE_DEPLOY_KEY: ${{ secrets.GAGGLE_DEPLOY_KEY }}
+          TARGET_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          : "${DEPLOY_HOST:?DEPLOY_HOST secret not set}"
+          : "${DEPLOY_SSH_KEY:?DEPLOY_SSH_KEY secret not set}"
+
+          echo "$DEPLOY_SSH_KEY" > /tmp/gaggle_deploy_key
+          chmod 600 /tmp/gaggle_deploy_key
+
+          # Secrets cross the SSH channel only: write the runtime env into the
+          # box (never the workflow logs), then pipe the apply script to bash -s.
+          printf 'GAGGLE_JWT_SECRET=%s\nGAGGLE_DB_USER=%s\nGAGGLE_DB_PASSWORD=%s\nGAGGLE_DEPLOY_KEY=%s\nTARGET_SHA=%s\n' \
+            "$GAGGLE_JWT_SECRET" "$GAGGLE_DB_USER" "$GAGGLE_DB_PASSWORD" "$GAGGLE_DEPLOY_KEY" "$TARGET_SHA" |
+            ssh -i /tmp/gaggle_deploy_key -o StrictHostKeyChecking=accept-new "deploy@$DEPLOY_HOST" \
+              'umask 077; cat > /tmp/gaggle-env'
+
+          ssh -i /tmp/gaggle_deploy_key "deploy@$DEPLOY_HOST" 'bash -s' < deploy/apply.sh
