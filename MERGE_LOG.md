@@ -2,6 +2,14 @@
 
 Running log of agent-branch merges into main. Newest on top.
 
+## 2026-08-19 — agent/chat-ui-fixes
+
+- Status: **clean** (`--no-ff` merge)
+- `SUMMARY.md` came in on the branch prepended; merged cleanly (main had no
+  nearby edits). `web/src/components/PollCard.tsx`,
+  `web/src/pages/ConversationPage.tsx`, `web/src/pages/ProfilePage.tsx`
+  auto-merged cleanly. Migration duplicate check clean after merge.
+
 ## 2026-08-18 — agent/trim-theme-catalog
 
 - Status: **conflicted**
