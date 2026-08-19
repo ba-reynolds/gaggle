@@ -643,6 +643,40 @@ func TestMentionsFeed(t *testing.T) {
 	}
 }
 
+func TestSearchSubstringMatch(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+	token := app.RegisterUser(t, "subsearcher", "subsearcher@example.com")
+
+	post, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/posts/",
+		Token:  token,
+		Body:   map[string]string{"content": "hey everyone"},
+	}))
+	postID := int(post["id"].(float64))
+
+	search := func(path string) []any {
+		rec, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{
+			Method: http.MethodGet,
+			Path:   path,
+			Token:  token,
+		}))
+		items, _ := rec["items"].([]any)
+		return items
+	}
+
+	// A single letter must match posts that merely contain it (substring, not
+	// whole-word full-text matching).
+	if items := search("/api/v1/search?q=e&type=posts"); len(items) != 1 || int(items[0].(map[string]any)["id"].(float64)) != postID {
+		t.Fatalf("single-letter search items = %v, want post %d", items, postID)
+	}
+
+	// Partial words should match too.
+	if items := search("/api/v1/search?q=hey%20every&type=posts"); len(items) != 1 || int(items[0].(map[string]any)["id"].(float64)) != postID {
+		t.Fatalf("partial word search items = %v, want post %d", items, postID)
+	}
+}
+
 func TestSearchFilters(t *testing.T) {
 	app := testutil.NewApp(t, testutil.Database(t))
 	tokenA := app.RegisterUser(t, "filteruser", "filteruser@example.com")
