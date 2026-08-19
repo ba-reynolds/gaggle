@@ -1,3 +1,18 @@
+## GitHub / git on NixOS
+- `~/.config/git/config` is a read-only home-manager symlink into the nix
+  store. Anything writing the *global* git config fails ("could not lock config
+  file ... Read-only file system") — e.g. the final `git config --global`
+  step of `gh auth login`. Workaround: push over SSH (`id_ed25519` registered
+  on GitHub), not gh's HTTPS credential helper. Repo-level `git remote`/push
+  config is unaffected (`.git/config` is writable).
+- gh auth login's default OAuth scopes (`repo`, `workflow`, etc.) DO NOT include
+  `admin:public_key`, so `gh ssh-key add` returns HTTP 404 until you run
+  `gh auth refresh -h github.com -s admin:public_key`. Adding a key via the
+  web UI (Settings → SSH keys, type "Authentication key") sidesteps the refresh.
+- Repo `main` was pushed to GitHub as `ba-reynolds/gophersocial` over SSH
+  (origin = git@github.com:...); home-manager sets `init.defaultBranch=master`
+  but existing repos keep their own branch.
+
 ## Sidebar/mobile nav tiers (agent/sidebar-mobile-nav)
 - Three responsive nav tiers: below `md` = fixed bottom nav is the ONLY nav
   (left sidebar `hidden md:block`), `md`–`lg` = icon-only sidebar rail
