@@ -1,10 +1,10 @@
-import { getHashtagPosts, getMentionsFeed, getSuggestedUsers, getTrends, searchPosts, searchUsers } from '@/api/search';
+import { getHashtagPosts, getMentionsFeed, getSuggestedUsers, getTrends, type PostSearchFilters, searchPosts, searchUsers } from '@/api/search';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
-export function useSearchPosts(query: string) {
+export function useSearchPosts(query: string, filters: PostSearchFilters = {}) {
   return useInfiniteQuery({
-    queryKey: ['search-posts', query],
-    queryFn: ({ pageParam }) => searchPosts(query, pageParam),
+    queryKey: ['search-posts', query, JSON.stringify(filters)],
+    queryFn: ({ pageParam }) => searchPosts(query, filters, pageParam),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last.data.next_cursor ?? undefined,
     enabled: query.trim().length > 0,

@@ -3,6 +3,10 @@ package handlers
 import (
 	"log/slog"
 	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/ba-reynolds/gophersocial/internal/apperrors"
 	"github.com/ba-reynolds/gophersocial/internal/middleware"
@@ -46,12 +50,65 @@ func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 		util.RespondWithJson(w, http.StatusOK, users)
 		return
 	}
-	posts, err := h.service.Search.Posts(r.Context(), user.ID, query, limit, cursor)
+	filters, err := parseSearchFilters(r.URL.Query())
+	if err != nil {
+		h.respondError(w, err)
+		return
+	}
+	posts, err := h.service.Search.Posts(r.Context(), user.ID, query, filters, limit, cursor)
 	if err != nil {
 		h.respondError(w, err)
 		return
 	}
 	util.RespondWithJson(w, http.StatusOK, posts)
+}
+
+// parseSearchFilters reads the optional post search filter query params with
+// loose Boolean handling: has_media and include_replies are treated as true
+// only for the literal value "true". Dates accept RFC3339 or YYYY-MM-DD.
+func parseSearchFilters(values url.Values) (models.PostSearchFilters, error) {
+	filters := models.PostSearchFilters{
+		From:    strings.TrimSpace(values.Get("from")),
+		Hashtag: strings.TrimSpace(values.Get("hashtag")),
+	}
+	if values.Get("has_media") == "true" {
+		filters.HasMedia = true
+	}
+	if n := strings.TrimSpace(values.Get("min_likes")); n != "" {
+		v, err := strconv.Atoi(n)
+		if err != nil || v < 0 {
+			return filters, apperrors.BadRequestError("min_likes must be a non-negative integer", nil)
+		}
+		filters.MinLikes = v
+	}
+	if values.Get("include_replies") == "true" {
+		filters.IncludeReplies = true
+	}
+	for _, key := range []string{"since", "until"} {
+		if raw := values.Get(key); raw != "" {
+			dateOnly, t, err := parseSearchTime(raw)
+			if err != nil {
+				return filters, apperrors.BadRequestError(key+" must be an RFC3339 timestamp or YYYY-MM-DD date", nil)
+			}
+			if key == "until" && dateOnly {
+				t = t.Add(24 * time.Hour)
+			}
+			if key == "since" {
+				filters.Since = &t
+			} else {
+				filters.Until = &t
+			}
+		}
+	}
+	return filters, nil
+}
+
+func parseSearchTime(raw string) (dateOnly bool, t time.Time, err error) {
+	if t, err := time.Parse(time.RFC3339, raw); err == nil {
+		return false, t, nil
+	}
+	t, err = time.Parse("2006-01-02", raw)
+	return true, t, err
 }
 
 func (h *SearchHandler) HashtagPosts(w http.ResponseWriter, r *http.Request) {

@@ -1,3 +1,68 @@
+# SUMMARY — detailed-search-filters
+
+Post search (`GET /search?type=posts`) now supports fine-grained filters, and
+the Search page exposes them as a collapsible, URL-driven filter panel. The
+hashtag page (`/hashtags/{tag}/posts`), trends, and user search are unchanged.
+
+## What was changed and why
+
+Search previously accepted only a free-text `q`. This adds six optional query
+params, each an additive SQL clause on the existing keyset-paginated
+`postStore.Search`:
+
+- `from=<username>` — posts authored by that user (exact username match)
+- `hashtag=<name>` — posts that also contain that hashtag (normalized: case
+  folded, leading `#` stripped — the same normalization hashtag writes use)
+- `has_media=true` — only posts with at least one attached media row
+- `min_likes=<n>` — posts with `likes_count >= n` (denormalized count, no join)
+- `include_replies=true` — include replies; default remains top-level only
+- `since` / `until` — `created_at` range (inclusive start, exclusive end);
+  accepts RFC3339 or `YYYY-MM-DD` (a date-only `until` covers the whole day)
+
+Invalid `since`/`until` values and `until <= since` return 400.
+
+Frontend: `SearchPage` gained a "Filters" toggle that opens a panel (from user,
+hashtag, min likes, date from/to, media-only and include-replies switches) with
+Apply/Clear. Filters are committed to the URL params (`from`, `hashtag`,
+`media`, `min_likes`, `replies`, `since`, `until`) so they are shareable and
+bookmarkable, and are part of the react-query key (`['search-posts', q, json]`)
+so applying filters refetches. The `useSearchPosts(query, filters)` default
+keeps `ExplorePage` working unchanged.
+
+## Files touched
+
+- `server/internal/models/search.go` — new `PostSearchFilters` struct
+- `server/internal/store/post_store.go` — `Search` builds WHERE clauses
+  dynamically from the filters (still top-level-only by default)
+- `server/internal/store/store.go` + `server/internal/service/service.go` —
+  `Search` interface signatures updated to take the filters
+- `server/internal/service/search_service.go` — validates `until > since`
+- `server/internal/handlers/search_handler.go` — parses the new query params;
+  `parseSearchFilters` / `parseSearchTime` helpers
+- `server/internal/handlers/integration_test.go` — `TestSearchFilters` covers
+  every filter, combinations, the date range, and the 400 on bad dates
+- `web/src/api/search.ts` — `PostSearchFilters` type + `searchPosts` params
+- `web/src/hooks/useSearch.ts` — filters folded into the query key
+- `web/src/pages/SearchPage.tsx` — collapsible filter panel, URL-driven
+
+## What a reviewer should double-check
+
+- **SQL correctness**: `from`/`hashtag` use `EXISTS` subqueries against
+  `$n` placeholders; cursor clauses appended by `listDiscoverablePosts` use
+  `len(args)+1`. A filter clause after hashtag/from would shift `$n` — verify
+  the arg-index bookkeeping in `postStore.Search` holds for all six filters.
+- **Search term interpretation**: `hashtag` is AND-ed with the full-text `q`
+  (a hashtag-only search needs the term in `q` too). If empty-content hashtag
+  searches should work, that's a follow-up.
+- **`until` date-only semantics** (end-of-day inclusive) vs RFC3339 exclusive
+  bound — picked deliberately; confirm it matches expectations.
+- **Toggle params parity**: `SearchPage` writes `media`/`replies`; the API
+  reads `has_media`/`include_replies`. The mismatch is bridged in
+  `web/src/api/search.ts` — a reviewer may prefer one naming for both.
+- **Badge hydration** for user search is untouched; post hydration reuses the
+  shared `hydrateFeed`.
+
+---
 # SUMMARY — pin-unpin-timeline-bug
 
 Pin/unpin from the timeline left the "Pin to profile / Unpin from profile" menu

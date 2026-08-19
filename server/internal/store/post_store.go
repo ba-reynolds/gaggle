@@ -1739,12 +1739,39 @@ func (store *postStore) GetQuotesFeed(ctx context.Context, postID int, limit int
 	}, nil
 }
 
-func (store *postStore) Search(ctx context.Context, query string, limit int, cursor string) (*models.PostFeed, error) {
-	return store.listDiscoverablePosts(ctx, `
-		FROM posts p
-		WHERE p.soft_deleted = FALSE AND p.parent_id IS NULL
-		  AND to_tsvector('simple', p.content) @@ plainto_tsquery('simple', $1)
-	`, []any{query}, limit, cursor)
+func (store *postStore) Search(ctx context.Context, query string, filters models.PostSearchFilters, limit int, cursor string) (*models.PostFeed, error) {
+	filters.Hashtag = strings.ToLower(strings.TrimPrefix(strings.TrimSpace(filters.Hashtag), "#"))
+	clauses := []string{`to_tsvector('simple', p.content) @@ plainto_tsquery('simple', $1)`}
+	args := []any{query}
+	if filters.From != "" {
+		clauses = append(clauses, `EXISTS (SELECT 1 FROM users u WHERE u.username = $`+strconv.Itoa(len(args)+1)+` AND u.user_id = p.author_id)`)
+		args = append(args, filters.From)
+	}
+	if filters.Hashtag != "" {
+		clauses = append(clauses, `EXISTS (SELECT 1 FROM post_hashtags ph JOIN hashtags h ON h.hashtag_id = ph.hashtag_id WHERE ph.post_id = p.post_id AND h.name = $`+strconv.Itoa(len(args)+1)+`)`)
+		args = append(args, filters.Hashtag)
+	}
+	if filters.HasMedia {
+		clauses = append(clauses, `EXISTS (SELECT 1 FROM post_media pm WHERE pm.post_id = p.post_id)`)
+	}
+	if filters.MinLikes > 0 {
+		clauses = append(clauses, `p.likes_count >= $`+strconv.Itoa(len(args)+1))
+		args = append(args, filters.MinLikes)
+	}
+	if filters.Since != nil {
+		clauses = append(clauses, `p.created_at >= $`+strconv.Itoa(len(args)+1))
+		args = append(args, *filters.Since)
+	}
+	if filters.Until != nil {
+		clauses = append(clauses, `p.created_at < $`+strconv.Itoa(len(args)+1))
+		args = append(args, *filters.Until)
+	}
+
+	base := "p.soft_deleted = FALSE"
+	if !filters.IncludeReplies {
+		base += " AND p.parent_id IS NULL"
+	}
+	return store.listDiscoverablePosts(ctx, "FROM posts p WHERE "+base+" AND "+strings.Join(clauses, " AND "), args, limit, cursor)
 }
 
 func (store *postStore) ListByHashtag(ctx context.Context, name string, limit int, cursor string) (*models.PostFeed, error) {

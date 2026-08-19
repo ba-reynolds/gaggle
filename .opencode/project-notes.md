@@ -1,3 +1,16 @@
+## Search filters (detailed-search-filters)
+- `GET /search?type=posts` filter params: `from`, `hashtag`, `has_media`,
+  `min_likes`, `include_replies`, `since`, `until`. Frontend URL params are
+  `media`/`replies` while the API uses `has_media`/`include_replies` — bridged
+  in `web/src/api/search.ts`, don't "align" one side blindly.
+- `postStore.Search` builds additive clauses with hand-rolled `$n` indexing;
+  `listDiscoverablePosts` appends the cursor AFTER those args, so a new filter
+  must use `len(args)+1` like the others. Watch arg order when adding filters.
+- `hashtag` filter is AND-ed with the text `q`; search handlers carry no
+  swagger annotations (the endpoint never appears in `server/docs`).
+- Date bounds: RFC3339 or `YYYY-MM-DD`; a date-only `until` means end-of-day
+  (inclusive), `since` means midnight. `TestSearchFilters` covers all filters.
+
 ## Migrations: parallel-branch version collisions
 - `make new-migration` (`create -seq`) numbers from "highest in THIS branch" —
   parallel branches from the same base pick the SAME next number → collisions.
