@@ -1,3 +1,44 @@
+# SUMMARY — chat-ui-fixes
+
+Three small UI fixes: long DM messages now wrap instead of overflowing into a
+horizontal scrollbar, the poll vote count moved from the top to the bottom of
+the poll card, and the profile action buttons reordered to Message, Follow,
+three-dots.
+
+## What was changed and why
+
+- **Long messages wrap** (`web/src/pages/ConversationPage.tsx`): the message
+  bubble is a flex child capped at `max-w-[75%]`, but an unbroken string (e.g.
+  a long URL) forced it past that cap because flex items default to
+  `min-width: auto` and `overflow-wrap` was never set. Added `min-w-0` to the
+  bubble and `break-words` to the message body so it wraps within the 75% cap;
+  newlines are still preserved (`whitespace-pre-wrap` kept).
+- **Poll vote count moved to bottom** (`web/src/components/PollCard.tsx`): the
+  "N votes" label was the first child of the poll card (above the options);
+  it now renders as the last element, below the options and the "Poll closed"
+  note.
+- **Profile button order** (`web/src/pages/ProfilePage.tsx`): the Follow and
+  Message buttons were swapped so the row reads Message, Follow, three-dots
+  menu.
+
+## Files touched
+
+- `web/src/pages/ConversationPage.tsx`
+- `web/src/components/PollCard.tsx`
+- `web/src/pages/ProfilePage.tsx`
+
+## Reviewer double-checks
+
+- `min-w-0 break-words` on the DM bubble: confirm a long unbroken URL/word
+  wraps on both mine/theirs bubbles, and that very short messages still render
+  as compact bubbles.
+- Poll vote count: confirm it sits below the options (and below "Poll closed"
+  when the poll is closed).
+- Profile buttons: confirm order is Message, Follow, three-dots and Follow's
+  outline/default styling logic is intact after the reorder.
+
+---
+
 # SUMMARY — trim-theme-catalog
 
 Follow-up to the catalog trim: cut the Catppuccin catalog down to one flavor
