@@ -2,6 +2,19 @@
 
 Running log of agent-branch merges into main. Newest on top.
 
+## 2026-08-19 — agent/auth-validation-consistency
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md` — kept **every** section from both sides, newest on top
+    (gaggle-goose-branding → auth-validation-sweep #1–#6 →
+    auth-validation-consistency → base sections), `---` separated.
+  - `.opencode/project-notes.md` — kept **every** section from both sides,
+    newest on top (goose branding, then auth-validation sweep, then base).
+- Real code (`server/` auth/models/service + `integration_test.go`,
+  `web/src/pages`/components) auto-merged cleanly. Migration duplicate check
+  clean after merge.
+
 ## 2026-08-19 — agent/gaggle-goose-branding
 
 - Status: **clean** (`--no-ff` merge)
