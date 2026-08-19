@@ -135,6 +135,52 @@ from the table below before triggering the first `workflow_dispatch` deploy.
 
 The `public_ip` output is the box; set it as the `DEPLOY_HOST` secret.
 
+**If you're new to this — exact commands (in order):**
+
+1. **Generate keys + secrets** (idempotent; skip if you already have them)
+
+   ```bash
+   bash scripts/provision.sh            # creates ~/.gaggle-deploy/ keys + secrets.env
+   cat ~/.gaggle-deploy/gaggle_admin.pub        # -> admin_public_key
+   cat ~/.gaggle-deploy/gaggle_ci.pub           # -> deploy_public_key
+   cat ~/.gaggle-deploy/gaggle_repo_deploy.pub  # -> GitHub repo deploy key blob
+   ```
+
+2. **Register the repo deploy key on GitHub** — repo → Settings → Deploy keys
+   → **Add deploy key**: title `gaggle-box`, paste the
+   `gaggle_repo_deploy.pub` contents, read-only is fine.
+
+3. **Provision the box**
+
+   ```bash
+   cd infra
+   cp terraform.tfvars.example terraform.tfvars
+   # in terraform.tfvars: paste the two public keys from step 1 verbatim
+   nix shell nixpkgs#terraform --command terraform init
+   nix shell nixpkgs#terraform --command terraform apply   # note the public_ip output
+   ```
+
+4. **Add the GitHub secrets** — repo → Settings → Secrets and variables →
+   Actions → **New repository secret**, once per row of the table below. The
+   two private keys (`DEPLOY_SSH_KEY` = `gaggle_ci`, `GAGGLE_DEPLOY_KEY` =
+   `gaggle_repo_deploy`) paste as multi-line values — keep the blank first line
+   as-is, it is the OpenSSH header. If you prefer, `scripts/provision.sh` can
+   set all six for you with the `gh` CLI (just run it with `DEPLOY_HOST=...
+   bash scripts/provision.sh`).
+
+5. **Deploy** — wait a few minutes for first-boot provisioning (packages,
+   Docker, EBS format) to finish on the box. Then repo → **Actions** →
+   **Deploy** → **Run workflow** (on `main`).
+
+6. **Smoke test** — browse `http://<public_ip>`; sign up a test user; post with
+   media; then on the box `docker compose -f /srv/gaggle/compose.yaml -f
+   /srv/gaggle/compose.prod.yaml restart` and confirm posts + media persist
+   (they're EBS-backed).
+
+If the first Deploy run fails, likely causes are: you ran it before the box
+finished first-boot provisioning (wait, re-run), or `DEPLOY_HOST`/secrets are
+missing (check the run's log for `DEPLOY_HOST secret not set`).
+
 **GitHub secrets required** (Settings → Secrets and variables → Actions):
 
 | Secret | Value |
