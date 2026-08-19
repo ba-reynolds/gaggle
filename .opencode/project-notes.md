@@ -42,6 +42,16 @@
   resolve and `make swag` exits 1.
 
 ## Server: home feed Redis cache + pin/edit/delete invalidation
+- Migrations must have UNIQUE 6-digit versions — golang-migrate refuses to open
+  the source on duplicates and the `api` container crash-loops at startup
+  (happened with two `000016_*` files: mute-relationship + refresh-token-session;
+  renumbered the latter to 000017). `docker compose build` can also serve STALE
+  image layers (cache hit on reused `latest` tag) — use `--no-cache` and verify
+  baked-in artifacts when a build seems to ignore edits.
+- `usePinPost` flips `is_pinned` optimistically across all cached copies
+  (`updatePostInAllQueries`, onMutate) + rolls back onError — the pin menu label
+  is driven by `post.is_pinned` inside feed payloads, so without the optimistic
+  flip a slow/stale refetch makes the button "never update".
 - `GET /posts/feed` is served from a 60s Redis cache (`feed:home:{userID}:{cursor}`,
   `handlers.GetHomeFeed`). Any write that changes `is_pinned`, content, or post
   existence must invalidate via `PostHandler.invalidateFeedForUserAndFollowers`
