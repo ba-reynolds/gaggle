@@ -1,6 +1,5 @@
 import ComposeContent from "@/components/ComposeContent";
 import MobileNavigation from "@/components/MobileNavigation";
-import ThemeCustomizer from "@/components/ThemeCustomizer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { CustomDialogContent } from "@/components/ui/custom-dialog";
@@ -205,11 +204,6 @@ export default function SocialMediaLayout({
                   if (event.key === 'Enter' && search.trim()) navigate(`/search?q=${encodeURIComponent(search.trim())}`);
                 }}
               />
-
-              <div className="bg-muted rounded-xl p-4 mb-4">
-                <h3 className="font-bold text-xl mb-4 text-primary">Appearance</h3>
-                <ThemeCustomizer />
-              </div>
 
               {/* Trending */}
               <div className="bg-muted rounded-xl p-4">

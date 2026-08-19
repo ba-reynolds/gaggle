@@ -7,7 +7,7 @@ export type ThemeFont = "inter" | "geist" | "jetbrains" | "lora" | "sketch" | "c
 export interface ThemeDefinition {
   id: string
   label: string
-  group: "Classic" | "Catppuccin" | "Brands" | "Editor" | "Fun"
+  group: "Catppuccin" | "Brands" | "Editor" | "Fun"
   swatch: string // primary color preview
   defaultRadius: number
   font: ThemeFont
@@ -23,30 +23,9 @@ export const FONT_STACKS: Record<ThemeFont, string> = {
 }
 
 export const THEME_CATALOG: ThemeDefinition[] = [
-  // Classic shadcn schemes
-  { id: "zinc", label: "Zinc", group: "Classic", swatch: "#27272a", defaultRadius: 0.5, font: "inter" },
-  { id: "slate", label: "Slate", group: "Classic", swatch: "#1e293b", defaultRadius: 0.5, font: "inter" },
-  { id: "stone", label: "Stone", group: "Classic", swatch: "#292524", defaultRadius: 0.5, font: "inter" },
-  { id: "gray", label: "Gray", group: "Classic", swatch: "#111827", defaultRadius: 0.5, font: "inter" },
-  { id: "neutral", label: "Neutral", group: "Classic", swatch: "#171717", defaultRadius: 0.5, font: "inter" },
-  { id: "red", label: "Red", group: "Classic", swatch: "#ef4444", defaultRadius: 0.5, font: "inter" },
-  { id: "rose", label: "Rose", group: "Classic", swatch: "#e11d48", defaultRadius: 0.5, font: "inter" },
-  { id: "orange", label: "Orange", group: "Classic", swatch: "#f97316", defaultRadius: 0.5, font: "inter" },
-  { id: "green", label: "Green", group: "Classic", swatch: "#22c55e", defaultRadius: 0.5, font: "inter" },
-  { id: "blue", label: "Blue", group: "Classic", swatch: "#3b82f6", defaultRadius: 0.5, font: "inter" },
-  { id: "yellow", label: "Yellow", group: "Classic", swatch: "#eab308", defaultRadius: 0.5, font: "inter" },
-  { id: "violet", label: "Violet", group: "Classic", swatch: "#8b5cf6", defaultRadius: 0.5, font: "inter" },
   // Brand / identity presets (shadcnstudio)
-  { id: "studio-marshmallow", label: "Marshmallow", group: "Brands", swatch: "#f083ab", defaultRadius: 0, font: "inter" },
-  { id: "studio-spotify", label: "Spotify", group: "Brands", swatch: "#1ed760", defaultRadius: 0.25, font: "inter" },
-  { id: "studio-summer", label: "Summer", group: "Brands", swatch: "#f97316", defaultRadius: 0.6, font: "inter" },
-  { id: "studio-marvel", label: "Marvel", group: "Brands", swatch: "#e23636", defaultRadius: 0, font: "inter" },
-  { id: "studio-valorant", label: "Valorant", group: "Brands", swatch: "#ff4655", defaultRadius: 0, font: "inter" },
-  { id: "studio-nature", label: "Nature", group: "Brands", swatch: "#3fae62", defaultRadius: 0.5, font: "inter" },
   { id: "studio-claude", label: "Claude", group: "Brands", swatch: "#d97757", defaultRadius: 0.5, font: "inter" },
   { id: "studio-caffeine", label: "Caffeine", group: "Brands", swatch: "#5f4b32", defaultRadius: 0.5, font: "inter" },
-  { id: "studio-corporate", label: "Corporate", group: "Brands", swatch: "#2563eb", defaultRadius: 0.375, font: "inter" },
-  { id: "studio-slack", label: "Slack", group: "Brands", swatch: "#611f69", defaultRadius: 0.5, font: "inter" },
   { id: "studio-perplexity", label: "Perplexity", group: "Brands", swatch: "#20808d", defaultRadius: 0.5, font: "inter" },
   // Catppuccin (dark flavors pair with latte for light mode)
   { id: "catppuccin-mocha-mauve", label: "Catppuccin Mocha", group: "Catppuccin", swatch: "#cba6f7", defaultRadius: 0.625, font: "geist" },
@@ -59,26 +38,13 @@ export const THEME_CATALOG: ThemeDefinition[] = [
   { id: "catppuccin-frappe-blue", label: "Catppuccin Frappé Blue", group: "Catppuccin", swatch: "#8caaee", defaultRadius: 0.625, font: "geist" },
   { id: "catppuccin-frappe-peach", label: "Catppuccin Frappé Peach", group: "Catppuccin", swatch: "#ef9f76", defaultRadius: 0.625, font: "geist" },
   // Iconic code-editor themes (ui.jln.dev gallery)
-  { id: "icon-synthwave-84", label: "Synthwave '84", group: "Editor", swatch: "#fef727", defaultRadius: 0.5, font: "jetbrains" },
-  { id: "icon-cyberpunk", label: "Cyberpunk", group: "Editor", swatch: "#fede5d", defaultRadius: 0.5, font: "jetbrains" },
-  { id: "icon-tokyo-night", label: "Tokyo Night", group: "Editor", swatch: "#7aa2f7", defaultRadius: 0.5, font: "jetbrains" },
-  { id: "icon-everforest-dark", label: "Everforest Dark", group: "Editor", swatch: "#a7c080", defaultRadius: 0.5, font: "jetbrains" },
-  { id: "icon-rose-pine", label: "Rosé Pine", group: "Editor", swatch: "#ebbcba", defaultRadius: 0.5, font: "jetbrains" },
   { id: "icon-kanagawa", label: "Kanagawa", group: "Editor", swatch: "#7aa89f", defaultRadius: 0.5, font: "jetbrains" },
-  { id: "icon-night-owl", label: "Night Owl", group: "Editor", swatch: "#82aaff", defaultRadius: 0.5, font: "jetbrains" },
-  { id: "icon-monokai-pro", label: "Monokai Pro", group: "Editor", swatch: "#ffd866", defaultRadius: 0.5, font: "jetbrains" },
-  { id: "icon-cobalt2", label: "Cobalt2", group: "Editor", swatch: "#ffc600", defaultRadius: 0.5, font: "jetbrains" },
-  { id: "icon-one-dark-pro", label: "One Dark Pro", group: "Editor", swatch: "#61afef", defaultRadius: 0.5, font: "jetbrains" },
-  // Sketch: ink on paper, hand-drawn
-  { id: "sketch", label: "Sketch", group: "Editor", swatch: "#1a1512", defaultRadius: 0.125, font: "sketch" },
   // Fun themes
   { id: "fun-neobrutalism", label: "Neo-brutalism", group: "Fun", swatch: "#3333ff", defaultRadius: 0, font: "inter" },
-  { id: "fun-arcade", label: "Arcade", group: "Fun", swatch: "#33e8ff", defaultRadius: 0.75, font: "jetbrains" },
   { id: "fun-comic", label: "Comic", group: "Fun", swatch: "#4dd2ff", defaultRadius: 0.625, font: "comic" },
-  { id: "fun-terminal", label: "Retro Terminal", group: "Fun", swatch: "#00e600", defaultRadius: 0, font: "jetbrains" },
 ]
 
-const DEFAULT_THEME_ID = "slate"
+const DEFAULT_THEME_ID = "studio-claude"
 
 function findTheme(id: string): ThemeDefinition {
   return THEME_CATALOG.find((t) => t.id === id) ?? THEME_CATALOG.find((t) => t.id === DEFAULT_THEME_ID)!
