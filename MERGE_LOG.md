@@ -2,6 +2,14 @@
 
 Running log of agent-branch merges into main. Newest on top.
 
+## 2026-08-19 — agent/gaggle-goose-branding
+
+- Status: **clean** (`--no-ff` merge)
+- `.opencode/project-notes.md`, `SUMMARY.md` auto-merged cleanly (main had no
+  nearby edits). `web/` assets (favicon.ico, goos logo) and
+  `web/src/layout/SocialMediaLayout.tsx` merged cleanly. Migration duplicate
+  check clean after merge. Frontend-only; no server/DB changes.
+
 ## 2026-08-19 — agent/sidebar-mobile-nav
 
 - Status: **conflicted**
