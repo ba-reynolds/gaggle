@@ -1,3 +1,69 @@
+# SUMMARY — profile-relationships-view
+
+Fix so that clicking the "Following"/"Followers" counts on a user's profile lets
+you view that user's actual follow relationships.
+
+## Root cause
+
+The follow-list feature already existed in source (routes
+`/profile/:username/followers|following`, `FollowListPage`, backend
+`GET /users/{username}/followers|following` returning the flat
+`items: UserProfileResponse[]` array). Two things stopped it working in a real
+deployment:
+
+1. **Stale running stack.** The `api` container predated the merge of
+   `fix-profile-tabs-and-user-relations`, which changed these two endpoints from
+   nested `followers:`/`following:` objects to the app-wide flat `items:` array.
+   The web bundle expected `items`, so `res.data.items` was `undefined` and
+   `FollowListPage` crashed into a blank screen — "clicking following/followers
+   doesn't show relationships".
+2. **Duplicate migration version.** Two merged branches both created a migration
+   numbered `000016` (`add-mute-relationship` from fix-profile-tabs…, and
+   `add-refresh-token-session` from refresh-token-rotation). golang-migrate aborts
+   with "duplicate migration file", so a fresh deploy of current main could not
+   boot the api container at all.
+
+## What was changed and why
+
+- Renumbered `000016_add-refresh-token-session.{up,down}.sql` →
+  `000017_add-refresh-token-session.{up,down}.sql`. The two 000016 files were
+  independent (mute relationship type vs refresh-token session columns); keeping
+  mute at `000016` and the refresh-token migration at `000017` matches the order
+  the branches were merged. The dev DB was at version 15, so 16 and 17 apply
+  cleanly.
+- Rebuilt the `api` and `web` containers from current source (the deployment
+  fix for the stale-api symptom). No `FollowListPage`/handler code changed — it
+  was already correct for the flat `items` contract.
+
+## Verification
+
+- `docker compose up --build -d api web` boots healthy; `schema_migrations`
+  shows versions through 17.
+- `GET /api/v1/users/alice/following` and `/followers` return flat `items`
+  with viewer-relative `is_following/is_blocked/is_muted` and badges.
+- Playwright (host chrome, "Test sign in"): `/profile/alice` shows
+  "2 Following / 3 Followers"; clicking Following lists Charlie Brown and
+  Bob Smith (each with a Follow/Following button); clicking Followers lists
+  Grace, Charlie, Bob. No console errors.
+- `go test ./...` passes (incl. relationship suites in handlers).
+- Frontend `npm run build` (tsc + vite) passes; `npm run lint` reports 0 errors.
+
+## Files touched
+
+- `server/cmd/migrate/migrations/000016_add-refresh-token-session.up.sql` → renamed to `000017_add-refresh-token-session.up.sql`
+- `server/cmd/migrate/migrations/000016_add-refresh-token-session.down.sql` → renamed to `000017_add-refresh-token-session.down.sql`
+
+## Things a reviewer should double-check
+
+- Migration content is unchanged — only the file names / version number.
+- Any environment that already applied the refresh-token-session migration as
+  `000016` would diverge from the new numbering. The dev DB (this session) was
+  at version 15 and had not applied either 000016, so 16/17 apply cleanly here;
+  confirm no CI/prod DB applied it under the old number before this change.
+- The web/`FollowListPage` code was intentionally untouched (already correct);
+  the visible bug was a stale deployment, so a rebuild is the real fix.
+
+---
 # SUMMARY — refresh-token-rotation
 
 Refresh tokens now rotate on every use, sessions are grouped into families,

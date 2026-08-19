@@ -1,3 +1,18 @@
+## Migrations & follow lists
+- **Migration 000016 was duplicated on main**: `fix-profile-tabs-and-user-relations`
+  merged `000016_add-mute-relationship` while `refresh-token-rotation` merged
+  `000016_add-refresh-token-session` → golang-migrate dies with "duplicate
+  migration file" and the api container can't boot. Resolved by renaming
+  refresh-token-session to `000017`. Watch for this whenever two agent branches
+  add migrations in parallel (they both start at the same `0000NN`).
+- **Stale containers masquerade as bugs**: the shared compose api/web get
+  replaced on rebuild from whichever worktree builds last. After merges, the
+  running `api` may still serve an older response shape (e.g. nested
+  `followers:`/`following:` instead of flat `items:`) while a newer `web` bundle
+  expects `items` → `FollowListPage` crashes to a blank screen ("clicking
+  following/followers does nothing"). Rebuild both from current source before
+  debugging "broken" features.
+
 ## Server: home feed Redis cache + pin/edit/delete invalidation
 - `GET /posts/feed` is served from a 60s Redis cache (`feed:home:{userID}:{cursor}`,
   `handlers.GetHomeFeed`). Any write that changes `is_pinned`, content, or post
