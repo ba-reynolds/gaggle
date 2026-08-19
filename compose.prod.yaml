@@ -1,0 +1,21 @@
+# Production override: used on the AWS EC2 box by deploy/apply.sh as
+#   docker compose -f compose.yaml -f compose.prod.yaml up --build -d
+#
+# Differences from local dev:
+#   - db/redis ports are REMOVED (reachable only on the compose network)
+#   - web publishes host port 80 (set WEB_PORT=80 via /srv/gaggle/.env)
+#   - APP_ENV=production enables the config fail-fast so a leaked dev
+#     JWT_SECRET / DB_PASSWORD prevents the api from booting.
+name: gaggle
+
+services:
+  db:
+    ports: !reset []
+
+  redis:
+    ports: !reset []
+
+  api:
+    environment:
+      APP_ENV: production
+      COOKIE_SECURE: "false"
