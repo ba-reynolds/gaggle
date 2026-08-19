@@ -1,3 +1,29 @@
+## Login lab + useLoginFlow (agent/login-experiments)
+- **Do NOT render a decorative heading via `FormLabel`.** The step-flow
+  password step put "Welcome back" in a `FormLabel`, which carries
+  `data-error` + `data-[error=true]:text-destructive` (`ui/form.tsx:98`) —
+  so a field error painted the H1/title red along with the error text.
+  If text is a heading, render a real heading; `FormLabel` is for the
+  actual field label.
+- **studio-claude light theme had `--destructive: oklch(0.19 0 106.59)`** =
+  neutral dark gray (identical to `--card-foreground`) → every
+  `text-destructive` error/destructive UI looked like plain text on the
+  default theme. Fixed to `oklch(0.577 0.245 27.325)`. Its `.dark` block
+  (line 61) was already red.
+- **react-hook-form `handleSubmit` only calls its `onValid` when the WHOLE
+  form is valid.** A multi-step flow whose step 1 only needs `identifier`
+  can't gate step-advance inside `handleSubmit` — the empty step-2
+  `password` keeps the form globally invalid, so advancing never fires
+  (observed at runtime in `StepFlow.tsx`). Fix: raw
+  `onSubmit={(e) => { e.preventDefault(); ... }}`, call
+  `form.trigger('identifier')` directly to advance, and only resort to
+  `form.handleSubmit(onSubmit)()` on the final step.
+- Login auth flow (zod schema, `useLoginMutation`, `setUser`, navigate '/')
+  is shared via `web/src/hooks/useLoginFlow.ts` — used by `LoginPage` AND
+  every `login-lab` variant so the real page and experiments can't drift.
+- Glassmorphism variant needs the `login-lab-drift` keyframes added to
+  `web/src/index.css` (`@layer utilities`) — remove if the variant goes.
+
 ## Enable HTTPS (agent/enable-https)
 - Compose list merge (ports) is **append**, not replace — a prod override that
   re-declares `ports` dups the dev mappings. `ports: !reset []` DOES work as a

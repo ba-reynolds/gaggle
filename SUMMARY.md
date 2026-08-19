@@ -1,3 +1,185 @@
+# SUMMARY — login-experiments (follow-up: promote step flow to /login)
+
+The chosen keeper design (simple step flow) is now the real login page.
+`/login` renders the `StepFlow` variant with a footer slot carrying the
+affordances the old page had: **Test sign in** button (dev verification
+path), **Forgot your password?** (switches to the existing reset card), and
+on sign-up link. The old "Try other login designs" link is gone from `/login`
+— the lab remains reachable at `/login-lab` and its variants are untouched
+(StepFlow renders no footer there; the new `footer?` prop defaults to
+undefined).
+
+## Files touched
+
+- `web/src/pages/login-lab/variants/StepFlow.tsx` — added optional
+  `footer?: ReactNode` prop rendered inside the form column.
+- `web/src/pages/LoginPage.tsx` — sign-in mode is now `<StepFlow
+  footer=...>`; forgot-password mode kept as the reset card.
+
+## Verification
+
+- `npm run lint`: 0 errors; `npm run build`: passes.
+- Rebuilt `gaggle-web`; headless checks on live `:5173/login`: step flow
+  renders with all footer controls; "Welcome back" color unchanged on an
+  error (error itself is red); forgot → reset card → back to login works;
+  test sign-in navigates to `/`; `/login-lab` still shows 6 variants with
+  no footer on the lab copy.
+
+## Reviewer double-checks
+
+- The promoted page hardcodes `h-screen overflow-y-auto` (mirrors the lab
+  pane); on very short viewports content scrolls.
+- Test sign-in lives only on the production page footer, not in the lab
+  StepFlow variant.
+- Login now reuses the exact StepFlow component from the lab — if the lab
+  variant evolves, `/login` changes too.
+
+---
+
+# SUMMARY — login-experiments (follow-up: error color + title bugfix)
+
+Two root causes fixed for the step-flow keeper design, found during
+headless-browser color measurement on the claude / catppuccin / perplexity
+themes:
+
+1. **"Welcome back" changed color with errors.** It was rendered as the
+   password field's `FormLabel`, which carries `data-error` and
+   `data-[error=true]:text-destructive`, so a field error turned the
+   heading text red too. Fixed: it's now a plain `<h2>` (`StepFlow.tsx`).
+2. **Errors looked like plain text on the default theme.** `studio-claude`
+   light set `--destructive: oklch(0.19 0 106.59)` — a neutral dark gray
+   identical to `--card-foreground`, so every `text-destructive` error and
+   destructive UI (delete/block items, destructive buttons, alerts) rendered
+   in foreground gray. Fixed to a true red `oklch(0.577 0.245 27.325)`
+   (`theme-themes.css:27`). All other themes already used real red/pink.
+
+## Files touched
+
+- `web/src/pages/login-lab/variants/StepFlow.tsx`
+- `web/src/theme-themes.css`
+
+## Verification
+
+- `npm run lint`: 0 errors; `npm run build`: passes.
+- `docker compose build web && up -d web`; headless re-check via the real
+  localStorage theme path: on studio-claude / catppuccin-mocha-mauve /
+  studio-perplexity (dark) the "Welcome back" computed color is identical
+  before and after a password error, and the error message renders a
+  saturated red on every theme.
+
+## Reviewer double-checks
+
+- Changing a theme token app-wide affects every `text-destructive` surface
+  (not just forms) on the claude light theme — that's the intended fix, but
+  worth eyeballing delete/block buttons in the light claude theme.
+- The identifier step's prompt ("What's your username or email?") still IS
+  a `FormLabel`, so it turns red with errors — that's intended field-error
+  behavior, unlike the heading.
+
+---
+
+# SUMMARY — login-experiments (follow-up: SplitStepFlow)
+
+Adds a sixth variant to the login lab: **SplitStepFlow** — the SplitPanel
+visual frame (gradient brand panel with tagline + feature list on the left,
+form column on the right) combined with the StepFlow interaction (identifier
+first, then password; progress dots; back button; per-field validation).
+Same `useLoginFlow` hook; registered in `variants/index.ts` under Style,
+right after split-panel (`?v=split-step-flow`).
+
+Verified: lint 0 errors, build passes, and a headless render of the live
+`:5173` container shows the brand panel, identifier→password advance, back
+button, and short-password inline error (no navigation). Rebuilt `gaggle-web`
+so it's visible at `http://localhost:5173/login-lab`.
+
+## Files touched (this follow-up)
+
+- `web/src/pages/login-lab/variants/SplitStepFlow.tsx` (new)
+- `web/src/pages/login-lab/variants/index.ts` (register variant)
+
+---
+
+# SUMMARY — login-experiments
+
+Frontend-only "login lab" for experimenting with login page designs: a new
+`/login-lab` route renders a sidebar of login design variants with a live
+full-height preview so the user can compare looks/flows and pick a keeper.
+No backend changes.
+
+## What was changed and why
+
+- **`/login-lab` route** (`web/src/App.tsx`): added outside the logged-in
+  layout, alongside `/login` and `/signup`.
+- **`web/src/pages/login-lab/LoginLabPage.tsx`** (new): sidebar of variants
+  (grouped Style vs Flow) + full-height live preview. Selection is persisted
+  via URL search param `?v=<id>` (defaults to the first variant) so a
+  favourite can be linked/bookmarked; sidebar buttons switch instantly.
+- **5 variants** under `web/src/pages/login-lab/variants/` (one
+  self-contained component each, registered in `variants/index.ts`):
+  - `SplitPanel` — brand/marketing panel on one side, form on the other.
+  - `Glassmorphism` — frosted card + animated gradient blobs (new
+    `login-lab-drift` keyframes in `web/src/index.css`).
+  - `CenteredBrand` — big wordmark + compact centered form.
+  - `Minimal` — quiet, underline inputs, lots of whitespace.
+  - `StepFlow` — flow variant: identifier first, then password, with
+    progress dots and back navigation.
+- **`web/src/hooks/useLoginFlow.ts`** (new): extracted the login submit flow
+  (zod schema, `useLoginMutation`, `/users/me` fetch, `setUser`, toast,
+  `navigate('/')`) out of `LoginPage.tsx:43-79` so every variant runs the
+  exact same authentication — the variants only change the chrome.
+- **`web/src/pages/LoginPage.tsx`**: refactored to use `useLoginFlow` (keeps
+  the forgot-password toggle and the "Test sign in" button); added a small
+  "Try other login designs" link to `/login-lab` under the form.
+
+## Why purely frontend
+
+The variants reuse the existing `POST /auth/login` + `GET /users/me` flow
+via the same hook — no API surface changed, so no server work or migration.
+
+## Files touched
+
+- `web/src/hooks/useLoginFlow.ts` (new)
+- `web/src/pages/login-lab/LoginLabPage.tsx` (new)
+- `web/src/pages/login-lab/variants/index.ts` (new)
+- `web/src/pages/login-lab/variants/SplitPanel.tsx` (new)
+- `web/src/pages/login-lab/variants/Glassmorphism.tsx` (new)
+- `web/src/pages/login-lab/variants/CenteredBrand.tsx` (new)
+- `web/src/pages/login-lab/variants/Minimal.tsx` (new)
+- `web/src/pages/login-lab/variants/StepFlow.tsx` (new)
+- `web/src/pages/LoginPage.tsx` (refactor to shared hook + lab link)
+- `web/src/index.css` (login-lab-drift keyframes)
+- `web/src/App.tsx` (route)
+
+## Verification
+
+- `npm run lint`: 0 errors (14 pre-existing warnings, none in new files).
+- `npm run build` (tsc -b + vite): passes.
+- Headless-browser smoke (vite dev :5199, host google-chrome, playwright):
+  `/login-lab` renders title + 5 sidebar variants + preview form; every
+  `?v=<id>` renders its form; sidebar click switches preview instantly;
+  `/login` still renders + links to the lab. StepFlow advanced correctly:
+  invalid identifier shows inline error and stays, valid identifier →
+  password step, Back returns, short password blocked with error. End-to-end
+  sign-in through SplitPanel with `alice@example.com`/`password123`
+  navigated to `/` (full auth flow works). The 500-hit console noise is the
+  known pre-existing `/auth/refresh-token` no-cookie 500 (project-notes).
+
+## Reviewer double-checks
+
+- **Visual QA could not be done screenshot-to-eyeball from this session** —
+  the variants' aesthetics (spacing, gradients, glass blur) should be
+  eyeballed at `http://localhost:5173/login-lab` before picking a keeper.
+- `FormItem` is used without a visible `FormLabel` in `CenteredBrand` and
+  `Minimal` (label is implied by placeholder) — error text still renders;
+  confirm that reads OK.
+- The StepFlow advance relies on `form.trigger('identifier')` directly
+  rather than `handleSubmit` (see project-notes: handleSubmit only fires
+  `onValid` when the whole form is valid). Confirmed working in browser.
+- `useLoginFlow` moved the zod schema out of `LoginPage.tsx`; the
+  forgot-password `resetSchema` stays local to the page.
+- No tests exist for the frontend in this repo (no test runner in
+  `web/package.json`) — lint + build + browser smoke are the verification.
+---
 # SUMMARY — enable-https
 
 HTTPS on port 443 without a domain name (self-signed fallback), plus a switch
@@ -63,8 +245,6 @@ is pointed at the box (no repo changes needed).
 - certbot flag set proven via a `--staging --dry-run` invocation (fails only
   because `example.com` is policy-blocked — external net access not available).
 - `go test ./...` all pass; `npm run build` + `npm run lint` (0 errors).
-
----
 ---
 # SUMMARY — gaggle-goose-branding
 

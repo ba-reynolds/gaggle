@@ -2,6 +2,20 @@
 
 Running log of agent-branch merges into main. Newest on top.
 
+## 2026-08-19 — agent/login-experiments
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md` — kept **every** section from both sides, newest on top
+    (login-experiments follow-ups → enable-https → prior sections), `---`
+    separated.
+  - `.opencode/project-notes.md` — kept **every** section from both sides,
+    newest on top (Login lab/useLoginFlow → enable-https → promotion entry →
+    base), `---` separated.
+- Real code (useLoginFlow hook, login-lab variants, LoginPage.tsx rewrite,
+  App.tsx, index.css, theme-themes.css) auto-merged cleanly. Migration
+  duplicate check clean. No DB migrations on this branch (web only).
+
 ## 2026-08-19 — agent/enable-https
 
 - Status: **conflicted**
