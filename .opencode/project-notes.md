@@ -1,4 +1,15 @@
 ## Login lab + useLoginFlow (agent/login-experiments)
+- **Do NOT render a decorative heading via `FormLabel`.** The step-flow
+  password step put "Welcome back" in a `FormLabel`, which carries
+  `data-error` + `data-[error=true]:text-destructive` (`ui/form.tsx:98`) —
+  so a field error painted the H1/title red along with the error text.
+  If text is a heading, render a real heading; `FormLabel` is for the
+  actual field label.
+- **studio-claude light theme had `--destructive: oklch(0.19 0 106.59)`** =
+  neutral dark gray (identical to `--card-foreground`) → every
+  `text-destructive` error/destructive UI looked like plain text on the
+  default theme. Fixed to `oklch(0.577 0.245 27.325)`. Its `.dark` block
+  (line 61) was already red.
 - **react-hook-form `handleSubmit` only calls its `onValid` when the WHOLE
   form is valid.** A multi-step flow whose step 1 only needs `identifier`
   can't gate step-advance inside `handleSubmit` — the empty step-2

@@ -1,3 +1,45 @@
+# SUMMARY — login-experiments (follow-up: error color + title bugfix)
+
+Two root causes fixed for the step-flow keeper design, found during
+headless-browser color measurement on the claude / catppuccin / perplexity
+themes:
+
+1. **"Welcome back" changed color with errors.** It was rendered as the
+   password field's `FormLabel`, which carries `data-error` and
+   `data-[error=true]:text-destructive`, so a field error turned the
+   heading text red too. Fixed: it's now a plain `<h2>` (`StepFlow.tsx`).
+2. **Errors looked like plain text on the default theme.** `studio-claude`
+   light set `--destructive: oklch(0.19 0 106.59)` — a neutral dark gray
+   identical to `--card-foreground`, so every `text-destructive` error and
+   destructive UI (delete/block items, destructive buttons, alerts) rendered
+   in foreground gray. Fixed to a true red `oklch(0.577 0.245 27.325)`
+   (`theme-themes.css:27`). All other themes already used real red/pink.
+
+## Files touched
+
+- `web/src/pages/login-lab/variants/StepFlow.tsx`
+- `web/src/theme-themes.css`
+
+## Verification
+
+- `npm run lint`: 0 errors; `npm run build`: passes.
+- `docker compose build web && up -d web`; headless re-check via the real
+  localStorage theme path: on studio-claude / catppuccin-mocha-mauve /
+  studio-perplexity (dark) the "Welcome back" computed color is identical
+  before and after a password error, and the error message renders a
+  saturated red on every theme.
+
+## Reviewer double-checks
+
+- Changing a theme token app-wide affects every `text-destructive` surface
+  (not just forms) on the claude light theme — that's the intended fix, but
+  worth eyeballing delete/block buttons in the light claude theme.
+- The identifier step's prompt ("What's your username or email?") still IS
+  a `FormLabel`, so it turns red with errors — that's intended field-error
+  behavior, unlike the heading.
+
+---
+
 # SUMMARY — login-experiments (follow-up: SplitStepFlow)
 
 Adds a sixth variant to the login lab: **SplitStepFlow** — the SplitPanel

@@ -103,14 +103,12 @@ export function StepFlow() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <div className="flex items-center gap-2">
-                        <FormLabel className="text-base font-semibold">
-                          Welcome back
-                        </FormLabel>
+                      <h2 className="flex items-center gap-2 text-base font-semibold">
+                        Welcome back
                         <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
                           {identifier}
                         </span>
-                      </div>
+                      </h2>
                       <FormControl>
                         <div className="relative">
                           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
