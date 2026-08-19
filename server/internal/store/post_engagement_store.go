@@ -134,9 +134,12 @@ func (store *postEngagementStore) Unbookmark(ctx context.Context, tx *sql.Tx, po
 	return nil
 }
 
-// AddView records a view for a post
+// AddView records a view for a post. A logged-in user only counts once per
+// post (enforced by the partial unique index on post_views(post_id, user_id)),
+// so refetches of the post detail page — including the ones engagement
+// mutations trigger — do not inflate the view count.
 func (store *postEngagementStore) AddView(ctx context.Context, postID int, userID *int, ipAddress, userAgent string) error {
-	query := `INSERT INTO post_views (post_id, user_id, ip_address, user_agent) VALUES ($1, $2, $3, $4)`
+	query := `INSERT INTO post_views (post_id, user_id, ip_address, user_agent) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`
 	_, err := store.db.ExecContext(ctx, query, postID, userID, ipAddress, userAgent)
 	if err != nil {
 		store.logger.Error("database insert failed", "operation", "add_view", "postID", postID, "userID", userID, "ipAddress", ipAddress, "userAgent", userAgent, "query", query, "error", err)

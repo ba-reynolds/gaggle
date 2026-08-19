@@ -1037,6 +1037,40 @@ func TestViewsAreRecorded(t *testing.T) {
 	}
 }
 
+// TestViewsAreDeduplicatedPerUser: every GET of a post (including the React
+// Query refetches that like/bookmark mutations trigger) used to append another
+// row to post_views, so interacting with a post bumped its view count. The
+// dedup index means one authenticated user only ever counts once per post.
+func TestViewsAreDeduplicatedPerUser(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+	token := app.RegisterUser(t, "viewer2", "view2@example.com")
+	otherToken := app.RegisterUser(t, "otherviewer", "otherview@example.com")
+	post, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/posts/", Token: token, Body: map[string]string{"content": "view me dedup"}}))
+	postID := int(post["id"].(float64))
+
+	path := "/api/v1/posts/" + itoa(postID)
+	detail, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: path, Token: token}))
+	first := detail["post"].(map[string]any)["engagement"].(map[string]any)["view_count"].(float64)
+	if first < 1 {
+		t.Fatalf("view_count = %v, want >= 1", first)
+	}
+
+	// A second fetch (what the like/bookmark invalidation refetch does) must
+	// NOT inflate the count for the same user.
+	detail, _ = testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: path, Token: token}))
+	second := detail["post"].(map[string]any)["engagement"].(map[string]any)["view_count"].(float64)
+	if second != first {
+		t.Fatalf("view_count after repeat fetch = %v, want %v (no bump)", second, first)
+	}
+
+	// A different user still counts as a new view.
+	detail, _ = testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: path, Token: otherToken}))
+	third := detail["post"].(map[string]any)["engagement"].(map[string]any)["view_count"].(float64)
+	if third != first+1 {
+		t.Fatalf("view_count after second user = %v, want %v", third, first+1)
+	}
+}
+
 func TestEnvelopeContract(t *testing.T) {
 	app := testutil.NewApp(t, testutil.Database(t))
 	token := app.RegisterUser(t, "envuser", "env@example.com")
