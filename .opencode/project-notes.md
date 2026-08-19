@@ -1,3 +1,20 @@
+## Theme merge + kanagawa light + radius removal (agent/trim-theme-catalog)
+- Catppuccin catalog is now ONE flavor (mocha), 3 entries: `catppuccin-mocha-mauve` /
+  `blue` / `peach`. Macchiato/frappe ids removed from `THEME_CATALOG` AND their
+  CSS blocks deleted from `theme-themes.css` — a stored macchiato/frappe id
+  falls back to Claude via `findTheme`.
+- Radius is theme-owned now: `setRadius`/`radius`/`vite-ui-radius` gone from
+  `ThemeContext.tsx`. On themeId change the provider sets `--radius` from
+  `definition.defaultRadius`. The per-theme `--radius: 0.5rem/0.625rem/0rem`
+  lines left in `theme-themes.css` are dead weight (inline style wins).
+- Kanagawa light ≠ dark: `:root[data-theme="icon-kanagawa"]` = washi light
+  palette, `.dark[...]` = wave dark palette. The old
+  `:root[data-theme="icon-kanagawa"]:not(.dark) .text-gray-800` override is
+  deleted — pointless now that the light sidebar is light.
+- On this NixOS box `npm` isn't on PATH: run frontend commands via
+  `nix shell nixpkgs#nodejs --command npm ...` (works with the checked-in
+  node_modules-free worktree; `npm ci` first).
+
 ## Theme catalog trim + kanagawa light mode (agent/move-themes-to-settings)
 - `THEME_CATALOG` (web/src/contexts/ThemeContext.tsx) is now 15 themes: claude /
   caffeine / perplexity / 9× catppuccin / kanagawa / neobrutalism / comic. The

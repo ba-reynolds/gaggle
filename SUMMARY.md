@@ -1,3 +1,58 @@
+# SUMMARY — trim-theme-catalog
+
+Follow-up to the catalog trim: cut the Catppuccin catalog down to one flavor
+(mocha), gave Kanagawa a real light mode, removed the manual "Rounded corners"
+slider (radius now always comes from the theme), and made the selected state
+in the theme/font pickers visually distinct from hover so selection reads
+clearly.
+
+## What was changed and why
+
+- **Catppuccin flavor collapse** (`web/src/contexts/ThemeContext.tsx`,
+  `web/src/theme-themes.css`): Macchiato and Frappé are near-indistinguishable
+  from Mocha, so the catalog went from 9 → 3 Catppuccin themes: `Mocha`,
+  `Mocha Blue`, `Mocha Peach`. Kept the `catppuccin-mocha-*` ids so stored
+  theme ids keep working; dropped `catppuccin-macchiato-*` / `catppuccin-frappe-*`
+  CSS blocks are gone (verified absent from the production CSS bundle). Any
+  stored macchiato/frappe id now falls back to Claude via `findTheme`.
+- **Kanagawa light/dark now actually differ** (`web/src/theme-themes.css`):
+  previously `:root` (light) and `.dark` were byte-for-byte the same dark
+  palette, so toggling light/dark did nothing. `:root[data-theme="icon-kanagawa"]`
+  is now a real light "washi" palette (paper/ink/wisteria) and the dark block is
+  the wave palette. The old `.text-gray-800` nav-label override was deleted —
+  with a light sidebar it's no longer needed.
+- **Rounded corners slider removed** (`web/src/components/ThemeCustomizer.tsx`,
+  `web/src/contexts/ThemeContext.tsx`): the slider ("Rounded corners") was
+  removed and the whole radius override mechanism (state, `setRadius`,
+  `vite-ui-radius` localStorage, the `--radius` effect) was deleted. Radius is
+  now set once from `findTheme(themeId).defaultRadius` when the theme changes —
+  the theme is the single source of truth. Per-theme `--radius` values in
+  `theme-themes.css` are now redundant but harmless.
+- **Selected state ≠ hover** (`web/src/components/ThemeCustomizer.tsx`): theme
+  and font buttons previously highlighted selection with the same ring used on
+  hover, so it was easy to mistake hover for "editor has kanagawa / font has
+  inter". Selected buttons now get `bg-primary/10` + `font-medium` so selection
+  is unmistakable while hover stays just a border tint.
+
+## Files touched
+
+- `web/src/contexts/ThemeContext.tsx` (catalog + radius removal)
+- `web/src/components/ThemeCustomizer.tsx` (radius slider removed, selected styling)
+- `web/src/theme-themes.css` (catppuccin trim, kanagawa light/dark palettes)
+- `SUMMARY.md` (this section)
+
+## Things a reviewer should double-check
+
+- **Kanagawa light palette** is hand-derived from the wave/"washi" reference
+  palette — verify contrast on the sidebar nav, feed text, and the DM bubble
+  gradient (which derives from `--chart-*`) in light mode in a browser.
+- **Stored ids**: a user with `vite-ui-theme-id` set to a removed macchiato/
+  frappe id silently falls back to Claude. Radius localStorage keys
+  (`vite-ui-radius`) are simply ignored now.
+- Lint + `tsc -b && vite build` pass inside the worktree; no server or
+  migration files were touched.
+
+---
 # SUMMARY — move-themes-to-settings
 
 Moved every appearance/theme control out of the right-rail "Appearance" box
