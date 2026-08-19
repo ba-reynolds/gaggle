@@ -1,3 +1,80 @@
+# SUMMARY — fix-bookmark-like-increments-view
+
+## Problem
+
+On a post's detail page, clicking **like** or **bookmark** bumped the post's
+view count by 1.
+
+### Root cause
+
+`GET /posts/{postID}` records a view on *every* request
+(`post_handler.go:252` → `PostEngagementService.AddView` → plain
+`INSERT INTO post_views`). The detail page's like/bookmark React Query
+mutations invalidate the `['post', postId]` query on success
+(`usePost.ts:170` / `usePost.ts:420`), which refetches the same GET endpoint.
+Each refetch appended a new `post_views` row and its trigger
+(`maintain_views_count`, migration 000007) incremented `posts.views_count`.
+
+So the flow *view page → like → refetch* produced 2 view rows for one human
+viewing one post; every further engagement bump re-inserted another row.
+
+## Fix
+
+Make a view idempotent per authenticated user + post, instead of per HTTP
+request.
+
+- **Migration `000019_dedupe-post-views`**:
+  - Deletes older duplicate `post_views` rows (keeps the newest per
+    `(post_id, user_id)` for logged-in users) and decrements the denormalized
+    `posts.views_count` by the number of excess rows per post.
+  - Adds partial unique index `post_views_user_dedup_idx ON post_views
+    (post_id, user_id) WHERE user_id IS NOT NULL`.
+- **`AddView`** (`post_engagement_store.go`): now `INSERT ... ON CONFLICT DO
+  NOTHING` so a repeat visit from the same user silently no-ops instead of
+  erroring on the new index.
+
+### Semantics
+
+`views_count` now means "distinct authenticated viewers" (+ anonymous views,
+unchanged), not "page loads". This matches the user expectation that
+interacting with a post doesn't inflate its view count, and also fixes the
+count for any other repeated fetch (back/forward navigation, refetch on window
+focus, etc.).
+
+## Files touched
+
+- `server/cmd/migrate/migrations/000019_dedupe-post-views.up.sql` (new)
+- `server/cmd/migrate/migrations/000019_dedupe-post-views.down.sql` (new)
+- `server/internal/store/post_engagement_store.go` — idempotent insert
+- `server/internal/handlers/integration_test.go` —
+  `TestViewsAreDeduplicatedPerUser` (repeat fetch from same user must not bump
+  the count; a different user must still count).
+
+## Verification
+
+- `make test` (tools container `go test ./...`): all pass, including the new
+  `TestViewsAreDeduplicatedPerUser` and the existing `TestViewsAreRecorded`.
+
+## Reviewer double-checks
+
+- **Migration applies on existing data**: the dedup DELETE + views_count
+  correction runs before the unique index is created; verify the count
+  correction matches the number of rows actually deleted (it uses the same
+  `(post_id, user_id)` grouping).
+- **Partial index / NULLs**: anonymous views have `user_id = NULL`, so they are
+  excluded from the unique index and keep their per-request behavior. If we
+  later want anonymous dedup (per IP/user-agent), that needs a separate partial
+  index + conflict target — out of scope here.
+- **Old binary + new index race**: until the api container is rebuilt with this
+  branch, its `AddView` insert can hit the new unique constraint (a unique
+  violation). The handler ignores `AddView` errors, so it only logs — no user
+  impact. Rebuild both `api` + `web` from this branch when merging.
+- **Migration version**: `000019` is the next free version on this branch;
+  confirm no parallel branch picked the same number before merging (see
+  project-notes "duplicate migration file" hazard).
+
+---
+
 # SUMMARY — account-and-post-privacy
 
 Post-level visibility and account-level privacy are now actually enforced end
@@ -110,6 +187,8 @@ follow; `Post.visibility`/`UserProfileResponse.is_private` in the API types.
   create/edit/delete already invalidate — no cache invalidation was needed for
   the privacy toggles themselves (changing privacy only affects who already
   could/couldn't see the author's own feed, which is follow-driven).
+
+---
 
 ---
 
