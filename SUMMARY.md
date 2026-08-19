@@ -42,10 +42,36 @@ Three direct-messaging issues reported against the live app:
   is the shared sidebar column exceeding the viewport (present on every page,
   message-count-independent) — deliberately left untouched as out of scope.
 
+### Follow-up: debounce sweep across the app (same branch)
+
+After fixing the messages search, audited **every** input-driven query in
+`web/src` and found two more keystroke-fired searches plus a cleanup:
+
+- **ListPage "Add a user" search** (`web/src/pages/ListPage.tsx`,
+  `MemberSearch`): `useSearchUsers(query)` fired `GET /search?type=users` on
+  every keystroke (3 requests for a 3-char burst) — identical pattern to the
+  MessagesPage bug. Now debounced; 1 request per burst.
+- **ExplorePage live post search** (`web/src/pages/ExplorePage.tsx`): the
+  search box feed `useSearchPosts(query)` live, so each keystroke hit
+  `GET /search?type=posts` (6 requests for a 6-char burst) while ALSO rendering
+  an inline results preview. Now debounced (live preview kept per product call);
+  the submit → `/search?q=` navigation is unchanged and still uses the raw query.
+- **Debounce delay centralized** (`web/src/hooks/useDebounce.ts`): added
+  `export const SEARCH_DEBOUNCE_MS = 300` as the single source of truth for
+  search debounce (per request "don't hardcode, we may tune later"). Migrated
+  the existing hardcoded `300` literals in MessagesPage, AdminPage, and
+  BookmarksPage to it. `FeedPost` intentionally stays at 150 ms (its search is a
+  client-side, in-memory category filter — no API).
+
 ## Files touched
 
 - `web/src/pages/ConversationPage.tsx` — `isNew` detection
+- `web/src/hooks/useDebounce.ts` — added `SEARCH_DEBOUNCE_MS = 300`
 - `web/src/pages/MessagesPage.tsx` — debounced user search
+- `web/src/pages/ListPage.tsx` — debounced member search
+- `web/src/pages/ExplorePage.tsx` — debounced live post search
+- `web/src/pages/AdminPage.tsx`, `web/src/pages/BookmarksPage.tsx` — use the
+  shared `SEARCH_DEBOUNCE_MS` (no behavior change)
 
 ## Verification
 
@@ -58,6 +84,11 @@ Three direct-messaging issues reported against the live app:
     conversation server-side, navigates to `/messages/90`, the message appears
     in the thread, and the conversation shows up in the messages list.
   - Search burst `henr` → exactly 1 request (was 4).
+  - Debounce sweep bursts: ListPage member search `hen` → 1 request (was 3);
+    ExplorePage live search `sunset` → 1 request (was 6); MessagesPage `henr` →
+    1 request (regression check). Results still render after the debounce
+    (`@henry` row visible in the ListPage dropdown) and ExplorePage's submit
+    still navigates to `/search?q=sunset`.
   - Regression: existing conversation thread still bounded with internal
     scroll; page height unchanged.
   - Before the fix, `/messages/new?user=henry` on the deployed app showed
@@ -73,8 +104,12 @@ Three direct-messaging issues reported against the live app:
   `:conversationId` route fallback; confirm all entry points that link to
   `/messages/new?user=...` (profile "Message" button, messages search results)
   land on the empty-chat composer.
-- Debounce delay is 300 ms to match AdminPage's user search — adjust down if it
-  feels sluggish in chat.
+- Debounce delay is centralized at `SEARCH_DEBOUNCE_MS = 300` in
+  `useDebounce.ts` — tune it in one place if search feels sluggish or too
+  eager. `FeedPost`'s 150 ms is deliberate (client-side filter, no API).
+- The ExplorePage live-results preview is kept (debounced, per product call);
+  if it's ever unwanted, only the `useSearchPosts` line + the posts block need
+  removing — the submit-to-`/search` navigation is independent.
 - No backend, migration, or test-infra changes (the repo's `web` has no test
   runner — verification is browser-based, consistent with prior branches).
 - The ~98 px app-wide sidebar overflow was intentionally not touched (affects

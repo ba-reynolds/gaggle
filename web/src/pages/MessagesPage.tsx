@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useConversations } from '@/hooks/useDms';
 import { useSearchUsers } from '@/hooks/useSearch';
-import { useDebounce } from '@/hooks/useDebounce';
+import { SEARCH_DEBOUNCE_MS, useDebounce } from '@/hooks/useDebounce';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Loader2, Mail } from 'lucide-react';
@@ -65,7 +65,7 @@ export default function MessagesPage() {
 
 function NewMessageComposer({ onPick }: { onPick: (username: string) => void }) {
   const [query, setQuery] = useState('');
-  const debouncedQuery = useDebounce(query, 300);
+  const debouncedQuery = useDebounce(query, SEARCH_DEBOUNCE_MS);
   const results = useSearchUsers(debouncedQuery);
 
   return (
