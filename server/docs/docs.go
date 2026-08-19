@@ -7368,6 +7368,10 @@ const docTemplate = `{
                 },
                 "poll": {
                     "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.CreatePollPayload"
+                },
+                "visibility": {
+                    "description": "Visibility is one of \"public\" | \"followers\" | \"mentions\". Empty defaults\nto \"public\" (see PostService.Create).",
+                    "type": "string"
                 }
             }
         },
@@ -7431,6 +7435,10 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "updated_at": {
+                    "type": "string"
+                },
+                "visibility": {
+                    "description": "Visibility controls who may see this post: \"public\" (everyone),\n\"followers\" (the author + their followers), or \"mentions\" (the author +\nusers @mentioned in the content).",
                     "type": "string"
                 }
             }
@@ -7662,6 +7670,10 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "string"
+                },
+                "visibility": {
+                    "description": "Visibility controls who may see this post: \"public\" (everyone),\n\"followers\" (the author + their followers), or \"mentions\" (the author +\nusers @mentioned in the content).",
+                    "type": "string"
                 }
             }
         },
@@ -7877,6 +7889,12 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "revoked_at": {
+                    "type": "string"
+                },
+                "revoked_reason": {
+                    "type": "string"
+                },
+                "session_id": {
                     "type": "string"
                 },
                 "token_hash": {
@@ -8199,6 +8217,10 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "is_muted": {
+                    "type": "boolean"
+                },
+                "is_private": {
+                    "description": "IsPrivate reports whether the account only shows posts to followers.\nThe profile shell (display name, bio, counts) stays public either way.",
                     "type": "boolean"
                 },
                 "location": {

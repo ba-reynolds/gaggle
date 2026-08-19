@@ -32,6 +32,28 @@ func (h *PostEngagementHandler) invalidateActorFeed(ctx context.Context, userID 
 	}
 }
 
+// requirePostVisible returns false (and writes a 404) when the viewer may not
+// read the given post — either because the author's account is private, or the
+// post's own visibility rule excludes them. Engagement writes must never be
+// possible on a post the actor cannot see.
+func (h *PostEngagementHandler) requirePostVisible(w http.ResponseWriter, r *http.Request, postID, viewerID int) bool {
+	visible, err := h.service.Posts.CanViewPost(r.Context(), postID, viewerID)
+	if err != nil {
+		if appErr, ok := err.(*apperrors.AppError); ok && appErr.Code == apperrors.NotFound {
+			util.RespondWithAppError(w, apperrors.NotFoundError("post not found", nil))
+			return false
+		}
+		h.logger.Error("failed to check post visibility", "error", err, "postID", postID, "viewerID", viewerID)
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return false
+	}
+	if !visible {
+		util.RespondWithAppError(w, apperrors.NotFoundError("post not found", nil))
+		return false
+	}
+	return true
+}
+
 // Like godoc
 //
 // @Summary      Like a post
@@ -56,6 +78,9 @@ func (h *PostEngagementHandler) Like(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.logger.Warn("invalid post ID parameter", "postID", r.PathValue("postID"), "error", err)
 		util.RespondWithAppError(w, apperrors.BadRequestError("invalid post ID", err))
+		return
+	}
+	if !h.requirePostVisible(w, r, postID, user.ID) {
 		return
 	}
 	created, err := h.service.PostEngagements.Like(r.Context(), postID, user.ID)
@@ -140,6 +165,9 @@ func (h *PostEngagementHandler) Repost(w http.ResponseWriter, r *http.Request) {
 		util.RespondWithAppError(w, apperrors.BadRequestError("invalid post ID", err))
 		return
 	}
+	if !h.requirePostVisible(w, r, postID, user.ID) {
+		return
+	}
 	created, err := h.service.PostEngagements.Repost(r.Context(), postID, user.ID)
 	if err != nil {
 		if appErr, ok := err.(*apperrors.AppError); ok {
@@ -221,6 +249,9 @@ func (h *PostEngagementHandler) Bookmark(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		h.logger.Warn("invalid post ID parameter", "postID", r.PathValue("postID"), "error", err)
 		util.RespondWithAppError(w, apperrors.BadRequestError("invalid post ID", err))
+		return
+	}
+	if !h.requirePostVisible(w, r, postID, user.ID) {
 		return
 	}
 	var payload models.BookmarkRequest
@@ -424,6 +455,9 @@ func (h *PostEngagementHandler) VotePoll(w http.ResponseWriter, r *http.Request)
 		util.RespondWithAppError(w, apperrors.BadRequestError("invalid post ID", err))
 		return
 	}
+	if !h.requirePostVisible(w, r, postID, user.ID) {
+		return
+	}
 	var payload struct {
 		OptionID int `json:"option_id"`
 	}
@@ -470,6 +504,9 @@ func (h *PostEngagementHandler) Quote(w http.ResponseWriter, r *http.Request) {
 		util.RespondWithAppError(w, apperrors.BadRequestError("invalid quoted post ID", err))
 		return
 	}
+	if !h.requirePostVisible(w, r, quotedPostID, user.ID) {
+		return
+	}
 	var payload models.CreatePostPayload
 	if err := util.ReadJSON(r, &payload); err != nil {
 		h.logger.Warn("invalid JSON payload in request", "error", err, "userID", user.ID)
@@ -486,6 +523,7 @@ func (h *PostEngagementHandler) Quote(w http.ResponseWriter, r *http.Request) {
 		AuthorID:     user.ID,
 		ParentID:     payload.ParentID,
 		QuotedPostID: &quotedPostID,
+		Visibility:   payload.Visibility,
 	}
 	if err := h.service.Posts.QuotePost(r.Context(), post, payload.Media); err != nil {
 		if appErr, ok := err.(*apperrors.AppError); ok {

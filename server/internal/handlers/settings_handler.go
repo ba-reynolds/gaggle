@@ -107,6 +107,18 @@ func (h *SettingsHandler) UpdateSettings(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// Keep the query-time account-privacy flag in sync with the UI preference.
+	// "private" and "friends" both mean followers-only in this app.
+	isPrivate := current.Privacy.ProfileVisibility == "private" || current.Privacy.ProfileVisibility == "friends"
+	if err := h.service.Users.SetPrivate(r.Context(), user.ID, isPrivate); err != nil {
+		if appErr, ok := err.(*apperrors.AppError); ok {
+			util.RespondWithAppError(w, appErr)
+			return
+		}
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+
 	h.logger.Info("user settings updated successfully", "userID", user.ID)
 
 	if err := util.RespondWithJson(w, http.StatusOK, current); err != nil {

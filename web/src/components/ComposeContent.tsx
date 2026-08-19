@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Image as ImageIcon, Globe, Users, Loader2, BarChart3, Plus, X } from "lucide-react";
+import { Image as ImageIcon, Globe, Users, AtSign, Loader2, BarChart3, Plus, X } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,7 +35,14 @@ import type { CreatePollPayload, MediaItem } from "@/types/api";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
-type Visibility = "Everyone" | "Followers";
+type Visibility = "Everyone" | "Followers" | "Mentions";
+
+// Wire value sent to the API for each visibility choice.
+const VISIBILITY_WIRE_VALUE: Record<Visibility, "public" | "followers" | "mentions"> = {
+  Everyone: "public",
+  Followers: "followers",
+  Mentions: "mentions",
+};
 
 export interface PostData {
   text: string;
@@ -109,6 +116,7 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
           media: mediaPayload,
           parent_id: parentId,
           poll,
+          visibility: VISIBILITY_WIRE_VALUE[visibility],
         });
 
         // Show success toast with link to the new post
@@ -340,8 +348,10 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
                       <Button variant="ghost" size="icon" className="rounded-full text-primary hover:bg-primary/10">
                         {visibility === "Everyone" ? (
                           <Globe className="h-5 w-5" />
-                        ) : (
+                        ) : visibility === "Followers" ? (
                           <Users className="h-5 w-5" />
+                        ) : (
+                          <AtSign className="h-5 w-5" />
                         )}
                       </Button>
                     </DropdownMenuTrigger>
@@ -367,6 +377,13 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
                 >
                   <Users className="h-4 w-4 mr-2" />
                   <span>Followers only</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className={`cursor-pointer ${visibility === "Mentions" ? "bg-accent" : ""}`}
+                  onClick={() => setVisibility("Mentions")}
+                >
+                  <AtSign className="h-4 w-4 mr-2" />
+                  <span>Only people you mention</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

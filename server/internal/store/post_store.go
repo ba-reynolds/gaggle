@@ -14,11 +14,42 @@ import (
 	"github.com/ba-reynolds/gophersocial/internal/models"
 	"github.com/ba-reynolds/gophersocial/internal/util"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 type postStore struct {
 	db     *sql.DB
 	logger *slog.Logger
+}
+
+// nonNilIntSlice returns ids, or an empty non-nil slice, so pq.Array never
+// sends NULL into the NOT NULL mentioned_user_ids column.
+func nonNilIntSlice(ids []int) []int {
+	if ids == nil {
+		return []int{}
+	}
+	return ids
+}
+
+// mentionedScanner scans a postgres int[] into a []int through pq (which only
+// supports scanning into []int64).
+type mentionedScanner struct{ dst *[]int }
+
+func (m *mentionedScanner) Scan(src any) error {
+	var raw []int64
+	if err := pq.Array(&raw).Scan(src); err != nil {
+		return err
+	}
+	out := make([]int, len(raw))
+	for i, v := range raw {
+		out[i] = int(v)
+	}
+	*m.dst = out
+	return nil
+}
+
+func scanMentionedIDs(dst *[]int) sql.Scanner {
+	return &mentionedScanner{dst: dst}
 }
 
 // GetByID fetches a post by ID
@@ -73,6 +104,7 @@ func (store *postStore) GetFullPostByID(ctx context.Context, id int) (*models.Fu
 		SELECT
 			p.post_id, p.content, p.author_id, p.parent_id, p.soft_deleted, p.soft_deleted_at, p.created_at, p.updated_at,
 			p.edited_at, p.is_pinned, p.likes_count, p.reposts_count, p.quotes_count, p.bookmarks_count, p.views_count, p.replies_count,
+			p.visibility, p.mentioned_user_ids,
 			author.username, author_profile.display_name, author_profile.profile_picture_uuid
 		FROM posts p
 		JOIN users author ON p.author_id = author.user_id
@@ -99,6 +131,8 @@ func (store *postStore) GetFullPostByID(ctx context.Context, id int) (*models.Fu
 		&post.BookmarksCount,
 		&post.ViewsCount,
 		&post.RepliesCount,
+		&post.Visibility,
+		scanMentionedIDs(&post.MentionedUserIDs),
 		&post.Author.Username,
 		&post.Author.DisplayName,
 		&profilePictureUUID,
@@ -121,6 +155,43 @@ func (store *postStore) GetFullPostByID(ctx context.Context, id int) (*models.Fu
 	}
 
 	return &post, nil
+}
+
+// GetPostVisibilities returns, for each post ID, the visibility rule plus the
+// author and the resolved mentioned-user set. Used by the service layer to
+// enforce post-level privacy across feeds without loading full posts.
+func (store *postStore) GetPostVisibilities(ctx context.Context, postIDs []int) (map[int]*models.Post, error) {
+	result := make(map[int]*models.Post, len(postIDs))
+	if len(postIDs) == 0 {
+		return result, nil
+	}
+	rows, err := store.db.QueryContext(ctx, `
+		SELECT post_id, author_id, visibility, mentioned_user_ids
+		FROM posts
+		WHERE post_id = ANY($1)
+	`, pq.Array(postIDs))
+	if err != nil {
+		store.logger.Error("database query failed",
+			"operation", "get_post_visibilities",
+			"postIDs", postIDs,
+			"error", err,
+		)
+		return nil, apperrors.InternalServerError(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var post models.Post
+		if err := rows.Scan(&post.ID, &post.AuthorID, &post.Visibility, scanMentionedIDs(&post.MentionedUserIDs)); err != nil {
+			store.logger.Error("failed to scan post visibility", "operation", "get_post_visibilities", "error", err)
+			return nil, apperrors.InternalServerError(err)
+		}
+		result[post.ID] = &post
+	}
+	if err := rows.Err(); err != nil {
+		store.logger.Error("row iteration failed", "operation", "get_post_visibilities", "error", err)
+		return nil, apperrors.InternalServerError(err)
+	}
+	return result, nil
 }
 
 // GetParentInfo returns, for each reply post ID, a summary of the post it is
@@ -187,8 +258,8 @@ func (store *postStore) GetParentInfo(ctx context.Context, postIDs []int) (map[i
 // Create inserts a new post into the database
 func (store *postStore) Create(ctx context.Context, tx *sql.Tx, post *models.Post) error {
 	query := `
-		INSERT INTO posts (content, author_id, parent_id)
-		VALUES ($1, $2, $3)
+		INSERT INTO posts (content, author_id, parent_id, visibility, mentioned_user_ids)
+		VALUES ($1, $2, $3, $4, $5)
 		RETURNING post_id, created_at, updated_at
 	`
 
@@ -197,7 +268,7 @@ func (store *postStore) Create(ctx context.Context, tx *sql.Tx, post *models.Pos
 		exec = tx.QueryRowContext
 	}
 
-	err := exec(ctx, query, post.Content, post.AuthorID, post.ParentID).Scan(&post.ID, &post.CreatedAt, &post.UpdatedAt)
+	err := exec(ctx, query, post.Content, post.AuthorID, post.ParentID, post.Visibility, pq.Array(nonNilIntSlice(post.MentionedUserIDs))).Scan(&post.ID, &post.CreatedAt, &post.UpdatedAt)
 	if err != nil {
 		// Log database insert errors with full context
 		store.logger.Error("database insert failed",
@@ -216,8 +287,8 @@ func (store *postStore) Create(ctx context.Context, tx *sql.Tx, post *models.Pos
 // CreateQuotedPost inserts a new post with quoted_post_id set (for quoting another post)
 func (store *postStore) CreateQuotedPost(ctx context.Context, tx *sql.Tx, post *models.Post) error {
 	query := `
-		INSERT INTO posts (content, author_id, parent_id, quoted_post_id)
-		VALUES ($1, $2, $3, $4)
+		INSERT INTO posts (content, author_id, parent_id, quoted_post_id, visibility, mentioned_user_ids)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING post_id, created_at, updated_at
 	`
 
@@ -226,7 +297,7 @@ func (store *postStore) CreateQuotedPost(ctx context.Context, tx *sql.Tx, post *
 		exec = tx.QueryRowContext
 	}
 
-	err := exec(ctx, query, post.Content, post.AuthorID, post.ParentID, post.QuotedPostID).Scan(&post.ID, &post.CreatedAt, &post.UpdatedAt)
+	err := exec(ctx, query, post.Content, post.AuthorID, post.ParentID, post.QuotedPostID, post.Visibility, pq.Array(nonNilIntSlice(post.MentionedUserIDs))).Scan(&post.ID, &post.CreatedAt, &post.UpdatedAt)
 	if err != nil {
 		store.logger.Error("database insert failed",
 			"operation", "create_quoted_post",

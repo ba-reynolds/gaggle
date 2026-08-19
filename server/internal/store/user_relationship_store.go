@@ -194,7 +194,7 @@ func (store *userRelationshipStore) GetFollowers(ctx context.Context, userID int
 	if cursor == "" {
 		// Initial query - get first batch of followers
 		query = `
-			SELECT u.user_id, u.username, u.email, u.password, u.soft_deleted, u.soft_deleted_at, u.created_at, u.updated_at, u.is_admin,
+			SELECT u.user_id, u.username, u.email, u.password, u.soft_deleted, u.soft_deleted_at, u.created_at, u.updated_at, u.is_admin, u.is_private,
 				   up.display_name, up.bio, up.profile_picture_uuid, up.banner_uuid, up.birth_date, up.location, up.website,
 				   up.followers_count, up.following_count, ur.created_at as relationship_created_at
 			FROM user_relationships ur
@@ -229,7 +229,7 @@ func (store *userRelationshipStore) GetFollowers(ctx context.Context, userID int
 
 		// Cursor-based query - get followers after the cursor timestamp
 		query = `
-			SELECT u.user_id, u.username, u.email, u.password, u.soft_deleted, u.soft_deleted_at, u.created_at, u.updated_at, u.is_admin,
+			SELECT u.user_id, u.username, u.email, u.password, u.soft_deleted, u.soft_deleted_at, u.created_at, u.updated_at, u.is_admin, u.is_private,
 				   up.display_name, up.bio, up.profile_picture_uuid, up.banner_uuid, up.birth_date, up.location, up.website,
 				   up.followers_count, up.following_count, ur.created_at as relationship_created_at
 			FROM user_relationships ur
@@ -275,6 +275,7 @@ func (store *userRelationshipStore) GetFollowers(ctx context.Context, userID int
 			&user.CreatedAt,
 			&user.UpdatedAt,
 			&user.IsAdmin,
+			&user.IsPrivate,
 			&user.Profile.DisplayName,
 			&user.Profile.Bio,
 			&user.Profile.ProfilePictureUUID,
@@ -349,7 +350,7 @@ func (store *userRelationshipStore) GetFollowing(ctx context.Context, userID int
 	if cursor == "" {
 		// Initial query - get first batch of following users
 		query = `
-			SELECT u.user_id, u.username, u.email, u.password, u.soft_deleted, u.soft_deleted_at, u.created_at, u.updated_at, u.is_admin,
+			SELECT u.user_id, u.username, u.email, u.password, u.soft_deleted, u.soft_deleted_at, u.created_at, u.updated_at, u.is_admin, u.is_private,
 				   up.display_name, up.bio, up.profile_picture_uuid, up.banner_uuid, up.birth_date, up.location, up.website,
 				   up.followers_count, up.following_count
 			FROM user_relationships ur
@@ -384,7 +385,7 @@ func (store *userRelationshipStore) GetFollowing(ctx context.Context, userID int
 
 		// Cursor-based query - get following users after the cursor ID
 		query = `
-			SELECT u.user_id, u.username, u.email, u.password, u.soft_deleted, u.soft_deleted_at, u.created_at, u.updated_at, u.is_admin,
+			SELECT u.user_id, u.username, u.email, u.password, u.soft_deleted, u.soft_deleted_at, u.created_at, u.updated_at, u.is_admin, u.is_private,
 				   up.display_name, up.bio, up.profile_picture_uuid, up.banner_uuid, up.birth_date, up.location, up.website,
 				   up.followers_count, up.following_count
 			FROM user_relationships ur
@@ -428,6 +429,7 @@ func (store *userRelationshipStore) GetFollowing(ctx context.Context, userID int
 			&user.CreatedAt,
 			&user.UpdatedAt,
 			&user.IsAdmin,
+			&user.IsPrivate,
 			&user.Profile.DisplayName,
 			&user.Profile.Bio,
 			&user.Profile.ProfilePictureUUID,

@@ -16,7 +16,7 @@ import { useUserLists } from "@/hooks/useLists";
 import UserBadges from "@/components/UserBadges";
 import { getMediaUrl } from "@/util/media";
 import { format, parseISO } from "date-fns";
-import { Calendar, Camera, Link as LinkIcon, Loader2, MapPin, MessageSquare, MoreHorizontal, ShieldBan, ShieldCheck, UserMinus, UserPlus, Volume2, VolumeX } from "lucide-react";
+import { Calendar, Camera, Link as LinkIcon, Loader2, Lock, MapPin, MessageSquare, MoreHorizontal, ShieldBan, ShieldCheck, UserMinus, UserPlus, Volume2, VolumeX } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useInView } from "react-intersection-observer";
 import { useParams, Link, useNavigate } from "react-router-dom";
@@ -366,6 +366,16 @@ const ProfilePage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Private account notice */}
+      {profile?.is_private && !isCurrentUser && !profile?.is_following && (
+        <div className="mx-4 mt-4 flex items-center gap-3 rounded-xl border border-border bg-muted/50 px-4 py-3">
+          <Lock className="h-5 w-5 text-muted-foreground shrink-0" />
+          <p className="text-sm text-muted-foreground">
+            These posts are protected. Follow <span className="font-medium text-foreground">@{profile.username}</span> to see their posts.
+          </p>
+        </div>
+      )}
 
       {/* Tabs for posts, replies, media, etc. */}
       <Tabs defaultValue="posts" className="mt-4">

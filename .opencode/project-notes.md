@@ -1,3 +1,21 @@
+## Privacy / visibility enforcement (account-and-post-privacy)
+- `posts.visibility` (`public|followers|mentions`) + `posts.mentioned_user_ids int[]`
+  (resolved at create) and `users.is_private` (synced from settings
+  `profileVisibility`; `private` AND `friends` both mean followers-only).
+- ALL enforcement is centralized in `service/filterVisiblePosts(ctx, st, posts, viewerID)`
+  (package-level, like the hydrate helpers) — one batched `GetRelationshipStatuses`
+  + one `Users.GetIsPrivate` per unique author. Single-post reads gate via the
+  same filter in `PostService.GetFullPostByID`/`GetPinned`; engagement writes via
+  `CanViewPost`. **Any new feed consumer must call `filterVisiblePosts` or it leaks.**
+- **`pq.Array(&[]int)` cannot SCAN a postgres int[]** — only `[]int64`. Use the
+  `scanMentionedIDs` adapter in post_store.go. (VALUER side `pq.Array([]int)` is fine.)
+- `mentioned_user_ids` is `NOT NULL` — `pq.Array(nil)` sends NULL and violates it;
+  always pass `pq.Array(nonNilIntSlice(...))`.
+- Media files under `GET /media/{uuid}` stay public by design (unguessable UUIDs,
+  `<img>` can't send auth headers) — a followers/mentions-only post's media is
+  reachable if you know the UUID. Known limitation.
+- Migration `000017` backfills `users.is_private` from existing settings JSONB.
+
 ## Server: home feed Redis cache + pin/edit/delete invalidation
 - `GET /posts/feed` is served from a 60s Redis cache (`feed:home:{userID}:{cursor}`,
   `handlers.GetHomeFeed`). Any write that changes `is_pinned`, content, or post

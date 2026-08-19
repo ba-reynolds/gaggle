@@ -131,6 +131,10 @@ func (s *ListService) GetListFeed(ctx context.Context, viewerID, listID, limit i
 	if err := hydrateParents(ctx, s.store, feed.Items); err != nil {
 		return nil, err
 	}
+	feed.Items, err = filterVisiblePosts(ctx, s.store, feed.Items, viewerID)
+	if err != nil {
+		return nil, err
+	}
 	return feed, nil
 }
 

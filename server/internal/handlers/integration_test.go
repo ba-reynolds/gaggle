@@ -1446,3 +1446,166 @@ func TestProfileRelationshipManageAndFeeds(t *testing.T) {
 		t.Fatalf("media feed item missing media attachments: %v", mediaItems[0])
 	}
 }
+
+// TestPostVisibility enforces the per-post visibility rule across reads and
+// engagement writes: public posts are open to everyone, followers-only posts
+// are restricted to the author + their followers, and mentions-only posts are
+// restricted to the author + the users @mentioned in the content.
+func TestPostVisibility(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+	alice := app.RegisterUser(t, "visalice", "visalice@example.com")
+	bob := app.RegisterUser(t, "visbob", "visbob@example.com")
+	carol := app.RegisterUser(t, "viscarol", "viscarol@example.com")
+
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/users/visalice/follow", Token: bob}); rec.Code != http.StatusOK {
+		t.Fatalf("bob follow alice: %d %s", rec.Code, rec.Body.String())
+	}
+
+	create := func(token string, body map[string]any) int {
+		rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/posts/", Token: alice, Body: body})
+		if rec.Code != http.StatusCreated {
+			t.Fatalf("create post %v: %d %s", body, rec.Code, rec.Body.String())
+		}
+		data, _ := testutil.Decode[map[string]any](t, rec)
+		return int(data["id"].(float64))
+	}
+
+	publicID := create(alice, map[string]any{"content": "public hello"})
+	followersID := create(alice, map[string]any{"content": "followers only", "visibility": "followers"})
+	mentionsID := create(alice, map[string]any{"content": "@visbob hi", "visibility": "mentions"})
+
+	// A mentions-only post that mentions nobody is rejected.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/posts/", Token: alice, Body: map[string]any{"content": "nobody", "visibility": "mentions"}}); rec.Code != http.StatusBadRequest {
+		t.Fatalf("mentions-only with no mention: expected 400 got %d %s", rec.Code, rec.Body.String())
+	}
+	// An unknown visibility value is rejected.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/posts/", Token: alice, Body: map[string]any{"content": "bad", "visibility": "secret"}}); rec.Code != http.StatusBadRequest {
+		t.Fatalf("invalid visibility: expected 400 got %d %s", rec.Code, rec.Body.String())
+	}
+
+	getCode := func(token string, postID int) int {
+		rec := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/posts/" + itoa(postID), Token: token})
+		return rec.Code
+	}
+
+	// The author sees everything.
+	for _, id := range []int{publicID, followersID, mentionsID} {
+		if code := getCode(alice, id); code != http.StatusOK {
+			t.Fatalf("author should see post %d, got %d", id, code)
+		}
+	}
+
+	// Bob follows alice and is mentioned: sees everything.
+	for _, id := range []int{publicID, followersID, mentionsID} {
+		if code := getCode(bob, id); code != http.StatusOK {
+			t.Fatalf("follower (and mentioned) should see post %d, got %d", id, code)
+		}
+	}
+
+	// Carol is neither a follower nor mentioned: only the public post.
+	if code := getCode(carol, publicID); code != http.StatusOK {
+		t.Fatalf("stranger should see public post, got %d", code)
+	}
+	if code := getCode(carol, followersID); code != http.StatusNotFound {
+		t.Fatalf("stranger must not see followers-only post, got %d", code)
+	}
+	if code := getCode(carol, mentionsID); code != http.StatusNotFound {
+		t.Fatalf("stranger must not see mentions-only post, got %d", code)
+	}
+
+	// Carol's view of alice's profile feed excludes the restricted posts.
+	rec := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/users/visalice/posts", Token: carol})
+	feed, _ := testutil.Decode[map[string]any](t, rec)
+	items := feed["items"].([]any)
+	if len(items) != 1 || int(items[0].(map[string]any)["id"].(float64)) != publicID {
+		t.Fatalf("stranger user feed should contain only the public post, got %v", feed["items"])
+	}
+
+	// Carol cannot like a post she cannot read.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/posts/" + itoa(followersID) + "/like", Token: carol}); rec.Code != http.StatusNotFound {
+		t.Fatalf("stranger like on followers-only post: expected 404 got %d %s", rec.Code, rec.Body.String())
+	}
+	// Bob's like succeeds (he can read the post).
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/posts/" + itoa(followersID) + "/like", Token: bob}); rec.Code != http.StatusOK {
+		t.Fatalf("follower like: %d %s", rec.Code, rec.Body.String())
+	}
+}
+
+// TestAccountPrivacy enforces the account-level profileVisibility: private
+// accounts keep a public profile shell (username/bio/counters) but only expose
+// their posts and content to followers. Toggling back to public restores
+// access. Both "private" and "friends" map to followers-only.
+func TestAccountPrivacy(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+	alice := app.RegisterUser(t, "priv_alice", "priv_alice@example.com")
+	bob := app.RegisterUser(t, "priv_bob", "priv_bob@example.com")
+	carol := app.RegisterUser(t, "priv_carol", "priv_carol@example.com")
+
+	// Make alice's account private via the settings endpoint.
+	patch := app.Do(t, testutil.Request{Method: http.MethodPatch, Path: "/api/v1/users/settings", Token: alice, Body: map[string]any{
+		"privacy": map[string]any{"profileVisibility": "private"},
+	}})
+	if patch.Code != http.StatusOK {
+		t.Fatalf("set private: %d %s", patch.Code, patch.Body.String())
+	}
+
+	// alice posts a public post.
+	rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/posts/", Token: alice, Body: map[string]string{"content": "private alice post"}})
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("create post: %d %s", rec.Code, rec.Body.String())
+	}
+	data, _ := testutil.Decode[map[string]any](t, rec)
+	postID := int(data["id"].(float64))
+
+	// Profile shell is still visible to a stranger, but flags is_private.
+	rec = app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/users/priv_alice", Token: carol})
+	profile, _ := testutil.Decode[map[string]any](t, rec)
+	if isPrivate, _ := profile["is_private"].(bool); !isPrivate {
+		t.Fatalf("profile should report is_private=true, got %v", profile)
+	}
+
+	// Stranger: private posts and feeds are hidden (as if the post doesn't exist).
+	if code := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/posts/" + itoa(postID), Token: carol}).Code; code != http.StatusNotFound {
+		t.Fatalf("stranger single post: expected 404 got %d", code)
+	}
+	rec = app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/users/priv_alice/posts", Token: carol})
+	feed, _ := testutil.Decode[map[string]any](t, rec)
+	if items := feed["items"].([]any); len(items) != 0 {
+		t.Fatalf("stranger profile feed should be empty, got %v", items)
+	}
+
+	// Follower: sees the content.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/users/priv_alice/follow", Token: bob}); rec.Code != http.StatusOK {
+		t.Fatalf("bob follow alice: %d %s", rec.Code, rec.Body.String())
+	}
+	if code := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/posts/" + itoa(postID), Token: bob}).Code; code != http.StatusOK {
+		t.Fatalf("follower single post: expected 200 got %d", code)
+	}
+	rec = app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/users/priv_alice/posts", Token: bob})
+	feed, _ = testutil.Decode[map[string]any](t, rec)
+	if items := feed["items"].([]any); len(items) != 1 {
+		t.Fatalf("follower profile feed should have 1 post, got %v", items)
+	}
+
+	// "friends" also means followers-only.
+	rec = app.Do(t, testutil.Request{Method: http.MethodPatch, Path: "/api/v1/users/settings", Token: alice, Body: map[string]any{
+		"privacy": map[string]any{"profileVisibility": "friends"},
+	}})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("set friends: %d %s", rec.Code, rec.Body.String())
+	}
+	if code := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/posts/" + itoa(postID), Token: carol}).Code; code != http.StatusNotFound {
+		t.Fatalf("friends-visibility hides content from strangers: expected 404 got %d", code)
+	}
+
+	// Back to public: the stranger regains access.
+	rec = app.Do(t, testutil.Request{Method: http.MethodPatch, Path: "/api/v1/users/settings", Token: alice, Body: map[string]any{
+		"privacy": map[string]any{"profileVisibility": "public"},
+	}})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("set public: %d %s", rec.Code, rec.Body.String())
+	}
+	if code := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/posts/" + itoa(postID), Token: carol}).Code; code != http.StatusOK {
+		t.Fatalf("after public, stranger should see post: expected 200 got %d", code)
+	}
+}

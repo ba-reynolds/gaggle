@@ -28,9 +28,16 @@ type Post struct {
 	Content string `json:"content"`
 	// Author ID is used for performance reasons, for example, if the user wants to delete
 	// a post, we don't have to make a join with the users table
-	AuthorID       int                `json:"-"`
-	ParentID       *int               `json:"parent_id"`
-	SoftDeleted    bool               `json:"-"`
+	AuthorID int `json:"-"`
+	// Visibility controls who may see this post: "public" (everyone),
+	// "followers" (the author + their followers), or "mentions" (the author +
+	// users @mentioned in the content).
+	Visibility string `json:"visibility"`
+	// MentionedUserIDs is the resolved user id set of @mentions in the content,
+	// used by the "mentions" visibility rule. Never serialized.
+	MentionedUserIDs []int `json:"-"`
+	ParentID         *int  `json:"parent_id"`
+	SoftDeleted      bool  `json:"-"`
 	SoftDeletedAt  *time.Time         `json:"-"`
 	CreatedAt      time.Time          `json:"created_at"`
 	UpdatedAt      time.Time          `json:"updated_at"`
@@ -81,6 +88,9 @@ type CreatePostPayload struct {
 	Media    []PostMediaRequest `json:"media" validate:"dive"`
 	ParentID *int               `json:"parent_id"`
 	Poll     *CreatePollPayload `json:"poll,omitempty"`
+	// Visibility is one of "public" | "followers" | "mentions". Empty defaults
+	// to "public" (see PostService.Create).
+	Visibility string `json:"visibility"`
 }
 
 type UpdatePostPayload struct {

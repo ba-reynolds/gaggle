@@ -12,6 +12,7 @@ type User struct {
 	Email         string     `json:"-"`
 	Password      string     `json:"-"`
 	IsAdmin       bool       `json:"-"`
+	IsPrivate     bool       `json:"-"`
 	SoftDeleted   bool       `json:"-"`
 	SoftDeletedAt *time.Time `json:"-"`
 	CreatedAt     time.Time  `json:"created_at"`
@@ -52,6 +53,9 @@ type UserProfileResponse struct {
 	FollowingCount     int         `json:"following_count"`
 	CreatedAt          time.Time   `json:"created_at"`
 	IsAdmin            bool        `json:"is_admin,omitempty"`
+	// IsPrivate reports whether the account only shows posts to followers.
+	// The profile shell (display name, bio, counts) stays public either way.
+	IsPrivate          bool        `json:"is_private"`
 	IsFollowing        bool        `json:"is_following"`
 	IsBlocked          bool        `json:"is_blocked"`
 	IsMuted            bool        `json:"is_muted"`
@@ -72,6 +76,7 @@ func (u *UserWithProfile) ToProfileResponse() UserProfileResponse {
 		FollowingCount: u.Profile.FollowingCount,
 		CreatedAt:      u.CreatedAt,
 		IsAdmin:        u.IsAdmin,
+		IsPrivate:      u.IsPrivate,
 		Badges:         u.Badges,
 	}
 	if u.Badges == nil {

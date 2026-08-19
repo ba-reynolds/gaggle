@@ -1,3 +1,119 @@
+# SUMMARY — account-and-post-privacy
+
+Post-level visibility and account-level privacy are now actually enforced end
+to end. The compose-box visibility toggle was cosmetic (the payload had no
+field, no column existed); the settings `profileVisibility` dropdown was
+persisted to JSONB but never read. Both are now real.
+
+## What was changed and why
+
+**Post-level visibility** (`posts.visibility`: `public` | `followers` |
+`mentions` + `posts.mentioned_user_ids int[]`):
+- The compose dropdown ("Everyone" / "Followers only" / new "Only people you
+  mention") now round-trips: `CreatePostPayload.visibility` →
+  `Post.Visibility` → written at create (`postStore.Create`/`CreateQuotedPost`).
+- `resolveVisibilityAndMentions` (PostService.Create/QuotePost) normalizes the
+  value (empty → `public`), validates it, and for `mentions` resolves
+  `@username`s in the content to user IDs (stored in `mentioned_user_ids`). A
+  mentions-only post that mentions nobody is rejected (400).
+- One centralized enforcement point, `service.filterVisiblePosts(ctx, st, posts,
+  viewerID)` — a package-level (batch) helper like `hydrateHelpers`. For each
+  unique author it runs one `GetRelationshipStatuses` + one `Users.GetIsPrivate`,
+  then keeps a post when: author == viewer, OR visibility == public, OR
+  (followers AND viewer follows author), OR (mentions AND viewer is in
+  `mentioned_user_ids`). Called from every feed path (home, user, replies,
+  media, bookmarks, likes, quotes, list, search/hashtag), ancestor/descendant
+  chains, `GetFullPostByID`, and `GetPinned` (404 when filtered out).
+- Engagement writes are gated: like/repost/bookmark/vote/quote call
+  `PostService.CanViewPost` first (404 for posts the actor can't read), so a
+  stranger can't like or vote on a followers-only post. Quotes also can't be
+  created against unviewable posts.
+- Feed `HasMore`/cursor is computed from raw rows, so pagination keeps working
+  after filtering (a page with hidden posts just returns fewer items).
+
+**Account-level privacy** (`users.is_private`, source of truth; backfilled from
+`user_settings.privacy.profileVisibility` in migration `000017`):
+- `profileVisibility` is synced to `users.is_private` on every settings PATCH
+  (`settings_handler`), and `UserProfileResponse.is_private` exposes it.
+- Enforcement lives in `filterVisiblePosts` (private authors only expose posts
+  to followers) — a profile *shell* (display name/bio/counters/Follow button)
+  stays public, matching the chosen "show shell, hide content" behavior. Feeds
+  for strangers return empty; single posts 404. Blocked-by-them viewers keep
+  the public shell + can still see plain *public* posts (ghost view); blocks
+  already remove the follow relationship so followers/mentions-only content is
+  hidden from them automatically.
+- `friends` maps to followers-only (this app has no separate "friends" circle).
+
+**Frontend**: ComposeContent sends `visibility` (+ "Only people you mention"
+with an `@` icon); FeedPost shows a small `Users`/`AtSign` badge+tooltip for
+restricted posts; ProfilePage shows a lock notice on private accounts you don't
+follow; `Post.visibility`/`UserProfileResponse.is_private` in the API types.
+
+## Files touched
+
+- `server/cmd/migrate/migrations/000017_account-post-privacy.{up,down}.sql` (new)
+- `server/internal/models/post.go` — `Post.Visibility`, `Post.MentionedUserIDs`,
+  `CreatePostPayload.Visibility`
+- `server/internal/models/user.go` — `User.IsPrivate`, `UserProfileResponse.IsPrivate`
+- `server/internal/store/post_store.go` — create/quote writes visibility+mentions;
+  `GetPostVisibilities`; `GetFullPostByID` returns them; `scanMentionedIDs`
+  adapter + `nonNilIntSlice` (pq int[] scanning/values quirks)
+- `server/internal/store/user_store.go` — `SetPrivate`, `GetIsPrivate`; is_private
+  in all user scans
+- `server/internal/store/user_relationship_store.go` — is_private in
+  followers/following scans
+- `server/internal/store/store.go` — interfaces (`SetPrivate`, `GetIsPrivate`,
+  `GetPostVisibilities`)
+- `server/internal/service/post_service.go` — `resolveVisibilityAndMentions`,
+  `CanViewPost`, `filterVisiblePosts`, wired into every feed + single-post paths
+- `server/internal/service/{list,search}_service.go` — filterVisiblePosts in
+  list/hashtag/search feeds
+- `server/internal/service/{service,user_service}.go` — `Users.SetPrivate`
+- `server/internal/handlers/post_handler.go`, `post_engagement_handler.go` —
+  visibility passthrough, `requirePostVisible` gate, quote/likers/reposters gates
+- `server/internal/handlers/settings_handler.go` — is_private sync
+- `web/src/{components/ComposeContent,components/FeedPost,pages/ProfilePage,hooks/usePost,types/api}.ts`
+- `server/internal/handlers/integration_test.go` — `TestPostVisibility`,
+  `TestAccountPrivacy`
+- `server/docs/*` — swagger regenerated (`make swag`)
+
+## Verification
+
+- `go build ./...`, `go vet ./...` clean; `go test ./...` passes, incl. new
+  `TestPostVisibility` (public/followers/mentions access across single-post,
+  profile feed, and like gating; invalid-visibility 400s; mentions-with-no-
+  mention 400) and `TestAccountPrivacy` (private/friends/public toggles, shell
+  stays public, stranger 404s + empty feed, follower access restored).
+- `npm run build` (tsc + vite) passes; `npm run lint` = the same 14 pre-existing
+  warnings as base, zero new.
+
+## Things a reviewer should double-check
+
+- **Any FUTURE feed/hydration consumer must call `filterVisiblePosts`** or it
+  leaks restricted posts — the privacy surface is a service-layer convention,
+  not a DB constraint. See `.opencode/project-notes.md`.
+- **Media is still public by UUID** (`GET /media/{uuid}`, unguessable-token
+  design, `<img>` can't send auth). A followers/mentions-only post's media is
+  reachable if the UUID is known. Pre-existing architecture tradeoff; the post
+  content and engagement are gated.
+- **Pagination after filtering**: `HasMore` is computed from raw feed rows, so a
+  denser-than-normal run of hidden posts returns short pages (rare; matches
+  Twitter's approach). Cursor progression remains correct.
+- **Replies** are filtered per reply author (a reply to a followers-only post by
+  a non-follower is hidden from strangers) but there is no "reply visibility
+  inheritance" — each post's own visibility rules apply. Account privacy gates
+  the whole thread for strangers anyway.
+- **`mentioned_user_ids` is resolved at create time** from the exact stored
+  content; editing content (POST /posts/{id}) does not re-resolve mentions or
+  change visibility. `visibility`/mentions are fixed at creation.
+- Home-feed Redis cache is per-viewer and stored AFTER filtering, and
+  create/edit/delete already invalidate — no cache invalidation was needed for
+  the privacy toggles themselves (changing privacy only affects who already
+  could/couldn't see the author's own feed, which is follow-driven).
+
+---
+
+
 # SUMMARY — refresh-token-rotation
 
 Refresh tokens now rotate on every use, sessions are grouped into families,

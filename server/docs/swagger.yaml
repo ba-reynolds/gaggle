@@ -183,6 +183,11 @@ definitions:
         type: integer
       poll:
         $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.CreatePollPayload'
+      visibility:
+        description: |-
+          Visibility is one of "public" | "followers" | "mentions". Empty defaults
+          to "public" (see PostService.Create).
+        type: string
     type: object
   github_com_ba-reynolds_gophersocial_internal_models.Date:
     properties:
@@ -224,6 +229,12 @@ definitions:
       quoted_post_id:
         type: integer
       updated_at:
+        type: string
+      visibility:
+        description: |-
+          Visibility controls who may see this post: "public" (everyone),
+          "followers" (the author + their followers), or "mentions" (the author +
+          users @mentioned in the content).
         type: string
     type: object
   github_com_ba-reynolds_gophersocial_internal_models.LikeResponse:
@@ -374,6 +385,12 @@ definitions:
         type: integer
       updated_at:
         type: string
+      visibility:
+        description: |-
+          Visibility controls who may see this post: "public" (everyone),
+          "followers" (the author + their followers), or "mentions" (the author +
+          users @mentioned in the content).
+        type: string
     type: object
   github_com_ba-reynolds_gophersocial_internal_models.PostAuthor:
     properties:
@@ -513,6 +530,10 @@ definitions:
       revoked:
         type: boolean
       revoked_at:
+        type: string
+      revoked_reason:
+        type: string
+      session_id:
         type: string
       token_hash:
         type: string
@@ -731,6 +752,11 @@ definitions:
       is_following:
         type: boolean
       is_muted:
+        type: boolean
+      is_private:
+        description: |-
+          IsPrivate reports whether the account only shows posts to followers.
+          The profile shell (display name, bio, counts) stays public either way.
         type: boolean
       location:
         type: string

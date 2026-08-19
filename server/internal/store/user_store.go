@@ -12,6 +12,7 @@ import (
 	"github.com/ba-reynolds/gophersocial/internal/apperrors"
 	"github.com/ba-reynolds/gophersocial/internal/models"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 type userStore struct {
@@ -21,7 +22,7 @@ type userStore struct {
 
 func (store *userStore) GetByID(ctx context.Context, id int) (*models.User, error) {
 	query := `
-		SELECT user_id, username, email, password, soft_deleted, soft_deleted_at, created_at, updated_at, is_admin
+		SELECT user_id, username, email, password, soft_deleted, soft_deleted_at, created_at, updated_at, is_admin, is_private
 		FROM users
 		WHERE user_id = $1
 	`
@@ -37,6 +38,7 @@ func (store *userStore) GetByID(ctx context.Context, id int) (*models.User, erro
 		&user.CreatedAt,
 		&user.UpdatedAt,
 		&user.IsAdmin,
+		&user.IsPrivate,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -56,7 +58,7 @@ func (store *userStore) GetByID(ctx context.Context, id int) (*models.User, erro
 
 func (store *userStore) GetByEmail(ctx context.Context, email string) (*models.User, error) {
 	query := `
-		SELECT user_id, username, email, password, soft_deleted, soft_deleted_at, created_at, updated_at, is_admin
+		SELECT user_id, username, email, password, soft_deleted, soft_deleted_at, created_at, updated_at, is_admin, is_private
 		FROM users
 		WHERE email = $1
 	`
@@ -72,6 +74,7 @@ func (store *userStore) GetByEmail(ctx context.Context, email string) (*models.U
 		&user.CreatedAt,
 		&user.UpdatedAt,
 		&user.IsAdmin,
+		&user.IsPrivate,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -91,7 +94,7 @@ func (store *userStore) GetByEmail(ctx context.Context, email string) (*models.U
 
 func (store *userStore) GetByUsername(ctx context.Context, username string) (*models.User, error) {
 	query := `
-		SELECT user_id, username, email, password, soft_deleted, soft_deleted_at, created_at, updated_at, is_admin
+		SELECT user_id, username, email, password, soft_deleted, soft_deleted_at, created_at, updated_at, is_admin, is_private
 		FROM users
 		WHERE username = $1
 	`
@@ -107,6 +110,7 @@ func (store *userStore) GetByUsername(ctx context.Context, username string) (*mo
 		&user.CreatedAt,
 		&user.UpdatedAt,
 		&user.IsAdmin,
+		&user.IsPrivate,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -188,7 +192,7 @@ func (store *userStore) Create(ctx context.Context, tx *sql.Tx, user *models.Use
 
 func (store *userStore) GetUserProfileByUsername(ctx context.Context, username string) (*models.UserWithProfile, error) {
 	query := `
-		SELECT u.user_id, u.username, u.email, u.password, u.soft_deleted, u.soft_deleted_at, u.created_at, u.updated_at, u.is_admin,
+		SELECT u.user_id, u.username, u.email, u.password, u.soft_deleted, u.soft_deleted_at, u.created_at, u.updated_at, u.is_admin, u.is_private,
 			   up.display_name, up.bio, up.profile_picture_uuid, up.banner_uuid, up.birth_date, up.location, up.website,
 			   up.followers_count, up.following_count
 		FROM users u
@@ -207,6 +211,7 @@ func (store *userStore) GetUserProfileByUsername(ctx context.Context, username s
 		&user.CreatedAt,
 		&user.UpdatedAt,
 		&user.IsAdmin,
+		&user.IsPrivate,
 		&user.Profile.DisplayName,
 		&user.Profile.Bio,
 		&user.Profile.ProfilePictureUUID,
@@ -315,6 +320,53 @@ func (store *userStore) Suggested(ctx context.Context, viewerID int, limit int) 
 	return result, nil
 }
 
+// SetPrivate toggles the query-time account privacy flag. Mirrors the
+// profileVisibility preference stored in the JSONB settings row.
+func (store *userStore) SetPrivate(ctx context.Context, userID int, isPrivate bool) error {
+	if _, err := store.db.ExecContext(ctx, `UPDATE users SET is_private = $1 WHERE user_id = $2`, isPrivate, userID); err != nil {
+		store.logger.Error("database update failed",
+			"operation", "set_user_private",
+			"userID", userID,
+			"error", err,
+		)
+		return apperrors.InternalServerError(err)
+	}
+	return nil
+}
+
+// GetIsPrivate returns the account-privacy flag for each user ID, keyed by ID.
+// Used by the service layer to gate content per author in batch.
+func (store *userStore) GetIsPrivate(ctx context.Context, userIDs []int) (map[int]bool, error) {
+	if len(userIDs) == 0 {
+		return map[int]bool{}, nil
+	}
+	rows, err := store.db.QueryContext(ctx, `SELECT user_id, is_private FROM users WHERE user_id = ANY($1)`, pq.Array(userIDs))
+	if err != nil {
+		store.logger.Error("database query failed",
+			"operation", "get_users_is_private",
+			"userIDs", userIDs,
+			"error", err,
+		)
+		return nil, apperrors.InternalServerError(err)
+	}
+	defer rows.Close()
+	result := make(map[int]bool, len(userIDs))
+	for rows.Next() {
+		var id int
+		var isPrivate bool
+		if err := rows.Scan(&id, &isPrivate); err != nil {
+			store.logger.Error("failed to scan user is_private", "operation", "get_users_is_private", "error", err)
+			return nil, apperrors.InternalServerError(err)
+		}
+		result[id] = isPrivate
+	}
+	if err := rows.Err(); err != nil {
+		return nil, apperrors.InternalServerError(err)
+	}
+	return result, nil
+}
+
+// UpdateUserProfile updates a user's profile
 func (store *userStore) UpdateUserProfile(ctx context.Context, tx *sql.Tx, user *models.UserWithProfile) error {
 	query := `
 		UPDATE user_profiles
