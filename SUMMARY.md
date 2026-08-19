@@ -271,6 +271,55 @@ are untouched.
 
 ---
 
+# SUMMARY — seed-data-strategy
+
+Brainstorm → design spec (no code) for how Gaggle loads dummy data. A fresh
+prod deploy currently comes up with an empty DB (the live EC2 site is empty),
+because `deploy/apply.sh` auto-migrates on api boot but never runs the seed
+binary. This branch records the chosen strategy and the seam for a future
+"live users" cron.
+
+## Decisions (resolved via brainstorm questions)
+
+- **Where**: seed runs in the api entrypoint, gated by `SEED_ON_START` (default
+  true in compose.yaml), after migrations and before `exec /app/api`. The seed
+  is already idempotent (`alice@example.com` guard), so only a fresh DB pays
+  the cost; re-deploys no-op. Covers local `make dev` and EC2 prod through one
+  switch. Rejected: explicit step in apply.sh (EC2-only, leaves local manual)
+  and SQL/psql scripts (unmaintainable, shares no primitives with the cron).
+- **Content**: faker library (`brianvoe/gofakeit/v7`, new dep) with a fixed RNG
+  seed for determinism. Target: 30 users, ~400 posts + ~150 replies spread over
+  the last 28 days, engagement (likes/reposts/bookmarks/polls/mentions/
+  hashtags), follows + a few blocks/mutes/private accounts, DMs, lists, badge
+  grants, and real (generated PNG) media attached to posts/profiles.
+- **Seam for the cron**: new `server/internal/seedgen` package (pure `Generate`
+  + DB-writing `Apply`, plus a `Tick` activity-cycle function). `cmd/seed` =
+  bulk initial load; future `cmd/simulate` = one activity tick with `now()`
+  timestamps, scheduled on the EC2 box via systemd/cron →
+  `docker compose run --rm --no-deps --entrypoint /app/simulate api`.
+- **Found constraint**: `post_store.go:261` INSERT can't set `created_at`
+  (DB-default `now()`). **Fix chosen**: honor `post.CreatedAt` in the store via
+  `COALESCE($n, CURRENT_TIMESTAMP)` on both Create INSERTs — app call sites pass a
+  zero value → `NULL` → `now()`, unchanged behavior; the seed sets it for
+  backdating. No migration/model change needed. See spec §"Backdating posts".
+
+## Files touched
+
+- `docs/superpowers/specs/2026-08-19-seed-strategy-design.md` (new, the spec)
+
+## Reviewer double-checks
+
+- Spec only — no code. The store `created_at` fix choice is resolved (COALESCE
+  on both Create INSERTs, §"Backdating posts"); when implementing, confirm the
+  two app call sites still pass a zero `CreatedAt`.
+- The `cmd/simulate` binary: implement now (prove the seam) or defer — open
+  question flagged in the spec.
+- No migration was added → no version-collision risk from this branch.
+- When implemented, verify a wiped-volume boot seeds automatically and re-boots
+  no-op quickly.
+
+---
+
 # SUMMARY — chat-ui-fixes
 
 Three small UI fixes: long DM messages now wrap instead of overflowing into a
