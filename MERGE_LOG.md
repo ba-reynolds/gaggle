@@ -2,6 +2,36 @@
 
 Running log of agent-branch merges into main. Newest on top.
 
+## 2026-08-18 — agent/move-themes-to-settings
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md`, `.opencode/project-notes.md` — kept **every** section from both
+    sides, newest on top.
+- `web/src/layout/SocialMediaLayout.tsx`, `ThemeCustomizer.tsx`,
+  `ThemeContext.tsx`, `theme-themes.css` auto-merged cleanly.
+
+## 2026-08-18 — agent/message-gradient
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md`, `.opencode/project-notes.md` — kept **every** section from both
+    sides, newest on top.
+- `web/src/index.css`, `web/src/pages/ConversationPage.tsx` auto-merged cleanly.
+
+## 2026-08-18 — agent/detailed-search-filters
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md`, `.opencode/project-notes.md` — kept **every** section from both
+    sides, newest on top.
+  - `server/internal/handlers/integration_test.go` — both sides added tests
+    (`TestMentionsFeed` from main, `TestSearchFilters` from the branch); kept
+    **both** test functions.
+  - `web/src/hooks/useSearch.ts` — combined both import lists (`getMentionsFeed`
+    retained, `type PostSearchFilters` added).
+- Migration duplicate check clean after merge.
+
 ## 2026-08-18 — agent/pin-unpin-timeline-bug
 
 - Status: **conflicted**
