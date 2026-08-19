@@ -142,7 +142,7 @@ export default function SocialMediaLayout({
 
 
                 <Button
-                  className="w-full rounded-full mt-4 flex items-center justify-center md:w-14 md:h-14 md:px-0 lg:w-full lg:h-auto lg:py-6"
+                  className="w-full rounded-full mt-4 flex items-center justify-center md:w-14 md:h-14 md:px-0 md:mx-auto lg:w-full lg:h-auto lg:py-6 lg:mx-0"
                   onClick={() => setIsComposing(true)}
                 >
                   <PenSquare className="h-5 w-5 hidden md:block lg:hidden" />
