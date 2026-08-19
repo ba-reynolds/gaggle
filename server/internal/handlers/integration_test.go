@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strconv"
 	"testing"
 	"time"
@@ -582,6 +583,99 @@ func TestSearchHashtagsAndTrends(t *testing.T) {
 	}))
 	if len(trends) == 0 || trends[0]["name"] == nil {
 		t.Fatalf("trends = %v, expected hashtag data", trends)
+	}
+}
+
+func TestSearchFilters(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+	tokenA := app.RegisterUser(t, "filteruser", "filteruser@example.com")
+	tokenB := app.RegisterUser(t, "filterother", "filterother@example.com")
+	tokenViewer := app.RegisterUser(t, "filterviewer", "filterviewer@example.com")
+
+	createPost := func(token string, body map[string]any) int {
+		rec, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{
+			Method: http.MethodPost,
+			Path:   "/api/v1/posts/",
+			Token:  token,
+			Body:   body,
+		}))
+		return int(rec["id"].(float64))
+	}
+
+	postA := createPost(tokenA, map[string]any{"content": "alpha kayak riverboat"})
+	postB := createPost(tokenA, map[string]any{"content": "beta kayak riverboat #Golang"})
+	postC := createPost(tokenB, map[string]any{"content": "gamma kayak riverboat"})
+	postD := createPost(tokenB, map[string]any{"content": "delta kayak riverboat", "parent_id": postA})
+
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/posts/" + itoa(postB) + "/like", Token: tokenViewer}); rec.Code != http.StatusOK {
+		t.Fatalf("like postB: status %d body %s", rec.Code, rec.Body.String())
+	}
+
+	// Attach media to postB directly (the has_media filter checks post_media rows).
+	mediaUUID := "11111111-1111-1111-1111-111111111111"
+	if _, err := app.DB.Exec(`INSERT INTO media (media_uuid, mime_type, filename) VALUES ($1, 'image/png', 'b.png')`, mediaUUID); err != nil {
+		t.Fatalf("insert media: %v", err)
+	}
+	if _, err := app.DB.Exec(`INSERT INTO post_media (post_id, media_uuid, position, alt_text) VALUES ($1, $2, 1, '')`, postB, mediaUUID); err != nil {
+		t.Fatalf("insert post_media: %v", err)
+	}
+
+	search := func(path string) []any {
+		rec, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{
+			Method: http.MethodGet,
+			Path:   path,
+			Token:  tokenViewer,
+		}))
+		items, _ := rec["items"].([]any)
+		return items
+	}
+	hasID := func(items []any, id int) bool {
+		for _, it := range items {
+			if int(it.(map[string]any)["id"].(float64)) == id {
+				return true
+			}
+		}
+		return false
+	}
+
+	if items := search("/api/v1/search?q=kayak&type=posts"); len(items) != 3 || !hasID(items, postA) || !hasID(items, postB) || !hasID(items, postC) || hasID(items, postD) {
+		t.Fatalf("base search items = %v, want A,B,C (no replies)", items)
+	}
+	if items := search("/api/v1/search?q=kayak&type=posts&from=filteruser"); len(items) != 2 || !hasID(items, postA) || !hasID(items, postB) {
+		t.Fatalf("from filter items = %v, want A,B", items)
+	}
+	if items := search("/api/v1/search?q=kayak&type=posts&hashtag=golang"); len(items) != 1 || !hasID(items, postB) {
+		t.Fatalf("hashtag filter items = %v, want B", items)
+	}
+	if items := search("/api/v1/search?q=kayak&type=posts&has_media=true"); len(items) != 1 || !hasID(items, postB) {
+		t.Fatalf("has_media filter items = %v, want B", items)
+	}
+	if items := search("/api/v1/search?q=kayak&type=posts&min_likes=1"); len(items) != 1 || !hasID(items, postB) {
+		t.Fatalf("min_likes filter items = %v, want B", items)
+	}
+	if items := search("/api/v1/search?q=kayak&type=posts&include_replies=true"); len(items) != 4 || !hasID(items, postD) {
+		t.Fatalf("include_replies filter items = %v, want A,B,C,D", items)
+	}
+	if items := search("/api/v1/search?q=kayak&type=posts&from=filterother&min_likes=1"); len(items) != 0 {
+		t.Fatalf("combined from+min_likes items = %v, want none", items)
+	}
+
+	yesterday := url.QueryEscape(time.Now().UTC().Add(-24 * time.Hour).Format(time.RFC3339))
+	tomorrow := url.QueryEscape(time.Now().UTC().Add(24 * time.Hour).Format(time.RFC3339))
+
+	if items := search("/api/v1/search?q=kayak&type=posts&since=" + yesterday); len(items) != 3 {
+		t.Fatalf("since filter items = %v, want A,B,C", items)
+	}
+	if items := search("/api/v1/search?q=kayak&type=posts&until=" + yesterday); len(items) != 0 {
+		t.Fatalf("until filter items = %v, want none", items)
+	}
+	if items := search("/api/v1/search?q=kayak&type=posts&since=" + yesterday + "&until=" + tomorrow); len(items) != 3 {
+		t.Fatalf("since+until filter items = %v, want A,B,C", items)
+	}
+
+	rec := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/search?q=kayak&type=posts&since=not-a-date", Token: tokenViewer})
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("invalid since status = %d, want 400 (body %s)", rec.Code, rec.Body.String())
 	}
 }
 

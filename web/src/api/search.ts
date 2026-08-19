@@ -1,10 +1,30 @@
 import api from '@/lib/api';
 import type { Envelope, PaginatedFeedResponse, Post, Trend, UserProfileResponse } from '@/types/api';
 
-export const searchPosts = async (query: string, cursor?: string): Promise<Envelope<PaginatedFeedResponse<Post>>> => {
-  const response = await api.get<Envelope<PaginatedFeedResponse<Post>>>('/search', {
-    params: { q: query, type: 'posts', cursor, limit: 20 },
-  });
+export interface PostSearchFilters {
+  from?: string;
+  hashtag?: string;
+  media?: boolean;
+  minLikes?: number;
+  includeReplies?: boolean;
+  since?: string;
+  until?: string;
+}
+
+export const searchPosts = async (
+  query: string,
+  filters: PostSearchFilters = {},
+  cursor?: string
+): Promise<Envelope<PaginatedFeedResponse<Post>>> => {
+  const params: Record<string, string | number> = { q: query, type: 'posts', cursor: cursor ?? '', limit: 20 };
+  if (filters.from) params.from = filters.from;
+  if (filters.hashtag) params.hashtag = filters.hashtag;
+  if (filters.media) params.has_media = 'true';
+  if (filters.minLikes !== undefined && filters.minLikes > 0) params.min_likes = filters.minLikes;
+  if (filters.includeReplies) params.include_replies = 'true';
+  if (filters.since) params.since = filters.since;
+  if (filters.until) params.until = filters.until;
+  const response = await api.get<Envelope<PaginatedFeedResponse<Post>>>('/search', { params });
   return response.data;
 };
 

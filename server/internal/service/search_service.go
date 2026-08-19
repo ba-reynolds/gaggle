@@ -21,12 +21,15 @@ func NewSearchService(st *store.Store, logger *slog.Logger, cfg config.AppConfig
 	return &SearchService{store: st, logger: logger, config: cfg}
 }
 
-func (s *SearchService) Posts(ctx context.Context, viewerID int, query string, limit int, cursor string) (*models.PostFeed, error) {
+func (s *SearchService) Posts(ctx context.Context, viewerID int, query string, filters models.PostSearchFilters, limit int, cursor string) (*models.PostFeed, error) {
 	query = strings.TrimSpace(query)
 	if query == "" {
 		return nil, apperrors.BadRequestError("search query is required", nil)
 	}
-	feed, err := s.store.Posts.Search(ctx, query, s.normalizeLimit(limit), cursor)
+	if filters.Since != nil && filters.Until != nil && !filters.Until.After(*filters.Since) {
+		return nil, apperrors.BadRequestError("until must be after since", nil)
+	}
+	feed, err := s.store.Posts.Search(ctx, query, filters, s.normalizeLimit(limit), cursor)
 	if err != nil {
 		s.logger.Error("post search failed", "error", err)
 		return nil, err
