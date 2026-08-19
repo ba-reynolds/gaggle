@@ -1,3 +1,89 @@
+# SUMMARY — poll-question-trending
+
+Two changes: (1) the poll's "question" no longer has its own composer field —
+the post text box IS the question — and (2) the right-rail Trending box now
+actually shows data and its "Show more" button works.
+
+## Poll question lives in the post text box
+
+**What was changed and why**
+
+- `web/src/components/ComposeContent.tsx`: removed the separate "Poll question"
+  input and its `pollQuestion` state. The submit payload now sends
+  `poll.question = text` (the main text box). The submit button is disabled
+  when a poll is enabled but the text box is empty, since the question must
+  be written there.
+- `server/internal/service/post_service.go`: `PostService.Create` now echoes
+  the post content into `poll.question` instead of trusting the request body,
+  so the stored question always mirrors the text box regardless of client.
+  `validatePoll` dropped the 140-char cap (the post text has no such limit)
+  and keeps only the non-empty check (which rejects media-only polls, e.g.
+  image + poll + blank text).
+- `web/src/components/PollCard.tsx`: removed the question line from the card —
+  the post content above the card already renders it — leaving the vote count
+  top-right.
+- `server/internal/handlers/integration_test.go`: added an assertion that the
+  stored poll `question` equals the post content ("pick one", not the "Which?"
+  sent in the request body).
+
+## Trending box was empty ("No trends yet")
+
+**Root cause** — not a backend bug: `/trends` was returning an empty list
+because the DB had zero hashtag rows. Hashtag syncing only happens in the
+**service layer** (`Hashtags.SyncPost` in `post_service.go`), but the seed
+script (`server/cmd/seed/main.go`) calls `store.Posts.Create` **directly**,
+bypassing the service — so the seeded `#programming #coding` post never
+created `hashtags`/`post_hashtags` rows. With no hashtagged posts in the last
+24h (the trends window), the API honestly returned `[]` and the sidebar showed
+"No trends yet."
+
+**What was changed and why**
+
+- `server/cmd/seed/main.go`: `seedPosts` now calls
+  `store.Hashtags.SyncPost(ctx, tx, post.ID, post.Content)` after creating
+  each top-level and reply post (inside the same transaction, mirroring the
+  service layer). A few seed post texts also gained hashtags (`#sunset #nature`,
+  `#art`, `#fitness`, `#food`, `#music`, `#photography`) so a fresh seed
+  produces a populated trending box instead of a single hashtag.
+- `web/src/layout/SocialMediaLayout.tsx`: the "Show more" button under the
+  Trending box was a link-less placeholder that did nothing — it now navigates
+  to `/explore?tab=trending`.
+- `web/src/pages/ExplorePage.tsx`: the Explore page now reads `?tab=trending`
+  from the URL to select the Trending tab (controlled `Tabs`), so deep-linking
+  from the sidebar actually lands on the full trends list.
+
+## Files touched
+
+- `web/src/components/ComposeContent.tsx`
+- `web/src/components/PollCard.tsx`
+- `server/internal/service/post_service.go`
+- `server/internal/handlers/integration_test.go`
+- `server/cmd/seed/main.go`
+- `web/src/layout/SocialMediaLayout.tsx`
+- `web/src/pages/ExplorePage.tsx`
+- `SUMMARY.md` (this section)
+
+## Things a reviewer should double-check
+
+- **Existing (already-seeded) databases** keep showing "No trends yet" until
+  either the DB is wiped + re-seeded, or a user posts with a hashtag. The seed
+  is idempotent and exits early when `alice@example.com` exists, so it will
+  NOT backfill hashtags into an existing DB. This was left as-is deliberately;
+  if instead we want the seed to "touch up" seeded timestamps/hashtags on
+  re-run, that's a follow-up.
+- **Trends are windowed to the last 24 hours** by design
+  (`hashtag_store.go:Trends`). Seeded content ages out after a day; the box
+  returning to "No trends yet" on a quiet instance is expected, not a bug.
+- **Poll question API**: `polls.question` is still stored and serialized
+  (`Poll.question`), now always echoing the post content. Any code that reads
+  `poll.question` expecting a distinct value will see the content instead.
+  The UI no longer renders it.
+- **Poll posts now require text** (submit is disabled / backend rejects empty
+  question). Media-only poll posts (image + poll + no text) are no longer
+  possible — intended, since the text box is the question.
+
+---
+
 # SUMMARY — move-themes-to-settings
 
 Moved every appearance/theme control out of the right-rail "Appearance" box

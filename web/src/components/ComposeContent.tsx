@@ -72,7 +72,6 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [visibility, setVisibility] = useState<Visibility>("Everyone");
   const [pollEnabled, setPollEnabled] = useState(false);
-  const [pollQuestion, setPollQuestion] = useState("");
   const [pollOptions, setPollOptions] = useState(["", ""]);
   const [isUploading, setIsUploading] = useState(false);
   const [currentEditingMedia, setCurrentEditingMedia] = useState<GalleryItem | null>(null);
@@ -101,7 +100,7 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
         }
       }
 
-      const poll = pollEnabled ? { question: pollQuestion, options: pollOptions.filter(Boolean) } : undefined;
+      const poll = pollEnabled ? { question: text, options: pollOptions.filter(Boolean) } : undefined;
       if (handlePostCreation) {
         // Create the post with the media UUIDs
         const response = await createPostMutation.mutateAsync({
@@ -145,7 +144,6 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
       setMediaFiles([]);
       setVisibility("Everyone");
       setPollEnabled(false);
-      setPollQuestion("");
       setPollOptions(["", ""]);
     } catch {
       if (onError) {
@@ -247,7 +245,7 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
 
   // Determine if the submit button should be disabled
   const isSubmitDisabled = 
-    (!text.trim() && mediaItems.length === 0 && !pollEnabled) || 
+    (!text.trim() && (mediaItems.length === 0 || pollEnabled)) || 
     mediaUploadMutation.isPending || 
     createPostMutation.isPending;
 
@@ -385,7 +383,6 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
         </div>
 
         {pollEnabled && !parentId && <div className="mt-3 space-y-2 rounded-xl border border-border p-3">
-          <Input placeholder="Poll question" value={pollQuestion} onChange={(event) => setPollQuestion(event.target.value)} maxLength={140} />
           {pollOptions.map((option, index) => <div key={index} className="flex gap-2">
             <Input placeholder={`Option ${index + 1}`} value={option} onChange={(event) => setPollOptions((current) => current.map((item, itemIndex) => itemIndex === index ? event.target.value : item))} maxLength={100} />
             {pollOptions.length > 2 && <Button type="button" variant="ghost" size="icon" onClick={() => setPollOptions((current) => current.filter((_, itemIndex) => itemIndex !== index))}><X className="h-4 w-4" /></Button>}

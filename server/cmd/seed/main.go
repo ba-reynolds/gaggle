@@ -233,12 +233,12 @@ func seedUserProfiles(ctx context.Context, store *store.Store, log *slog.Logger,
 func seedPosts(ctx context.Context, store *store.Store, log *slog.Logger, users []*models.User) []*models.Post {
 	postContents := []string{
 		"Just finished a great coding session! 🚀 #programming #coding",
-		"Beautiful sunset today! Nature is amazing 🌅",
-		"Working on some new artwork. Can't wait to share the final result! 🎨",
-		"Had an amazing workout today. Feeling energized! 💪",
-		"Cooking up something delicious in the kitchen 👨‍🍳",
-		"New track dropping soon! Stay tuned 🎵",
-		"Captured this amazing moment today 📸",
+		"Beautiful sunset today! Nature is amazing 🌅 #sunset #nature",
+		"Working on some new artwork. Can't wait to share the final result! 🎨 #art",
+		"Had an amazing workout today. Feeling energized! 💪 #fitness",
+		"Cooking up something delicious in the kitchen 👨‍🍳 #food",
+		"New track dropping soon! Stay tuned 🎵 #music",
+		"Captured this amazing moment today 📸 #photography",
 		"Reading an incredible book right now. Highly recommend! 📚",
 		"Great meeting with the team today. Excited about our new project! 👥",
 		"Travel plans are coming together nicely ✈️",
@@ -274,6 +274,14 @@ func seedPosts(ctx context.Context, store *store.Store, log *slog.Logger, users 
 		err = store.Posts.Create(ctx, tx, post)
 		if err != nil {
 			log.Error("failed to create post", "author", users[i].Username, "error", err)
+			tx.Rollback()
+			continue
+		}
+
+		// Sync hashtags so seeded posts actually power /trends (the service
+		// layer does this, but the seed calls the store directly).
+		if err := store.Hashtags.SyncPost(ctx, tx, post.ID, post.Content); err != nil {
+			log.Error("failed to sync hashtags for seeded post", "postID", post.ID, "error", err)
 			tx.Rollback()
 			continue
 		}
@@ -326,6 +334,14 @@ func seedPosts(ctx context.Context, store *store.Store, log *slog.Logger, users 
 		err = store.Posts.Create(ctx, tx, reply)
 		if err != nil {
 			log.Error("failed to create reply", "author", users[authorIndex].Username, "error", err)
+			tx.Rollback()
+			continue
+		}
+
+		// Sync hashtags for parity with top-level posts (replies rarely carry
+		// any, but keeps behavior identical to the service layer).
+		if err := store.Hashtags.SyncPost(ctx, tx, reply.ID, reply.Content); err != nil {
+			log.Error("failed to sync hashtags for seeded reply", "postID", reply.ID, "error", err)
 			tx.Rollback()
 			continue
 		}
