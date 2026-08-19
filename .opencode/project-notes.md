@@ -1,4 +1,11 @@
-## Theme catalog trim + kanagawa light mode (agent/move-themes-to-settings)
+## Profile page action buttons (agent/profile-action-buttons-align)
+- ProfilePage's action row (`<div class="flex justify-end …">`) used to ALWAYS
+  render "Edit profile" and hide it with `visible/invisible` — `visibility:hidden`
+  keeps layout space, so on other users' profiles the invisible ~106px button
+  reserved the rightmost slot and the visible Unfollow/Message/… stopped
+  ~114px short of the right edge (reads as "centered"; overflowed left at ~375px).
+  Fixed: conditionally render `{isCurrentUser && <Button>Edit profile` instead of
+  the invisible placeholder.
 - `THEME_CATALOG` (web/src/contexts/ThemeContext.tsx) is now 15 themes: claude /
   caffeine / perplexity / 9× catppuccin / kanagawa / neobrutalism / comic. The
   `"Classic"` group is gone; `DEFAULT_THEME_ID` is now `"studio-claude"`

@@ -1,3 +1,55 @@
+# SUMMARY — profile-action-buttons-align
+
+Fixes the profile action buttons on someone else's profile (Follow/Unfollow,
+Message, three-dots menu) appearing centered instead of flush right.
+
+## Root cause
+
+`ProfilePage.tsx` always rendered an "Edit profile" button at the end of the
+action-button row and just hid it for other viewers via
+`${isCurrentUser ? "visible" : "invisible"}`. `visibility: hidden` keeps the
+element in the layout, so on any other user's profile the invisible
+~106px-wide "Edit profile" button still occupied the rightmost slot of the
+`flex justify-end` row. The three visible buttons were therefore pushed left
+by that reserved space and stopped ~114px short of the right edge — reading as
+"centered". On narrow screens it also overflowed the avatar/column to the
+left (probe at 375px showed the Unfollow button starting at x=-84 before the
+fix). The invisible button had existed since the original frontend commit
+(git blame `^325aae4`), so the bug was unrelated to the profile-tabs merge.
+
+## Change
+
+`web/src/pages/ProfilePage.tsx`: render the "Edit profile" button only when
+`isCurrentUser` is true (`{isCurrentUser && <Button …>Edit profile</Button>}`)
+instead of always rendering it invisibly. For other users the row now holds
+exactly the visible buttons and `justify-end` lands them flush against the
+container's right edge. Current-user layout is unchanged (still just "Edit
+profile", right-aligned).
+
+## Verification
+
+- Playwright probes (`/profile/bob`, logged in as alice): before the fix the
+  visible buttons ended ~114px short of the row's right edge at every tested
+  viewport; after, the three-dots button ends exactly at the container's
+  right edge at 375 / 640 / 768 / 1024 / 1280 / 1920 px, and the 375px
+  overflow-to-the-left is gone.
+- Self-profile still shows a single right-aligned "Edit profile" button;
+  other-profile has zero "Edit profile" buttons rendered.
+- `npm run lint`: 0 errors (14 pre-existing warnings, none in ProfilePage).
+- `npm run build` (tsc -b + vite): passes.
+
+## Files touched
+
+- `web/src/pages/ProfilePage.tsx`
+
+## Review notes
+
+- No backend, tests, or migrations affected. The `invisible`→conditional
+  swap is the only behavioral change; row height is unchanged (the remaining
+  "Edit profile" / action buttons are the same default height).
+
+---
+
 # SUMMARY — move-themes-to-settings
 
 Moved every appearance/theme control out of the right-rail "Appearance" box
