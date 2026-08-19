@@ -216,6 +216,61 @@ chat UI where the first message is written by the sender.
 
 ---
 
+# SUMMARY — profile-loading-spinner
+
+The profile page (`/profile/:username`) shows a bare "Loading..." text while the
+profile fetch is in flight, instead of the spinning `Loader2` indicator every
+other page uses.
+
+## Root cause
+
+`ProfilePage.tsx` is the only page that renders the `profileLoading` state as
+inline text (`return <div>Loading...</div>`). Every other data-driven page
+(FeedPage, PostPage, HashtagPage, ExplorePage, ConversationPage, the profile
+tabs' `ProfileFeedTab`, …) uses a centered `Loader2 className="h-8 w-8
+animate-spin text-primary"` spinner. The profile's post/reply/media tab loading
+states already used the spinner — only the top-level profile fetch did not.
+
+## Change
+
+`web/src/pages/ProfilePage.tsx`: replaced the plain text with the app-standard
+centered spinner, matching the parent column width:
+
+```jsx
+if (profileLoading) {
+  return (
+    <div className="w-full max-w-4xl mx-auto flex items-center justify-center py-20">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
+}
+```
+
+`Loader2` was already imported. No other behavior changed — the loading
+condition, the "Username not found" guard above it, and everything downstream
+are untouched.
+
+## Files touched
+
+- `web/src/pages/ProfilePage.tsx`
+
+## Verification
+
+- `npm run lint`: 0 errors (the same 14 pre-existing react-refresh warnings as
+  base, none in ProfilePage).
+- `npm run build` (tsc + vite): passes.
+- Frontend-only; no server, tests, or migrations affected.
+
+## Reviewer double-checks
+
+- Centering/padding: `py-20` provides generous vertical spacing consistent with
+  the page's empty/"No posts yet" states; the spinner renders in the same
+  `max-w-4xl` column as the profile header so it doesn't drift horizontally on
+  narrow/mobile widths.
+- `Loader2` already imported at the top of the file — no new dependency added.
+
+---
+
 # SUMMARY — chat-ui-fixes
 
 Three small UI fixes: long DM messages now wrap instead of overflowing into a
