@@ -1,10 +1,12 @@
 ## Goose branding assets (agent/gaggle-goose-branding)
 - `web/` had NO `public/` dir and `index.html` referenced a nonexistent
-  `/vite.svg` → the favicon 404'd before this branch added
-  `web/public/favicon.svg` (goose on orange tile) and `web/public/gaggle-goose.svg`
-  (transparent goose for the sidebar).
-- Both SVGs are full 1024×1024 VTracer path traces (~3.1–3.6MB). Payload size
-  matters → consider re-tracing at lower resolution or a small PNG favicon.
+  `/vite.svg` → the favicon 404'd. This branch now ships
+  `web/public/favicon.ico` (transparent goose, 16/32/48/64 frames, 32KB) +
+  `web/public/gaggle-goose.png` (80×80, 6KB) — generated from the master
+  `goose_max.svg` via `nix develop /home/bau/Programming/svg-img` + `rsvg-convert`
+  + `magick`. Masters (1024×1024 VTracer traces, ~3MB) stay in that folder.
+- Regenerate: `rsvg-convert -w N -h N goose_max.svg -o icon-N.png` then
+  `magick icon-16.png icon-32.png icon-48.png icon-64.png favicon.ico`.
 - Branding "G" logo lived solely in `web/src/layout/SocialMediaLayout.tsx`
   (App Logo block); no other file rendered it.
 - Beware: `glob`/search tools in this setup skip hidden dirs — always check

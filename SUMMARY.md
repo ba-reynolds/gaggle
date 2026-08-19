@@ -6,44 +6,56 @@ goose-themed Gaggle logo, generated previously from `image.jpg`.
 ## What was changed and why
 
 - The app had **no real favicon**: `web/index.html` referenced `/vite.svg`,
-  but there is no `web/public/` directory, so the browser 404'd. Added a
-  `web/public/` dir with two raster-traced SVG logos copied from
-  `/home/bau/Programming/svg-img`:
-  - `web/public/favicon.svg` ← `image_max.svg` (goose + orange `#F86600`
-    background tile) — self-contained, visible in the browser tab on both
-    light and dark themes.
-  - `web/public/gaggle-goose.svg` ← `goose_max.svg` (transparent-background
-    goose) — for the in-app sidebar mark.
-- `web/index.html`: favicon `<link>` now points at `/favicon.svg`.
+  but there was no `web/public/` directory, so the browser 404'd. Added
+  `web/public/` with raster-rendered assets derived from the transparent
+  `goose_max.svg` in `/home/bau/Programming/svg-img`:
+  - `web/public/favicon.ico` — transparent goose, 4 ICO frames (16/32/48/64),
+    rendered with `rsvg-convert` (librsvg) and packed with ImageMagick
+    `magick`. 32KB. (The first pass shipped a 3.6MB SVG trace of the
+    orange-tile `image_max.svg`; per reviewer feedback the favicon switched to
+    the transparent goose and a real `.ico`.)
+  - `web/public/gaggle-goose.png` — transparent goose at 80×80 (2× the 40px
+    sidebar slot → crisp on retina), ~6KB. (Replaced a 3.1MB SVG trace that
+    the sidebar doesn't need.)
+  - The two giant SVG traces (`favicon.svg`, `gaggle-goose.svg`) were deleted
+    — masters remain in `/home/bau/Programming/svg-img`. Total payload for
+    both icon assets went from ~6.7MB to ~38KB.
+- `web/index.html`: favicon `<link>` now points at `/favicon.ico`
+  (`type="image/x-icon"`).
 - `web/src/layout/SocialMediaLayout.tsx` (App Logo block): dropped the
   primary-colored circle + "G" letter glyph and replaced it with an `<img>`
-  of the transparent goose (`w-10 h-10 rounded-full`); the "Gaggle"
-  wordmark text is unchanged.
+  of the transparent goose (`w-10 h-10 rounded-full`); the "Gaggle" wordmark
+  text is unchanged.
 
 ## Files touched
 
-- `web/public/favicon.svg` (new)
-- `web/public/gaggle-goose.svg` (new)
+- `web/public/favicon.ico` (new; generated from `goose_max.svg`)
+- `web/public/gaggle-goose.png` (new; generated from `goose_max.svg`)
+- `web/public/favicon.svg` (removed), `web/public/gaggle-goose.svg` (removed)
 - `web/index.html`
 - `web/src/layout/SocialMediaLayout.tsx`
 
 ## Verification
 
-- `npm run build` (tsc + vite): passes; both SVGs emitted into `dist/`.
+- Generation: `nix develop /home/bau/Programming/svg-img` +
+  `rsvg-convert` + `magick`; ICO frame check via `magick identify`
+  (16/32/48/64, sRGB).
+- `npm run build` (tsc + vite): passes; both assets emitted into `dist/`.
 - `npm run lint`: 0 errors (14 pre-existing warnings, none in
   SocialMediaLayout.tsx).
+- Deployed: `docker compose up --build -d web`; `curl localhost:5173`
+  serves `favicon.ico` (200, 32KB) and `gaggle-goose.png` (200, 6KB);
+  dead SVG paths fall back to index.html (SPA `try_files`).
 
 ## Reviewer double-checks
 
-- Both SVGs are full `1024×1024` VTracer path traces, ~3.1MB
-  (`gaggle-goose.svg`) and ~3.6MB (`favicon.svg`). The sidebar loads the
-  goose SVG on first paint and browsers cache the favicon, but if payload
-  size matters, re-trace at a lower resolution or ship a small PNG favicon.
-- Visual QA: the goose inside `goose_max.svg` is centered with margin, so at
-  40px it renders as a padded icon — confirm the crop/rounding looks right
-  (I could not view rendered images from this session).
-- Confirm the favicon tile looks OK against both light and dark browser
-  tabs.
+- Visual QA (I could not view rendered images from this session): goose is
+  centered in its 1024² canvas with margin, so at 40px the sidebar renders a
+  padded, circular-cropped icon; the transparent `.ico` shows the goose on
+  both light and dark tabs.
+- The favicon is a 32KB ICO — if ever needed bigger (e.g. a PWA manifest),
+  consider a 192/512 PNG or re-anchored SVG, but payload was the explicit
+  concern.
 
 ---
 
