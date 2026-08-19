@@ -736,9 +736,6 @@ func TestSearchFilters(t *testing.T) {
 	}
 }
 
-	}
-}
-
 func TestPostPowerFeatures(t *testing.T) {
 	app := testutil.NewApp(t, testutil.Database(t))
 	tokenA := app.RegisterUser(t, "power_a", "power-a@example.com")
