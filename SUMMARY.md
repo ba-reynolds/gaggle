@@ -1,3 +1,72 @@
+# SUMMARY — move-themes-to-settings
+
+Moved every appearance/theme control out of the right-rail "Appearance" box
+into the existing **Settings → Appearance** card (which already embedded the
+`ThemeCustomizer`), and slimmed the theme catalog down to the curated set
+(Claude, Caffeine, Perplexity, all 9 Catppuccin flavors, Kanagawa, Comic,
+Neo-brutalism) plus the category/editor themes already dropped (Classic,
+other studio-* brands, other editor themes, Sketch, Arcade, Retro Terminal).
+
+## What was changed and why
+
+- **Appearance box removed from the right sidebar**
+  (`web/src/layout/SocialMediaLayout.tsx`): the `<div class="bg-muted …">`
+  "Appearance" card with `<ThemeCustomizer />` was deleted (and its import).
+  All of its controls already live in `SettingsPage`'s Appearance card via
+  the same `<ThemeCustomizer />`, so nothing was lost — the right rail now
+  only has Search / Trending / Who to follow.
+- **Catalog trimmed to the kept list** (`web/src/contexts/ThemeContext.tsx`):
+  `THEME_CATALOG` went from 38 → 15 entries. Kept groups: `Brands`
+  (studio-claude / studio-caffeine / studio-perplexity), `Catppuccin`
+  (all mocha/macchiato/frappe × mauve/blue/peach), `Editor` (icon-kanagawa),
+  `Fun` (fun-neobrutalism / fun-comic). The `"Classic"` group and its 12
+  shadcn schemes are gone, along with the `ThemeDefinition.group` union
+  member.
+- **Empty catalog group removed** (`web/src/components/ThemeCustomizer.tsx`):
+  `groups` no longer renders the empty "Classic" heading.
+- **Default theme repointed** (`ThemeContext.tsx`): `DEFAULT_THEME_ID` was
+  `"slate"` (removed); it is now `"studio-claude"`. `findTheme` falls back to
+  it, so users with a removed theme id in `vite-ui-theme-id` localStorage now
+  resolve to Claude instead of crashing on the non-null assertion.
+- **Dead CSS removed** (`web/src/theme-themes.css`): rewrote the file to
+  retain only the 15 kept themes (light+dark blocks and their scoped
+  overrides), going from 3406 → ~1158 lines. Verified the production build
+  emits no selectors/classes for the dropped themes.
+- **Kanagawa light-mode fix**: Kanagawa only ships its dark wave palette, so
+  in light mode the (dark) sidebar background made the hardcoded
+  `text-gray-800` nav labels ("Home / Explore / …") almost unreadable. Added
+  a light-mode-only override scoped to kanagawa:
+  `:root[data-theme="icon-kanagawa"]:not(.dark) .text-gray-800 { color:
+  var(--sidebar-foreground) }`. It targets only the non-dark state so
+  `dark:text-gray-100` still wins in dark mode.
+
+## Files touched
+
+- `web/src/layout/SocialMediaLayout.tsx` (sidebar Appearance box + import)
+- `web/src/contexts/ThemeContext.tsx` (catalog, group union, default id)
+- `web/src/components/ThemeCustomizer.tsx` (empty group removed)
+- `web/src/theme-themes.css` (kept themes only + kanagawa override)
+- `SUMMARY.md` (this section)
+
+## Things a reviewer should double-check
+
+- **Stored theme ids**: an existing user whose `localStorage["vite-ui-theme-id"]`
+  holds a removed id (e.g. `zinc`) will be silently mapped to Claude on next
+  load — intended, but confirm that's acceptable UX.
+- **Kanagawa light mode**: the override targets the sidebar's nav text only.
+  Other hardcoded colors (e.g. the search input `text-primary`) still derive
+  from theme vars and read fine against the dark bg; verify in the browser.
+- **Catppuccin latte light blocks** were preserved byte-for-byte; no palette
+  values were "fixed" as part of this trim.
+- The Settings appearance card still also has the server-persisted
+  "Theme" (light/dark/system) and "Font Size" selects; those are separate
+  from the `ThemeContext` customizer and were left untouched.
+- Lint + `tsc -b && vite build` pass inside the worktree.
+
+---
+# SUMMARY — refresh-token-rotation
+
+---
 # SUMMARY — message-gradient
 
 DM conversation bubbles now look like the iMessage/Instagram "global gradient"
@@ -396,7 +465,6 @@ hashtag-parallel pieces.
    `models.Envelope` in annotations.
 
 ---# SUMMARY — refresh-token-rotation
-
 Refresh tokens now rotate on every use, sessions are grouped into families,
 and replayed (theft) tokens kill the whole family. Daily-active users are no
 longer logged out on a fixed 15-day-from-login schedule; sessions instead end

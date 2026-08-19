@@ -14,7 +14,7 @@ const FONTS: { id: ThemeFont; label: string }[] = [
 
 const ThemeCustomizer: React.FC = () => {
   const { themeId, setThemeId, font, setFont, radius, setRadius } = useTheme();
-  const groups = ["Classic", "Brands", "Catppuccin", "Editor", "Fun"] as const;
+  const groups = ["Brands", "Catppuccin", "Editor", "Fun"] as const;
 
   return (
     <div className="space-y-4">

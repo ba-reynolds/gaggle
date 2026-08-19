@@ -1,3 +1,18 @@
+## Theme catalog trim + kanagawa light mode (agent/move-themes-to-settings)
+- `THEME_CATALOG` (web/src/contexts/ThemeContext.tsx) is now 15 themes: claude /
+  caffeine / perplexity / 9× catppuccin / kanagawa / neobrutalism / comic. The
+  `"Classic"` group is gone; `DEFAULT_THEME_ID` is now `"studio-claude"`
+  (was `"slate"`, removed). A stored removed id in `localStorage` maps to Claude
+  via `findTheme` fallback.
+- Kanagawa only ships its dark "wave" palette — `:root` (light) == `.dark`. Nav
+  labels are hardcoded `text-gray-800 dark:text-gray-100`, so kanagawa light mode
+  needed an override: `:root[data-theme="icon-kanagawa"]:not(.dark) .text-gray-800
+  { color: var(--sidebar-foreground) }`. Scoped to `:not(.dark)` so it can never
+  shadow `dark:text-gray-100`.
+- The right-rail "Appearance" card was removed; appearance controls live only in
+  Settings → Appearance. Theme CSS went from 3406 → ~1158 lines (dead themes
+  deleted). Build output confirmed no dropped-theme selectors remain.
+
 ## DM bubbles: global gradient via background-attachment: fixed
 - Every outgoing/incoming conversation bubble (`ConversationPage.tsx`) paints
   ONE `--chat-gradient` (composed from per-theme `--chart-2/1/4/5`) with
