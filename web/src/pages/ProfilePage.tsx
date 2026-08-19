@@ -258,6 +258,14 @@ const ProfilePage: React.FC = () => {
           {!isCurrentUser && (
             <>
               <Button
+                variant="outline"
+                className="text-foreground"
+                onClick={() => navigate(`/messages?user=${encodeURIComponent(safeUsername)}`)}
+              >
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Message
+              </Button>
+              <Button
                 variant={profile?.is_following ? "outline" : "default"}
                 className={profile?.is_following ? "text-foreground" : ""}
                 onClick={handleFollowToggle}
@@ -274,14 +282,6 @@ const ProfilePage: React.FC = () => {
                     Follow
                   </>
                 )}
-              </Button>
-              <Button
-                variant="outline"
-                className="text-foreground"
-                onClick={() => navigate(`/messages?user=${encodeURIComponent(safeUsername)}`)}
-              >
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Message
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
