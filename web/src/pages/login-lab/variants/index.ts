@@ -4,6 +4,7 @@ import { Glassmorphism } from './Glassmorphism';
 import { CenteredBrand } from './CenteredBrand';
 import { Minimal } from './Minimal';
 import { StepFlow } from './StepFlow';
+import { SplitStepFlow } from './SplitStepFlow';
 
 export interface LoginVariant {
   id: string;
@@ -20,6 +21,13 @@ export const loginVariants: LoginVariant[] = [
     description: 'Brand panel on one side, form on the other.',
     Category: 'Style',
     Component: SplitPanel,
+  },
+  {
+    id: 'split-step-flow',
+    name: 'Split step flow',
+    description: 'Split panel layout with one-field-at-a-time steps.',
+    Category: 'Style',
+    Component: SplitStepFlow,
   },
   {
     id: 'glassmorphism',

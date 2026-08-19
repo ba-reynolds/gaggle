@@ -1,3 +1,24 @@
+# SUMMARY — login-experiments (follow-up: SplitStepFlow)
+
+Adds a sixth variant to the login lab: **SplitStepFlow** — the SplitPanel
+visual frame (gradient brand panel with tagline + feature list on the left,
+form column on the right) combined with the StepFlow interaction (identifier
+first, then password; progress dots; back button; per-field validation).
+Same `useLoginFlow` hook; registered in `variants/index.ts` under Style,
+right after split-panel (`?v=split-step-flow`).
+
+Verified: lint 0 errors, build passes, and a headless render of the live
+`:5173` container shows the brand panel, identifier→password advance, back
+button, and short-password inline error (no navigation). Rebuilt `gaggle-web`
+so it's visible at `http://localhost:5173/login-lab`.
+
+## Files touched (this follow-up)
+
+- `web/src/pages/login-lab/variants/SplitStepFlow.tsx` (new)
+- `web/src/pages/login-lab/variants/index.ts` (register variant)
+
+---
+
 # SUMMARY — login-experiments
 
 Frontend-only "login lab" for experimenting with login page designs: a new
