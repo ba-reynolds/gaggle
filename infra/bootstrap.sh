@@ -48,11 +48,10 @@ for _ in $(seq 1 30); do
   sleep 2
 done
 if ! blkid "$DATA_DEV" >/dev/null 2>&1; then
-  echo ">> data volume $DATA_DEV never appeared; continuing on root volume" >&2
+  echo ">> data volume $DATA_DEV never appeared; aborting bootstrap (fix the EBS attach and re-run)" >&2
+  exit 1
 fi
-if ! blkid "$DATA_DEV" >/dev/null 2>&1; then
-  mkfs -t xfs "$DATA_DEV"
-fi
+mkfs -t xfs "$DATA_DEV"
 mkdir -p "$DATA_MOUNT"
 grep -q "$DATA_MOUNT" /etc/fstab || echo "$DATA_DEV $DATA_MOUNT xfs defaults,noatime 0 2" >> /etc/fstab
 mountpoint -q "$DATA_MOUNT" || mount -a
