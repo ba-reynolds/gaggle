@@ -172,7 +172,8 @@ The `public_ip` output is the box; set it as the `DEPLOY_HOST` secret.
    Docker, EBS format) to finish on the box. Then repo → **Actions** →
    **Deploy** → **Run workflow** (on `main`).
 
-6. **Smoke test** — browse `http://<public_ip>`; sign up a test user; post with
+6. **Smoke test** — browse `http://<public_ip>` (or `https://<public_ip>` —
+   accept the self-signed cert warning); sign up a test user; post with
    media; then on the box `docker compose -f /srv/gaggle/compose.yaml -f
    /srv/gaggle/compose.prod.yaml restart` and confirm posts + media persist
    (they're EBS-backed).
@@ -191,11 +192,45 @@ missing (check the run's log for `DEPLOY_HOST secret not set`).
 | `GAGGLE_DB_USER` | e.g. `gaggle` |
 | `GAGGLE_DB_PASSWORD` | Long random string |
 | `GAGGLE_DEPLOY_KEY` | Private half of a **GitHub repo deploy key** (Settings → Deploy keys, read-only) registered on `ba-reynolds/gaggle` — the box checks the repo out with it. Its public half is NOT the `deploy_public_key` baked into the box's bootstrap; that keypair is only for GitHub Actions SSHing in as `deploy@` |
+| `GAGGLE_HTTPS_DOMAIN` (optional) | Domain pointing at the box's public IP; enables the certbot service to provision a real Let's Encrypt cert on 443. Omit/empty to keep the self-signed fallback. |
 
 **First deploy + smoke test:** trigger `workflow_dispatch` on the Deploy
-workflow, then verify: `ssh deploy@<ip> docker compose -f /srv/gaggle/compose.yaml -f /srv/gaggle/compose.prod.yaml ps` shows db/redis/api/web up; browse `http://<ip>`; sign up a test user; post with media; `docker compose restart` and confirm posts + media persist (EBS-backed).
+workflow, then verify: `ssh deploy@<ip> docker compose -f /srv/gaggle/compose.yaml -f /srv/gaggle/compose.prod.yaml ps` shows db/redis/api/web up; browse `http://<ip>`; sign up a test user; post with media; `docker compose restart` and confirm posts + media persist (EBS-backed). HTTPS on 443 is live (self-signed cert) from the start.
 
-**Current limitations (pilot):** served over plain HTTP — auth cookies and the
-refresh-token cookie travel in cleartext and `COOKIE_SECURE` is `false`. Buy a
-domain and this moves to TLS (ACM cert + nginx + `COOKIE_SECURE=true`) as a
-follow-up. db/redis are not exposed outside the box.
+**Current state:** the app is served over TLS. The box serves **HTTPS on
+port 443** (already open in the security group + host firewall) using a
+self-signed certificate by default, so `https://<public-ip>` works from any
+browser (it will show one warning until you accept the cert). Plain **HTTP
+on port 80** still works, which the ACME (Let's Encrypt) HTTP-01 validation
+uses, and keeps the box reachable while no domain exists.
+
+**Buying a domain → real cert (minimal changes):**
+
+1. Point a DNS **A record** at the box's public IP (any registrar — no extra
+   AWS setup needed).
+2. Set the `GAGGLE_HTTPS_DOMAIN` GitHub secret to your domain (e.g.
+   `gaggle.example.com`) and deploy. Alternatively run the certbot image once
+   on the box directly (see below). The compose `certbot` service auto-runs
+   `certbot certonly --webroot` on start and renews on a 12h loop.
+3. Once the cert is issued, nginx serves the real cert on 443 (the
+   self-signed fallback is only used when no cert exists yet).
+4. Optional but recommended: switch health checks / traffic to HTTPS only and
+   add an HTTP→HTTPS redirect in `web/nginx.conf` (out of scope to keep HTTP
+   working during the no-domain pilot).
+
+Manual one-shot issuance on the box (if you skipped the GitHub secret):
+
+```bash
+ssh deploy@<ip>
+cd /srv/gaggle
+docker compose run --rm certbot \
+  certbot certonly --cert-name gaggle --webroot -w /var/www/certbot \
+  -d gaggle.example.com --non-interactive --agree-tos -m you@example.com
+docker compose restart web certbot
+```
+
+Renewals run automatically on the 12h loop; after a renewal the `web`
+container needs a reload to serve the new cert, e.g.
+`docker compose restart web` (also applied on every deploy).
+
+db/redis are not exposed outside the box.

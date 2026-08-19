@@ -3,9 +3,13 @@
 #
 # Differences from local dev:
 #   - db/redis ports are REMOVED (reachable only on the compose network)
-#   - web publishes host port 80 (set WEB_PORT=80 via /srv/gaggle/.env)
+#   - web publishes host ports 80 (HTTP) and 443 (HTTPS)
 #   - APP_ENV=production enables the config fail-fast so a leaked dev
 #     JWT_SECRET / DB_PASSWORD prevents the api from booting.
+#   - COOKIE_SECURE=true because production serving is over TLS (443). Do NOT
+#     flip this unless HTTPS is actually in front of the api.
+#   - certbot service provisions real Let's Encrypt certs once HTTPS_DOMAIN
+#     is set (see deploy/README.md)
 name: gaggle
 
 services:
@@ -19,4 +23,55 @@ services:
     ports: !reset []
     environment:
       APP_ENV: production
-      COOKIE_SECURE: "false"
+      COOKIE_SECURE: "true"
+
+  web:
+    # Production publishes 80 + 443 for this service. The actual host ports
+    # come from the box's .env (WEB_PORT=80 / WEB_HTTPS_PORT=443, written by
+    # deploy/apply.sh) and are interpolated by the base compose.yaml — so the
+    # prod override doesn't re-declare ports (avoids list-merge surprises).
+    # 443 serves TLS, 80 stays for ACME HTTP-01 validation + http://<ip>
+    # access while no domain/real cert exists.
+
+  # Provisions HTTPS credentials via Let's Encrypt once a domain points at
+  # the box. HTTPS_DOMAIN is optional: until set, this container just waits,
+  # but the ACME webroot volume (shared with web) is already in place so
+  # certbot's HTTP-01 validation works the moment a domain is configured.
+  #
+  # The letsencrypt volume must be mounted at the SAME path (/etc/letsencrypt)
+  # in both web and certbot so nginx sees everything certbot writes (live/ AND
+  # archive/ — certbot's live/gaggle entries are symlinks into archive/).
+  certbot:
+    image: certbot/certbot:latest
+    container_name: gaggle-certbot
+    restart: unless-stopped
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    environment:
+      HTTPS_DOMAIN: ${HTTPS_DOMAIN:-}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        if [ -n "$HTTPS_DOMAIN" ]; then
+          if [ -L /etc/letsencrypt/live/gaggle ]; then
+            # Already certbot-managed: only renew when close to expiry.
+            certbot renew --cert-name gaggle --webroot -w /var/www/certbot --quiet || true
+          else
+            # First issuance (live/gaggle is the self-signed fallback or
+            # absent): force-replace it with the real cert.
+            certbot certonly --cert-name gaggle --webroot -w /var/www/certbot -d "$HTTPS_DOMAIN" --non-interactive --agree-tos --force-renewal || true
+          fi
+          while :; do
+            certbot renew --cert-name gaggle --webroot -w /var/www/certbot --quiet || true
+            sleep 12h
+          done
+        fi
+        exec sleep infinity
+
+volumes:
+  # Same names as the ones declared in compose.yaml (compose merges top-level
+  # declarations across override files), so the web + certbot services share.
+  letsencrypt:
+  certbot_www:

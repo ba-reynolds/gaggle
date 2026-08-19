@@ -102,7 +102,20 @@ services:
       api:
         condition: service_healthy
     ports:
+      # Host port for the frontend (local dev default 5173). Production sets
+      # WEB_PORT=80 / WEB_HTTPS_PORT=443 via .env (see deploy/apply.sh). HTTPS
+      # is always listened on 443 *inside* the container (web/docker-entrypoint.sh
+      # + nginx.conf); publishing the host port is opt-in per environment.
       - "${WEB_PORT:-5173}:80"
+      - "${WEB_HTTPS_PORT:-}:443"
+    volumes:
+      # Holds the TLS cert (self-signed fallback and/or the real certbot
+      # cert) and the certbot ACME webroot, so the 443 listener always has
+      # valid files. The letsencrypt volume must be mounted at the SAME path
+      # (/etc/letsencrypt) in web and certbot — certbot's live/gaggle entries
+      # are symlinks into archive/, so nginx needs the whole tree.
+      - letsencrypt:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
 
   # Local Go toolchain without needing anything installed on the host.
   # Not started by `make dev` (profile "tools"); use it via:
@@ -144,3 +157,5 @@ volumes:
   api_media:
   go_mod_cache:
   npm_cache:
+  letsencrypt:
+  certbot_www:

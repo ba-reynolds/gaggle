@@ -55,6 +55,8 @@ DB_USER=$GAGGLE_DB_USER
 DB_PASSWORD=$GAGGLE_DB_PASSWORD
 JWT_SECRET=$GAGGLE_JWT_SECRET
 WEB_PORT=80
+WEB_HTTPS_PORT=443
+HTTPS_DOMAIN=${GAGGLE_HTTPS_DOMAIN:-}
 EOF
 }
 
@@ -66,7 +68,9 @@ deploy() {
 
 health_check() {
   docker compose -f compose.yaml -f compose.prod.yaml ps --status running api web > /dev/null
-  curl -fsS http://localhost/swagger/doc.json > /dev/null
+  # TLS is self-signed until a real cert is issued, so curl skips
+  # verification for the HTTPS health check.
+  curl -kfsS https://localhost/swagger/doc.json > /dev/null
 }
 
 main() {

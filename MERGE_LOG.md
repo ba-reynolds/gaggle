@@ -2,6 +2,17 @@
 
 Running log of agent-branch merges into main. Newest on top.
 
+## 2026-08-19 — agent/enable-https
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `.opencode/project-notes.md` — kept **every** section from both sides,
+    newest on top (enable-https → login-experiments → base), `---` separated.
+- `SUMMARY.md` auto-merged cleanly; real code (compose, nginx, Dockerfile,
+  deploy scripts, workflows, README, Makefile, `.env.example`) auto-merged
+  cleanly. Migration duplicate check clean after merge. No DB migrations on
+  this branch (infra only).
+
 ## 2026-08-19 — agent/seed-data-strategy
 
 - Status: **conflicted** (spec-only branch, no code)
