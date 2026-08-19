@@ -16,6 +16,7 @@ services:
     ports: !reset []
 
   api:
+    ports: !reset []
     environment:
       APP_ENV: production
       COOKIE_SECURE: "false"

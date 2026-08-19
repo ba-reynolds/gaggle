@@ -129,6 +129,10 @@ nix shell nixpkgs#terraform --command terraform plan
 nix shell nixpkgs#terraform --command terraform apply
 ```
 
+Commit `infra/.terraform.lock.hcl` once it appears after `terraform init`
+(provider version pinning). After `terraform apply`, add the GitHub secrets
+from the table below before triggering the first `workflow_dispatch` deploy.
+
 The `public_ip` output is the box; set it as the `DEPLOY_HOST` secret.
 
 **GitHub secrets required** (Settings → Secrets and variables → Actions):

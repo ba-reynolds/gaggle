@@ -27,7 +27,8 @@ GAGGLE_DB_USER="${GAGGLE_DB_USER:-gaggle}"
 install_git_access() {
   mkdir -p "$SSH_DIR"
   chmod 700 "$SSH_DIR"
-  printf '%s\n' "$GAGGLE_DEPLOY_KEY" > "$SSH_DIR/id_deploy"
+  # GAGGLE_DEPLOY_KEY arrives base64-encoded (single line) and is decoded here.
+  printf '%s\n' "$GAGGLE_DEPLOY_KEY" | base64 -d > "$SSH_DIR/id_deploy"
   chmod 600 "$SSH_DIR/id_deploy"
   export GIT_SSH_COMMAND="ssh -i $SSH_DIR/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
   ssh-keyscan -H github.com >> "$SSH_DIR/known_hosts" 2>/dev/null || true

@@ -40,6 +40,16 @@ dnf install -y fail2ban
 systemctl enable --now fail2ban
 
 echo ">> mounting data volume at /data"
+# The EBS volume attaches after user-data starts (aws_volume_attachment runs
+# post-instance); wait for it so blkid doesn't abort bootstrap on cold start.
+echo ">> waiting for data volume $DATA_DEV"
+for _ in $(seq 1 30); do
+  blkid "$DATA_DEV" >/dev/null 2>&1 && break
+  sleep 2
+done
+if ! blkid "$DATA_DEV" >/dev/null 2>&1; then
+  echo ">> data volume $DATA_DEV never appeared; continuing on root volume" >&2
+fi
 if ! blkid "$DATA_DEV" >/dev/null 2>&1; then
   mkfs -t xfs "$DATA_DEV"
 fi

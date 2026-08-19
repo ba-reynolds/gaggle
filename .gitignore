@@ -33,3 +33,12 @@ agent-branch/
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
+
+# AWS / Terraform
+infra/.terraform/
+infra/terraform.tfvars
+infra/terraform.tfvars.*
+infra/terraform.tfstate
+infra/terraform.tfstate.*
+!infra/terraform.tfvars.example
+!infra/*.tf
