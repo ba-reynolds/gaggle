@@ -2,6 +2,75 @@
 
 Running log of agent-branch merges into main. Newest on top.
 
+## 2026-08-18 — agent/trim-theme-catalog
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md`, `.opencode/project-notes.md` — kept **every** section from both
+    sides, newest on top.
+- `web/src/contexts/ThemeContext.tsx`, `theme-themes.css`, `ThemeCustomizer.tsx`
+  auto-merged cleanly. Migration duplicate check clean after merge.
+
+## 2026-08-18 — agent/profile-action-buttons-align
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md`, `.opencode/project-notes.md` — kept **every** section from both
+    sides, newest on top.
+- `web/src/pages/ProfilePage.tsx` auto-merged cleanly. Migration duplicate check
+  clean after merge.
+
+## 2026-08-18 — agent/poll-question-trending
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md` — kept **every** section from both sides, newest on top.
+  (This merge surfaced that the earlier `fuzzy-search-results` merge had left
+  stray conflict markers in `SUMMARY.md` and dropped the base sections; fixed
+  afterward by reconstructing `SUMMARY.md` from branch sources — see the
+  `fuzzy-search-results` entry below.)
+- `server/internal/handlers/integration_test.go`, `post_service.go`,
+  `web/src/components/ComposeContent.tsx` auto-merged cleanly. Migration
+  duplicate check clean after merge.
+
+## 2026-08-18 — agent/fuzzy-search-results
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md` — kept **every** section from both sides, newest on top.
+  - NOTE: the branch's `SUMMARY.md` contained only its own section (base
+    stripped), and the first-pass resolution left stray conflict markers +
+    dropped the base sections. Reconstructed `SUMMARY.md` from branch sources
+    (poll, fuzzy, bookmark, account sections on top + the intact pre-merge
+    base), keeping every section, newest on top.
+- `.opencode/project-notes.md` and `post_store.go`/`integration_test.go`
+  auto-merged cleanly. Migration duplicate check clean after merge.
+
+## 2026-08-18 — agent/fix-bookmark-like-increments-view
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md` — kept **every** section from both sides, newest on top.
+- `server/internal/handlers/integration_test.go` (both sides' tests retained),
+  `server/internal/store/post_engagement_store.go` auto-merged cleanly.
+  Migration `000019_dedupe-post-views` merged cleanly; duplicate check clean.
+
+## 2026-08-18 — agent/account-and-post-privacy
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md`, `.opencode/project-notes.md` — kept **every** section from both
+    sides, newest on top.
+  - `server/cmd/migrate/migrations/000017_add-refresh-token-session.{up,down}.sql`
+    — rename/delete (main had renamed the migration to `000017`; the branch had
+    the redundant pre-rename `000016` copy deleted on the branch). Kept main's
+    `000017` version (content identical), branch's deletion honored.
+- **Migration renumber before merge**: branch added `000017_account-post-privacy`
+  colliding with main's `000017_add-refresh-token-session`. In the branch
+  worktree, dropped the redundant `000016_add-refresh-token-session` copy and
+  renumbered `000017_account-post-privacy` → `000020_account-post-privacy`
+  (`807bc72`) before merging. Migration duplicate check clean after merge.
+
 ## 2026-08-18 — agent/move-themes-to-settings
 
 - Status: **conflicted**
