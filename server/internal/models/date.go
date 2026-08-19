@@ -11,6 +11,12 @@ type Date struct {
 }
 
 func (t *Date) UnmarshalJSON(b []byte) (err error) {
+	// An empty string means "no date set", matching the zero Date used when
+	// the database column is NULL.
+	if string(b) == `""` {
+		t.Time = time.Time{}
+		return nil
+	}
 	date, err := time.Parse(`"2006-01-02"`, string(b))
 	if err != nil {
 		return err

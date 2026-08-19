@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/ba-reynolds/gaggle/internal/apperrors"
 	"github.com/ba-reynolds/gaggle/internal/models"
@@ -17,6 +18,14 @@ const (
 	VisibilityPublic    = "public"
 	VisibilityFollowers = "followers"
 	VisibilityMentions  = "mentions"
+)
+
+// Max lengths mirror the DB columns posts.content VARCHAR(280) and
+// polls.question VARCHAR(140). Enforced rune-aware so an over-long payload
+// gets a 400 instead of a Postgres 500.
+const (
+	maxPostContentLength = 280
+	maxPollQuestionLength = 140
 )
 
 type PostService struct {
@@ -452,6 +461,9 @@ func (s *PostService) Create(ctx context.Context, post *models.Post, mediaItems 
 		)
 		return apperrors.BadRequestError("post content is required", nil)
 	}
+	if err := validateContentLength(post.Content); err != nil {
+		return err
+	}
 	if post.PollPayload != nil {
 		if post.ParentID != nil {
 			return apperrors.BadRequestError("polls are only allowed on top-level posts", nil)
@@ -573,6 +585,9 @@ func (s *PostService) Update(ctx context.Context, post *models.Post, actorID int
 	if strings.TrimSpace(content) == "" {
 		return nil, apperrors.BadRequestError("post content is required", nil)
 	}
+	if err := validateContentLength(content); err != nil {
+		return nil, err
+	}
 	if content == post.Content {
 		return post, nil
 	}
@@ -686,9 +701,20 @@ func (s *PostService) VotePoll(ctx context.Context, postID, optionID, userID int
 	return s.store.Polls.GetForPost(ctx, postID, userID)
 }
 
+// validateContentLength rejects content longer than posts.content VARCHAR(280).
+func validateContentLength(content string) error {
+	if utf8.RuneCountInString(content) > maxPostContentLength {
+		return apperrors.BadRequestError("post content must be 280 characters or fewer", nil)
+	}
+	return nil
+}
+
 func validatePoll(poll *models.CreatePollPayload) error {
 	if strings.TrimSpace(poll.Question) == "" {
 		return apperrors.BadRequestError("poll question is required", nil)
+	}
+	if utf8.RuneCountInString(poll.Question) > maxPollQuestionLength {
+		return apperrors.BadRequestError("poll question must be 140 characters or fewer", nil)
 	}
 	if len(poll.Options) < 2 || len(poll.Options) > 4 {
 		return apperrors.BadRequestError("polls must have between 2 and 4 options", nil)
@@ -696,7 +722,7 @@ func validatePoll(poll *models.CreatePollPayload) error {
 	seen := make(map[string]struct{}, len(poll.Options))
 	for _, option := range poll.Options {
 		option = strings.TrimSpace(option)
-		if option == "" || len(option) > 100 {
+		if option == "" || utf8.RuneCountInString(option) > 100 {
 			return apperrors.BadRequestError("poll options must be between 1 and 100 characters", nil)
 		}
 		if _, exists := seen[strings.ToLower(option)]; exists {
@@ -1025,6 +1051,9 @@ func (s *PostService) QuotePost(ctx context.Context, post *models.Post, mediaIte
 			"operation", "quote_post",
 		)
 		return apperrors.BadRequestError("quote post content is required", nil)
+	}
+	if err := validateContentLength(post.Content); err != nil {
+		return err
 	}
 
 	// Create the quoted post

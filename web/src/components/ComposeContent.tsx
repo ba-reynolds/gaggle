@@ -285,8 +285,13 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
                 void handleSubmit();
               }
             }}
+            maxLength={pollEnabled ? 140 : 280}
             className={`composer-highlight relative w-full border-none resize-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-md ${textareaHeight} bg-transparent`}
           />
+        </div>
+
+        <div className="flex justify-end mt-1">
+          <span className="text-xs text-muted-foreground">{text.length}/{pollEnabled ? 140 : 280}</span>
         </div>
 
         {/* Hidden file input for image/gif selection */}

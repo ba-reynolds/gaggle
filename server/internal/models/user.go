@@ -21,12 +21,12 @@ type User struct {
 
 type UserProfile struct {
 	DisplayName        string    `json:"display_name" validate:"required,min=1,max=50"`
-	Bio                string    `json:"bio" validate:"required,max=160"`
+	Bio                string    `json:"bio" validate:"max=160"`
 	ProfilePictureUUID uuid.UUID `json:"profile_picture_uuid"`
 	BannerUUID         uuid.UUID `json:"banner_uuid"`
 	BirthDate          Date      `json:"birth_date"`
-	Location           string    `json:"location" validate:"min=3,max=30"`
-	Website            string    `json:"website" validate:"min=3,max=50"`
+	Location           string    `json:"location" validate:"max=30"`
+	Website            string    `json:"website" validate:"max=50"`
 	FollowersCount     int       `json:"followers_count"`
 	FollowingCount     int       `json:"following_count"`
 }
