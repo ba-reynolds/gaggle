@@ -20,7 +20,14 @@ RUN npm run build
 
 # ---- runtime stage: nginx serving the built app + reverse proxy to API ----
 FROM nginx:alpine
+RUN apk add --no-cache openssl && rm -f /etc/nginx/conf.d/default.conf
+
+# Replace the stock entrypoint: it first guarantees a TLS cert exists
+# (self-signed fallback unless a real cert is already mounted), then boots
+# nginx. The stock default.conf is removed so only nginx.conf binds :80/:443.
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY docker-entrypoint.sh /docker-entrypoint.sh
 COPY --from=build /app/dist /usr/share/nginx/html
 
-EXPOSE 80
+ENTRYPOINT ["/docker-entrypoint.sh"]
+EXPOSE 80 443

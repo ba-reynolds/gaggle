@@ -7,7 +7,7 @@ dev:
 	docker compose up --build -d
 	@docker compose ps
 	@echo
-	@echo "  Frontend: http://localhost:5173"
+	@echo "  Frontend: http://localhost:5173        (HTTPS on 443: WEB_HTTPS_PORT=8443 make dev)"
 	@echo "  API:      http://localhost:2021   (swagger: /swagger)"
 	@echo "  Seed:     make seed   (creates alice@example.com / password123)"
 	@echo "  Stop:     make dev-stop"

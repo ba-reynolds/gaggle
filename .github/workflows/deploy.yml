@@ -29,6 +29,7 @@ jobs:
           GAGGLE_DB_USER: ${{ secrets.GAGGLE_DB_USER }}
           GAGGLE_DB_PASSWORD: ${{ secrets.GAGGLE_DB_PASSWORD }}
           GAGGLE_DEPLOY_KEY: ${{ secrets.GAGGLE_DEPLOY_KEY }}
+          GAGGLE_HTTPS_DOMAIN: ${{ secrets.GAGGLE_HTTPS_DOMAIN }}
           TARGET_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
@@ -43,8 +44,8 @@ jobs:
           # GAGGLE_DEPLOY_KEY is a multi-line OpenSSH private key; base64 it so
           # the embedded newlines can't execute lines of /tmp/gaggle-env when
           # apply.sh `source`s it (apply.sh base64 -d's it back when writing).
-          printf 'GAGGLE_JWT_SECRET=%s\nGAGGLE_DB_USER=%s\nGAGGLE_DB_PASSWORD=%s\nGAGGLE_DEPLOY_KEY=%s\nTARGET_SHA=%s\n' \
-            "$GAGGLE_JWT_SECRET" "$GAGGLE_DB_USER" "$GAGGLE_DB_PASSWORD" "$(printf '%s' "$GAGGLE_DEPLOY_KEY" | base64 -w0)" "$TARGET_SHA" |
+          printf 'GAGGLE_JWT_SECRET=%s\nGAGGLE_DB_USER=%s\nGAGGLE_DB_PASSWORD=%s\nGAGGLE_DEPLOY_KEY=%s\nGAGGLE_HTTPS_DOMAIN=%s\nTARGET_SHA=%s\n' \
+            "$GAGGLE_JWT_SECRET" "$GAGGLE_DB_USER" "$GAGGLE_DB_PASSWORD" "$(printf '%s' "$GAGGLE_DEPLOY_KEY" | base64 -w0)" "${GAGGLE_HTTPS_DOMAIN:-}" "$TARGET_SHA" |
             ssh -i /tmp/gaggle_deploy_key -o StrictHostKeyChecking=accept-new "deploy@$DEPLOY_HOST" \
               'umask 077; cat > /tmp/gaggle-env'
 

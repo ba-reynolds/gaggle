@@ -1,3 +1,26 @@
+## Enable HTTPS (agent/enable-https)
+- Compose list merge (ports) is **append**, not replace — a prod override that
+  re-declares `ports` dups the dev mappings. `ports: !reset []` DOES work as a
+  standalone key (db/redis) but a YAML mapping can't hold `ports: !reset []`
+  AND `ports: [...]` (duplicate-key parse error), and `- !reset []` as a list
+  element silently no-ops. Cleanest: drive host ports via `.env` interpolation
+  in the BASE file (`WEB_PORT`, `WEB_HTTPS_PORT`) and let the prod override set
+  the env values.
+- certbot's `live/gaggle` is a **symlink into `archive/gaggle`** — any shared
+  volume must mount the WHOLE `/etc/letsencrypt` at the same path in web +
+  certbot or nginx can't follow the symlink.
+- First-issuance gotcha: if the web entrypoint seeds a self-signed fallback
+  and certbot runs `--keep-until-expiring`, the fresh 10yr fallback blocks
+  real issuance forever. First certbot run must use `--force-renewal` (guard:
+  check `[ -L live/gaggle ]` first).
+- The web image ENTRYPOINT is now custom (web/docker-entrypoint.sh: self-signed
+  gen then `exec nginx`); the stock `/docker-entrypoint.d/` envsubst
+  templating does NOT run — nginx conf must stay static (no `$VAR` baked by the
+  image).
+- `COOKIE_SECURE=true` in prod compose means the refresh cookie fails over
+  plain `http://<ip>` (browser rejects Secure cookies on HTTP) — expected,
+  HTTPS is the migration target.
+
 ## Goose branding assets (agent/gaggle-goose-branding)
 - `web/` had NO `public/` dir and `index.html` referenced a nonexistent
   `/vite.svg` → the favicon 404'd. This branch now ships

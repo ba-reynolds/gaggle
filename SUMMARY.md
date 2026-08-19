@@ -1,3 +1,71 @@
+# SUMMARY — enable-https
+
+HTTPS on port 443 without a domain name (self-signed fallback), plus a switch
+that provisions and auto-renews real Let's Encrypt certs the moment a domain
+is pointed at the box (no repo changes needed).
+
+## What was changed and why
+
+- `web/Dockerfile`: runtime stage installs `openssl` and removes the stock
+  `default.conf`; the http/HTTPS config lives in `web/nginx.conf`. EXPOSE 80 443.
+- `web/docker-entrypoint.sh` (new, replaces the stock ENTRYPOINT): before
+  starting nginx, writes a 10-year self-signed cert to
+  `/etc/letsencrypt/live/gaggle/{fullchain,privkey}.pem` **only if it is
+  missing** — so a mounted real cert is never clobbered and the 443 listener
+  always boots. Then runs nginx.
+- `web/nginx.conf`: added a `listen 443 ssl` server block mirroring :80 (SPA,
+  `/api/`, SSE `/api/v1/stream`, `/swagger/`). Both listeners serve the certbot
+  ACME webroot at `/.well-known/acme-challenge/` (root `/var/www/certbot`) for
+  HTTP-01 validation. :80 keeps serving the app so `http://<ip>` keeps working
+  until a domain exists.
+- `compose.yaml`: web gains the shared `letsencrypt` (`/etc/letsencrypt`) +
+  `certbot_www` (`/var/www/certbot`) volumes and optional
+  `"${WEB_HTTPS_PORT:-}:443"` publication (empty = unpublished locally).
+- `compose.prod.yaml`: `COOKIE_SECURE: "true"` (prod is HTTPS now); adds a
+  `certbot` service that issues `/etc/letsencrypt/live/gaggle` via webroot
+  (`--cert-name gaggle`, with `--force-renewal` only when `live/gaggle` is not
+  yet certbot-managed) and renews on a 12h loop. Web host ports come from
+  `.env` interpolation, so this file does not re-declare ports (Compose merges
+  lists by appending, which would duplicate the dev mappings).
+- `deploy/apply.sh` + `deploy/.env.production.template` + `.github/workflows/deploy.yml`:
+  write `WEB_PORT=80`, `WEB_HTTPS_PORT=443`, optional
+  `HTTPS_DOMAIN=${GAGGLE_HTTPS_DOMAIN:-}` to `/srv/gaggle/.env` (new optional
+  GitHub secret). Health check now curls `https://localhost/swagger/doc.json -k`.
+- `.env.example`, `Makefile`, `README.md`: document `WEB_HTTPS_PORT`,
+  `HTTPS_DOMAIN`, the self-signed behavior, and escalation to a real cert.
+
+## Reviewer checkpoints
+
+- certbot `live/gaggle` is a symlink into `archive/gaggle` — the shared volume
+  must be mounted at the SAME `/etc/letsencrypt` path in web and certbot, or
+  nginx cannot follow the link. Don't "optimize" one side to a subpath.
+- The image ENTRYPOINT is now custom (the stock envsubst templating no longer
+  runs); nginx conf is static — keep it that way.
+- First issuance: the self-signed fallback must be force-replaced or certbot's
+  `--keep-until-expiring` would see a fresh 10yr cert and never issue.
+- After a certbot renewal the running nginx serves the old cert until the web
+  container restarts (documented; every deploy restarts web). Deploy-hook
+  reload was considered but the certbot image lacks the docker CLI.
+- `COOKIE_SECURE=true` ⇒ the refresh cookie is only stored over HTTPS;
+  `http://<ip>` logins will now fail with a secure-cookie warning (intended —
+  HTTPS is the migration target).
+
+## Verification
+
+- `docker compose ... config` parses for dev + prod (with and without
+  `HTTPS_DOMAIN`); env-driven `WEB_PORT/ WEB_HTTPS_PORT` publish 80+443 in
+  prod and leave 443 unpublished locally.
+- Built `gaggle-web`; ran it with fresh empty volumes — entrypoint generated the
+  cert, nginx booted, https 200 / http 200, `/.well-known/acme-challenge/*`
+  served from the webroot over both protocols; restart preserved a
+  certbot-style symlinked cert (no regeneration); wiped volume reproduced the
+  fallback.
+- certbot flag set proven via a `--staging --dry-run` invocation (fails only
+  because `example.com` is policy-blocked — external net access not available).
+- `go test ./...` all pass; `npm run build` + `npm run lint` (0 errors).
+
+---
+---
 # SUMMARY — gaggle-goose-branding
 
 Replaces the placeholder Vite favicon and the sidebar "G" text logo with the
