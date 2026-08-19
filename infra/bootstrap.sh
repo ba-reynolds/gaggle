@@ -41,17 +41,21 @@ systemctl enable --now fail2ban
 
 echo ">> mounting data volume at /data"
 # The EBS volume attaches after user-data starts (aws_volume_attachment runs
-# post-instance); wait for it so blkid doesn't abort bootstrap on cold start.
+# post-instance). Probe device-node existence — a blank volume is a valid
+# target for mkfs, so `blkid` (which fails on blank devices) is the WRONG
+# presence probe. Wait for the device node, then format only if unformatted.
 echo ">> waiting for data volume $DATA_DEV"
 for _ in $(seq 1 30); do
-  blkid "$DATA_DEV" >/dev/null 2>&1 && break
+  [ -b "$DATA_DEV" ] && break
   sleep 2
 done
-if ! blkid "$DATA_DEV" >/dev/null 2>&1; then
+if [ ! -b "$DATA_DEV" ]; then
   echo ">> data volume $DATA_DEV never appeared; aborting bootstrap (fix the EBS attach and re-run)" >&2
   exit 1
 fi
-mkfs -t xfs "$DATA_DEV"
+if ! blkid "$DATA_DEV" >/dev/null 2>&1; then
+  mkfs -t xfs "$DATA_DEV"
+fi
 mkdir -p "$DATA_MOUNT"
 grep -q "$DATA_MOUNT" /etc/fstab || echo "$DATA_DEV $DATA_MOUNT xfs defaults,noatime 0 2" >> /etc/fstab
 mountpoint -q "$DATA_MOUNT" || mount -a
