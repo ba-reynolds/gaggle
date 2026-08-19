@@ -25,6 +25,9 @@ dist-ssr/
 !.vscode/extensions.json
 *.sw?
 
+# Agent worktrees (each is its own git checkout)
+agent-branch/
+
 # Logs
 *.log
 npm-debug.log*

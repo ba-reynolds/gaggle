@@ -1,3 +1,18 @@
+## Migrations: parallel-branch version collisions
+- `make new-migration` (`create -seq`) numbers from "highest in THIS branch" —
+  parallel branches from the same base pick the SAME next number → collisions.
+  A collision is often a **git-clean merge** (two different files sharing a
+  version merge without conflict) that then crash-loops the api at boot
+  ("duplicate migration file"). This is the #1 /merge-all failure.
+- **Dup check** (count families per version, NOT files — up+down is normal):
+  `git ls-tree -r --name-only HEAD server/cmd/migrate/migrations/ | sed -E 's|.*/||; s/\.(up|down)\.sql$//' | sort -u | awk -F_ '{c[$1]++} END {for (v in c) if (c[v]>1) print "DUP: " v}'`
+- **Fix at merge**: renumber the incoming branch's file to the next free
+  version (git mv + commit on the branch) BEFORE merging; verify post-merge.
+  See `agent-branch-workflow` skill for the full /merge-all procedure.
+- If master itself has a duplicate, fix it with ONE dedicated branch and merge
+  it first; never let each branch "fix" it independently (they all pick the
+  same replacement number). `/new-task` must verify master is clean first.
+
 ## Migrations & follow lists
 - **Migration 000016 was duplicated on main**: `fix-profile-tabs-and-user-relations`
   merged `000016_add-mute-relationship` while `refresh-token-rotation` merged
