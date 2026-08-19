@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ba-reynolds/gophersocial/internal/apperrors"
-	"github.com/ba-reynolds/gophersocial/internal/models"
-	"github.com/ba-reynolds/gophersocial/pkg/config"
+	"github.com/ba-reynolds/gaggle/internal/apperrors"
+	"github.com/ba-reynolds/gaggle/internal/models"
+	"github.com/ba-reynolds/gaggle/pkg/config"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )

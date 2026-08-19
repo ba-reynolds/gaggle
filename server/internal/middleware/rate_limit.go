@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ba-reynolds/gophersocial/internal/apperrors"
-	"github.com/ba-reynolds/gophersocial/internal/cache"
-	"github.com/ba-reynolds/gophersocial/internal/util"
+	"github.com/ba-reynolds/gaggle/internal/apperrors"
+	"github.com/ba-reynolds/gaggle/internal/cache"
+	"github.com/ba-reynolds/gaggle/internal/util"
 )
 
 // RateLimitMiddleware limits requests per client IP for a given route prefix.

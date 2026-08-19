@@ -10,10 +10,10 @@ import (
 
 	swagger "github.com/swaggo/http-swagger"
 
-	"github.com/ba-reynolds/gophersocial/internal/cache"
-	"github.com/ba-reynolds/gophersocial/internal/handlers"
-	mid "github.com/ba-reynolds/gophersocial/internal/middleware"
-	"github.com/ba-reynolds/gophersocial/internal/service"
+	"github.com/ba-reynolds/gaggle/internal/cache"
+	"github.com/ba-reynolds/gaggle/internal/handlers"
+	mid "github.com/ba-reynolds/gaggle/internal/middleware"
+	"github.com/ba-reynolds/gaggle/internal/service"
 )
 
 // NewRouter creates a new chi router

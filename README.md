@@ -1,4 +1,4 @@
-# GopherSocial
+# Gaggle
 
 A Twitter-like social media app: **Go** (chi + PostgreSQL + Redis) backend and a
 **React + TypeScript + shadcn/ui** (Vite) frontend, served by **nginx**. Single

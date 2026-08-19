@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ba-reynolds/gophersocial/internal/apperrors"
-	"github.com/ba-reynolds/gophersocial/internal/realtime"
-	"github.com/ba-reynolds/gophersocial/internal/service"
-	"github.com/ba-reynolds/gophersocial/internal/util"
+	"github.com/ba-reynolds/gaggle/internal/apperrors"
+	"github.com/ba-reynolds/gaggle/internal/realtime"
+	"github.com/ba-reynolds/gaggle/internal/service"
+	"github.com/ba-reynolds/gaggle/internal/util"
 )
 
 type RealtimeHandler struct {

@@ -1,6 +1,6 @@
 basePath: /api/v1
 definitions:
-  github_com_ba-reynolds_gophersocial_internal_apperrors.AppError:
+  github_com_ba-reynolds_gaggle_internal_apperrors.AppError:
     properties:
       code:
         type: string
@@ -9,19 +9,19 @@ definitions:
       message:
         type: string
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.AppearanceSettings:
+  github_com_ba-reynolds_gaggle_internal_models.AppearanceSettings:
     properties:
       fontSize:
         type: string
       theme:
         type: string
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.Badge:
+  github_com_ba-reynolds_gaggle_internal_models.Badge:
     properties:
       created_at:
         type: string
       criteria:
-        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.BadgeCriteria'
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.BadgeCriteria'
       description:
         type: string
       icon:
@@ -31,18 +31,18 @@ definitions:
       key:
         type: string
       kind:
-        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.BadgeKind'
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.BadgeKind'
       label:
         type: string
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.BadgeCriteria:
+  github_com_ba-reynolds_gaggle_internal_models.BadgeCriteria:
     properties:
       metric:
         type: string
       min:
         type: integer
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.BadgeKind:
+  github_com_ba-reynolds_gaggle_internal_models.BadgeKind:
     enum:
     - earned
     - assigned
@@ -50,7 +50,7 @@ definitions:
     x-enum-varnames:
     - BadgeKindEarned
     - BadgeKindAssigned
-  github_com_ba-reynolds_gophersocial_internal_models.BookmarkCategory:
+  github_com_ba-reynolds_gaggle_internal_models.BookmarkCategory:
     properties:
       color:
         type: string
@@ -67,46 +67,46 @@ definitions:
       user_id:
         type: integer
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.BookmarkCategorySummary:
+  github_com_ba-reynolds_gaggle_internal_models.BookmarkCategorySummary:
     properties:
       id:
         type: integer
       name:
         type: string
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.BookmarkRequest:
+  github_com_ba-reynolds_gaggle_internal_models.BookmarkRequest:
     properties:
       category_id:
         type: integer
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.BookmarkResponse:
+  github_com_ba-reynolds_gaggle_internal_models.BookmarkResponse:
     properties:
       success:
         type: boolean
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.Conversation:
+  github_com_ba-reynolds_gaggle_internal_models.Conversation:
     properties:
       created_at:
         type: string
       id:
         type: integer
       last_message:
-        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Message'
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Message'
       last_message_at:
         type: string
       other_participant:
-        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserAPISummary'
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserAPISummary'
       unread_count:
         type: integer
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.ConversationFeed:
+  github_com_ba-reynolds_gaggle_internal_models.ConversationFeed:
     properties:
       items:
         items:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Conversation'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Conversation'
         type: array
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.CreateBadgePayload:
+  github_com_ba-reynolds_gaggle_internal_models.CreateBadgePayload:
     properties:
       description:
         maxLength: 200
@@ -130,7 +130,7 @@ definitions:
     - key
     - label
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.CreateBookmarkCategoryRequest:
+  github_com_ba-reynolds_gaggle_internal_models.CreateBookmarkCategoryRequest:
     properties:
       color:
         type: string
@@ -141,14 +141,14 @@ definitions:
     required:
     - name
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.CreateBookmarkCategoryResponse:
+  github_com_ba-reynolds_gaggle_internal_models.CreateBookmarkCategoryResponse:
     properties:
       category:
-        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.BookmarkCategory'
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.BookmarkCategory'
       success:
         type: boolean
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.CreateListPayload:
+  github_com_ba-reynolds_gaggle_internal_models.CreateListPayload:
     properties:
       description:
         maxLength: 300
@@ -160,7 +160,7 @@ definitions:
     required:
     - name
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.CreatePollPayload:
+  github_com_ba-reynolds_gaggle_internal_models.CreatePollPayload:
     properties:
       ends_at:
         type: string
@@ -171,39 +171,39 @@ definitions:
       question:
         type: string
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.CreatePostPayload:
+  github_com_ba-reynolds_gaggle_internal_models.CreatePostPayload:
     properties:
       content:
         type: string
       media:
         items:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostMediaRequest'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostMediaRequest'
         type: array
       parent_id:
         type: integer
       poll:
-        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.CreatePollPayload'
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.CreatePollPayload'
       visibility:
         description: |-
           Visibility is one of "public" | "followers" | "mentions". Empty defaults
           to "public" (see PostService.Create).
         type: string
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.Date:
+  github_com_ba-reynolds_gaggle_internal_models.Date:
     properties:
       time.Time:
         type: string
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.Envelope:
+  github_com_ba-reynolds_gaggle_internal_models.Envelope:
     properties:
       data: {}
       error:
-        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.FullPost:
+  github_com_ba-reynolds_gaggle_internal_models.FullPost:
     properties:
       author:
-        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostAuthor'
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostAuthor'
       content:
         type: string
       created_at:
@@ -211,21 +211,21 @@ definitions:
       edited_at:
         type: string
       engagement:
-        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostEngagement'
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostEngagement'
       id:
         type: integer
       is_pinned:
         type: boolean
       media:
         items:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostMedia'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostMedia'
         type: array
       parent:
-        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostParentInfo'
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostParentInfo'
       parent_id:
         type: integer
       poll:
-        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Poll'
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Poll'
       quoted_post_id:
         type: integer
       updated_at:
@@ -237,12 +237,12 @@ definitions:
           users @mentioned in the content).
         type: string
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.LikeResponse:
+  github_com_ba-reynolds_gaggle_internal_models.LikeResponse:
     properties:
       success:
         type: boolean
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.List:
+  github_com_ba-reynolds_gaggle_internal_models.List:
     properties:
       created_at:
         type: string
@@ -259,18 +259,18 @@ definitions:
       owner_username:
         type: string
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.ListMembersResponse:
+  github_com_ba-reynolds_gaggle_internal_models.ListMembersResponse:
     properties:
       has_more:
         type: boolean
       items:
         items:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserProfileResponse'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserProfileResponse'
         type: array
       next_cursor:
         type: string
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.LoginRequest:
+  github_com_ba-reynolds_gaggle_internal_models.LoginRequest:
     properties:
       identifier:
         type: string
@@ -279,19 +279,19 @@ definitions:
     required:
     - identifier
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.LoginResponse:
+  github_com_ba-reynolds_gaggle_internal_models.LoginResponse:
     properties:
       access_token:
         type: string
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.MediaUploadResponse:
+  github_com_ba-reynolds_gaggle_internal_models.MediaUploadResponse:
     properties:
       uuids:
         items:
           type: string
         type: array
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.Message:
+  github_com_ba-reynolds_gaggle_internal_models.Message:
     properties:
       body:
         type: string
@@ -304,22 +304,22 @@ definitions:
       read_at:
         type: string
       sender:
-        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.MessageSender'
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.MessageSender'
       sender_id:
         type: integer
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.MessageFeed:
+  github_com_ba-reynolds_gaggle_internal_models.MessageFeed:
     properties:
       has_more:
         type: boolean
       items:
         items:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Message'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Message'
         type: array
       next_cursor:
         type: string
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.MessageSender:
+  github_com_ba-reynolds_gaggle_internal_models.MessageSender:
     properties:
       display_name:
         type: string
@@ -328,7 +328,7 @@ definitions:
       username:
         type: string
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.NotificationSettings:
+  github_com_ba-reynolds_gaggle_internal_models.NotificationSettings:
     properties:
       email:
         type: boolean
@@ -337,7 +337,7 @@ definitions:
       push:
         type: boolean
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.Poll:
+  github_com_ba-reynolds_gaggle_internal_models.Poll:
     properties:
       closed:
         type: boolean
@@ -347,7 +347,7 @@ definitions:
         type: integer
       options:
         items:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PollOption'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.PollOption'
         type: array
       question:
         type: string
@@ -356,7 +356,7 @@ definitions:
       total_votes:
         type: integer
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.PollOption:
+  github_com_ba-reynolds_gaggle_internal_models.PollOption:
     properties:
       id:
         type: integer
@@ -367,7 +367,7 @@ definitions:
       vote_count:
         type: integer
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.Post:
+  github_com_ba-reynolds_gaggle_internal_models.Post:
     properties:
       content:
         type: string
@@ -392,7 +392,7 @@ definitions:
           users @mentioned in the content).
         type: string
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.PostAuthor:
+  github_com_ba-reynolds_gaggle_internal_models.PostAuthor:
     properties:
       display_name:
         type: string
@@ -401,29 +401,29 @@ definitions:
       username:
         type: string
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.PostChain:
+  github_com_ba-reynolds_gaggle_internal_models.PostChain:
     properties:
       has_more:
         type: boolean
       items:
         items:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.FullPost'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.FullPost'
         type: array
       next_cursor:
         type: string
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.PostDescendants:
+  github_com_ba-reynolds_gaggle_internal_models.PostDescendants:
     properties:
       has_more:
         type: boolean
       items:
         items:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.FullPost'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.FullPost'
         type: array
       next_cursor:
         type: string
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.PostEdit:
+  github_com_ba-reynolds_gaggle_internal_models.PostEdit:
     properties:
       content_before:
         type: string
@@ -432,17 +432,17 @@ definitions:
       id:
         type: integer
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.PostEditHistory:
+  github_com_ba-reynolds_gaggle_internal_models.PostEditHistory:
     properties:
       items:
         items:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostEdit'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostEdit'
         type: array
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.PostEngagement:
+  github_com_ba-reynolds_gaggle_internal_models.PostEngagement:
     properties:
       bookmark_category:
-        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.BookmarkCategorySummary'
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.BookmarkCategorySummary'
       bookmark_count:
         type: integer
       is_bookmarked:
@@ -462,25 +462,25 @@ definitions:
       view_count:
         type: integer
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.PostFeed:
+  github_com_ba-reynolds_gaggle_internal_models.PostFeed:
     properties:
       has_more:
         type: boolean
       items:
         items:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.FullPost'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.FullPost'
         type: array
       next_cursor:
         type: string
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.PostMedia:
+  github_com_ba-reynolds_gaggle_internal_models.PostMedia:
     properties:
       alt_text:
         type: string
       uuid:
         type: string
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.PostMediaRequest:
+  github_com_ba-reynolds_gaggle_internal_models.PostMediaRequest:
     properties:
       alt_text:
         maxLength: 200
@@ -490,25 +490,25 @@ definitions:
     required:
     - uuid
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.PostParentInfo:
+  github_com_ba-reynolds_gaggle_internal_models.PostParentInfo:
     properties:
       author:
-        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostAuthor'
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostAuthor'
       deleted:
         type: boolean
       id:
         type: integer
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.PostWithAncestorsAndDescendants:
+  github_com_ba-reynolds_gaggle_internal_models.PostWithAncestorsAndDescendants:
     properties:
       ancestors:
-        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostChain'
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostChain'
       descendants:
-        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostDescendants'
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostDescendants'
       post:
-        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.FullPost'
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.FullPost'
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.PrivacySettings:
+  github_com_ba-reynolds_gaggle_internal_models.PrivacySettings:
     properties:
       allowTagging:
         type: boolean
@@ -517,7 +517,7 @@ definitions:
       showOnlineStatus:
         type: boolean
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.RefreshToken:
+  github_com_ba-reynolds_gaggle_internal_models.RefreshToken:
     properties:
       expires_at:
         type: string
@@ -542,12 +542,12 @@ definitions:
       user_id:
         type: integer
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.RefreshTokenResponse:
+  github_com_ba-reynolds_gaggle_internal_models.RefreshTokenResponse:
     properties:
       access_token:
         type: string
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.RegisterRequest:
+  github_com_ba-reynolds_gaggle_internal_models.RegisterRequest:
     properties:
       email:
         maxLength: 96
@@ -565,19 +565,19 @@ definitions:
     - password
     - username
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.RegisterResponse:
+  github_com_ba-reynolds_gaggle_internal_models.RegisterResponse:
     properties:
       access_token:
         type: string
       user:
-        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.User'
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.User'
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.RepostResponse:
+  github_com_ba-reynolds_gaggle_internal_models.RepostResponse:
     properties:
       success:
         type: boolean
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.SendMessagePayload:
+  github_com_ba-reynolds_gaggle_internal_models.SendMessagePayload:
     properties:
       body:
         maxLength: 2000
@@ -586,12 +586,12 @@ definitions:
     required:
     - body
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.UpdatePostPayload:
+  github_com_ba-reynolds_gaggle_internal_models.UpdatePostPayload:
     properties:
       content:
         type: string
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.UpdateUserProfileRequest:
+  github_com_ba-reynolds_gaggle_internal_models.UpdateUserProfileRequest:
     properties:
       banner_uuid:
         type: string
@@ -599,7 +599,7 @@ definitions:
         maxLength: 160
         type: string
       birth_date:
-        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Date'
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Date'
       display_name:
         maxLength: 50
         minLength: 1
@@ -622,7 +622,7 @@ definitions:
     - bio
     - display_name
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.User:
+  github_com_ba-reynolds_gaggle_internal_models.User:
     properties:
       created_at:
         type: string
@@ -631,7 +631,7 @@ definitions:
       username:
         type: string
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.UserAPISummary:
+  github_com_ba-reynolds_gaggle_internal_models.UserAPISummary:
     properties:
       display_name:
         type: string
@@ -640,12 +640,12 @@ definitions:
       username:
         type: string
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.UserBadge:
+  github_com_ba-reynolds_gaggle_internal_models.UserBadge:
     properties:
       created_at:
         type: string
       criteria:
-        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.BadgeCriteria'
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.BadgeCriteria'
       description:
         type: string
       granted_at:
@@ -657,44 +657,44 @@ definitions:
       key:
         type: string
       kind:
-        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.BadgeKind'
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.BadgeKind'
       label:
         type: string
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.UserFollowersResponse:
+  github_com_ba-reynolds_gaggle_internal_models.UserFollowersResponse:
     properties:
       has_more:
         type: boolean
       items:
         items:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserProfileResponse'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserProfileResponse'
         type: array
       next_cursor:
         type: string
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.UserFollowingResponse:
+  github_com_ba-reynolds_gaggle_internal_models.UserFollowingResponse:
     properties:
       has_more:
         type: boolean
       items:
         items:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserProfileResponse'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserProfileResponse'
         type: array
       next_cursor:
         type: string
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.UserList:
+  github_com_ba-reynolds_gaggle_internal_models.UserList:
     properties:
       has_more:
         type: boolean
       items:
         items:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserProfileResponse'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserProfileResponse'
         type: array
       next_cursor:
         type: string
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.UserProfile:
+  github_com_ba-reynolds_gaggle_internal_models.UserProfile:
     properties:
       banner_uuid:
         type: string
@@ -702,7 +702,7 @@ definitions:
         maxLength: 160
         type: string
       birth_date:
-        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Date'
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Date'
       display_name:
         maxLength: 50
         minLength: 1
@@ -725,18 +725,18 @@ definitions:
     - bio
     - display_name
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.UserProfileResponse:
+  github_com_ba-reynolds_gaggle_internal_models.UserProfileResponse:
     properties:
       badges:
         items:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserBadge'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserBadge'
         type: array
       banner_uuid:
         type: string
       bio:
         type: string
       birth_date:
-        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Date'
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Date'
       created_at:
         type: string
       display_name:
@@ -767,42 +767,42 @@ definitions:
       website:
         type: string
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.UserRelationshipResponse:
+  github_com_ba-reynolds_gaggle_internal_models.UserRelationshipResponse:
     properties:
       success:
         type: boolean
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.UserSettings:
+  github_com_ba-reynolds_gaggle_internal_models.UserSettings:
     properties:
       appearance:
-        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.AppearanceSettings'
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.AppearanceSettings'
       language:
         type: string
       notifications:
-        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.NotificationSettings'
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.NotificationSettings'
       privacy:
-        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PrivacySettings'
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.PrivacySettings'
     type: object
-  github_com_ba-reynolds_gophersocial_internal_models.UserWithProfile:
+  github_com_ba-reynolds_gaggle_internal_models.UserWithProfile:
     properties:
       badges:
         items:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserBadge'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserBadge'
         type: array
       created_at:
         type: string
       id:
         type: integer
       profile:
-        $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserProfile'
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserProfile'
       username:
         type: string
     type: object
 host: localhost:2021
 info:
   contact: {}
-  description: API for GopherSocial, a social network for gophers
-  title: GopherSocial API
+  description: API for Gaggle, a social microblogging app
+  title: Gaggle API
   version: "1.0"
 paths:
   /admin/badges:
@@ -815,34 +815,34 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Badge'
+                    $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Badge'
                   type: array
               type: object
         "403":
           description: Forbidden
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -859,7 +859,7 @@ paths:
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.CreateBadgePayload'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.CreateBadgePayload'
       produces:
       - application/json
       responses:
@@ -867,54 +867,54 @@ paths:
           description: Created
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Badge'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Badge'
               type: object
         "400":
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "403":
           description: Forbidden
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "409":
           description: Conflict
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -938,7 +938,7 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   additionalProperties:
@@ -949,56 +949,56 @@ paths:
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "403":
           description: Forbidden
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "404":
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "409":
           description: Conflict
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -1021,7 +1021,7 @@ paths:
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.CreateBadgePayload'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.CreateBadgePayload'
       produces:
       - application/json
       responses:
@@ -1029,54 +1029,54 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Badge'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Badge'
               type: object
         "400":
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "403":
           description: Forbidden
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "404":
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -1104,7 +1104,7 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   additionalProperties:
@@ -1115,34 +1115,34 @@ paths:
           description: Forbidden
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "404":
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -1169,7 +1169,7 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   additionalProperties:
@@ -1180,56 +1180,56 @@ paths:
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "403":
           description: Forbidden
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "404":
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "409":
           description: Conflict
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -1247,44 +1247,44 @@ paths:
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.LoginRequest'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.LoginRequest'
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.LoginResponse'
+            $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.LoginResponse'
         "400":
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "401":
           description: Unauthorized
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       summary: Login
       tags:
@@ -1299,7 +1299,7 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
@@ -1310,34 +1310,34 @@ paths:
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "401":
           description: Unauthorized
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       summary: Logout
       tags:
@@ -1353,44 +1353,44 @@ paths:
         name: refresh_token
         required: true
         schema:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.RefreshToken'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.RefreshToken'
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.RefreshTokenResponse'
+            $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.RefreshTokenResponse'
         "400":
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "401":
           description: Unauthorized
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       summary: Refresh token
       tags:
@@ -1406,44 +1406,44 @@ paths:
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.RegisterRequest'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.RegisterRequest'
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.RegisterResponse'
+            $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.RegisterResponse'
         "400":
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "409":
           description: Conflict
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       summary: Register
       tags:
@@ -1458,18 +1458,18 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.BookmarkCategory'
+              $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.BookmarkCategory'
             type: array
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -1486,46 +1486,46 @@ paths:
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.CreateBookmarkCategoryRequest'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.CreateBookmarkCategoryRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.CreateBookmarkCategoryResponse'
+            $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.CreateBookmarkCategoryResponse'
         "400":
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "409":
           description: Conflict
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -1548,23 +1548,23 @@ paths:
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -1588,7 +1588,7 @@ paths:
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.SendMessagePayload'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.SendMessagePayload'
       produces:
       - application/json
       responses:
@@ -1596,54 +1596,54 @@ paths:
           description: Created
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Message'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Message'
               type: object
         "400":
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "403":
           description: Forbidden
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "404":
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -1660,21 +1660,21 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.ConversationFeed'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.ConversationFeed'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -1697,32 +1697,32 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Conversation'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Conversation'
               type: object
         "404":
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -1754,10 +1754,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.MessageFeed'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.MessageFeed'
                 error:
                   type: object
               type: object
@@ -1765,23 +1765,23 @@ paths:
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -1805,7 +1805,7 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   additionalProperties:
@@ -1816,23 +1816,23 @@ paths:
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -1849,7 +1849,7 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   additionalProperties:
@@ -1860,12 +1860,12 @@ paths:
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -1882,23 +1882,23 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.List'
+                    $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.List'
                   type: array
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -1915,7 +1915,7 @@ paths:
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.CreateListPayload'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.CreateListPayload'
       produces:
       - application/json
       responses:
@@ -1923,43 +1923,43 @@ paths:
           description: Created
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.List'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.List'
               type: object
         "400":
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "409":
           description: Conflict
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -1982,7 +1982,7 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   additionalProperties:
@@ -1993,34 +1993,34 @@ paths:
           description: Forbidden
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "404":
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -2042,32 +2042,32 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.List'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.List'
               type: object
         "404":
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -2089,7 +2089,7 @@ paths:
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.CreateListPayload'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.CreateListPayload'
       produces:
       - application/json
       responses:
@@ -2097,65 +2097,65 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.List'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.List'
               type: object
         "400":
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "403":
           description: Forbidden
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "404":
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "409":
           description: Conflict
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -2186,10 +2186,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostFeed'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostFeed'
                 error:
                   type: object
               type: object
@@ -2197,23 +2197,23 @@ paths:
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -2244,10 +2244,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.ListMembersResponse'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.ListMembersResponse'
                 error:
                   type: object
               type: object
@@ -2255,23 +2255,23 @@ paths:
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -2299,7 +2299,7 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   additionalProperties:
@@ -2310,34 +2310,34 @@ paths:
           description: Forbidden
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "404":
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -2364,7 +2364,7 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   additionalProperties:
@@ -2375,56 +2375,56 @@ paths:
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "403":
           description: Forbidden
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "404":
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "409":
           description: Conflict
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -2451,34 +2451,34 @@ paths:
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "404":
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -2501,10 +2501,10 @@ paths:
           description: Created
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.MediaUploadResponse'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.MediaUploadResponse'
                 error:
                   type: object
               type: object
@@ -2512,23 +2512,23 @@ paths:
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -2555,21 +2555,21 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostFeed'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostFeed'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -2587,7 +2587,7 @@ paths:
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.CreatePostPayload'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.CreatePostPayload'
       produces:
       - application/json
       responses:
@@ -2595,10 +2595,10 @@ paths:
           description: Created
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.FullPost'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.FullPost'
                 error:
                   type: object
               type: object
@@ -2606,23 +2606,23 @@ paths:
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -2647,7 +2647,7 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
@@ -2658,23 +2658,23 @@ paths:
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -2720,10 +2720,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostWithAncestorsAndDescendants'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostWithAncestorsAndDescendants'
                 error:
                   type: object
               type: object
@@ -2731,34 +2731,34 @@ paths:
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "404":
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -2781,57 +2781,57 @@ paths:
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UpdatePostPayload'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.UpdatePostPayload'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.FullPost'
+            $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.FullPost'
         "400":
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "403":
           description: Forbidden
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "404":
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -2855,28 +2855,28 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.BookmarkResponse'
+            $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.BookmarkResponse'
         "400":
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -2898,35 +2898,35 @@ paths:
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.BookmarkRequest'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.BookmarkRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.BookmarkResponse'
+            $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.BookmarkResponse'
         "400":
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -2948,28 +2948,28 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostEditHistory'
+            $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostEditHistory'
         "404":
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -2993,28 +2993,28 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.LikeResponse'
+            $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.LikeResponse'
         "400":
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -3037,28 +3037,28 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.LikeResponse'
+            $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.LikeResponse'
         "400":
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -3091,10 +3091,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserList'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserList'
                 error:
                   type: object
               type: object
@@ -3102,23 +3102,23 @@ paths:
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -3141,7 +3141,7 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   additionalProperties:
@@ -3152,34 +3152,34 @@ paths:
           description: Forbidden
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "404":
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -3202,7 +3202,7 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   additionalProperties:
@@ -3213,34 +3213,34 @@ paths:
           description: Forbidden
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "404":
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -3272,50 +3272,50 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Poll'
+            $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Poll'
         "400":
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "404":
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "409":
           description: Conflict
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -3339,7 +3339,7 @@ paths:
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.CreatePostPayload'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.CreatePostPayload'
       produces:
       - application/json
       responses:
@@ -3347,32 +3347,32 @@ paths:
           description: Created
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Post'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Post'
               type: object
         "400":
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -3405,10 +3405,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostFeed'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostFeed'
                 error:
                   type: object
               type: object
@@ -3416,23 +3416,23 @@ paths:
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -3456,28 +3456,28 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.RepostResponse'
+            $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.RepostResponse'
         "400":
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -3500,28 +3500,28 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.RepostResponse'
+            $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.RepostResponse'
         "400":
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -3554,10 +3554,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserList'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserList'
                 error:
                   type: object
               type: object
@@ -3565,23 +3565,23 @@ paths:
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -3613,28 +3613,28 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostFeed'
+            $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostFeed'
         "400":
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -3664,10 +3664,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostFeed'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostFeed'
                 error:
                   type: object
               type: object
@@ -3675,23 +3675,23 @@ paths:
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -3716,10 +3716,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserWithProfile'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserWithProfile'
                 error:
                   type: object
               type: object
@@ -3727,23 +3727,23 @@ paths:
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -3770,23 +3770,23 @@ paths:
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -3810,10 +3810,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserRelationshipResponse'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserRelationshipResponse'
                 error:
                   type: object
               type: object
@@ -3821,34 +3821,34 @@ paths:
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "404":
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -3875,23 +3875,23 @@ paths:
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -3915,10 +3915,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserRelationshipResponse'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserRelationshipResponse'
                 error:
                   type: object
               type: object
@@ -3926,34 +3926,34 @@ paths:
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "404":
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -3986,10 +3986,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserFollowersResponse'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserFollowersResponse'
                 error:
                   type: object
               type: object
@@ -3997,23 +3997,23 @@ paths:
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -4046,10 +4046,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserFollowingResponse'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserFollowingResponse'
                 error:
                   type: object
               type: object
@@ -4057,23 +4057,23 @@ paths:
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -4105,39 +4105,39 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostFeed'
+            $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostFeed'
         "400":
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "404":
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -4160,34 +4160,34 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.List'
+                    $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.List'
                   type: array
               type: object
         "404":
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -4222,10 +4222,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostFeed'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostFeed'
                 error:
                   type: object
               type: object
@@ -4233,34 +4233,34 @@ paths:
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "404":
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -4287,23 +4287,23 @@ paths:
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -4327,10 +4327,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserRelationshipResponse'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserRelationshipResponse'
                 error:
                   type: object
               type: object
@@ -4338,34 +4338,34 @@ paths:
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "404":
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -4388,28 +4388,28 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.FullPost'
+            $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.FullPost'
         "404":
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -4447,10 +4447,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostFeed'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostFeed'
                 error:
                   type: object
               type: object
@@ -4458,34 +4458,34 @@ paths:
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "404":
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -4520,10 +4520,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostFeed'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostFeed'
                 error:
                   type: object
               type: object
@@ -4531,34 +4531,34 @@ paths:
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "404":
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -4577,10 +4577,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.User'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.User'
                 error:
                   type: object
               type: object
@@ -4588,23 +4588,23 @@ paths:
           description: Unauthorized
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -4626,7 +4626,7 @@ paths:
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UpdateUserProfileRequest'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.UpdateUserProfileRequest'
       produces:
       - application/json
       responses:
@@ -4634,10 +4634,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserWithProfile'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserWithProfile'
                 error:
                   type: object
               type: object
@@ -4645,34 +4645,34 @@ paths:
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "404":
           description: Not Found
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -4691,10 +4691,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserSettings'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserSettings'
                 error:
                   type: object
               type: object
@@ -4702,12 +4702,12 @@ paths:
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -4724,7 +4724,7 @@ paths:
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserSettings'
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserSettings'
       produces:
       - application/json
       responses:
@@ -4732,10 +4732,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserSettings'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserSettings'
                 error:
                   type: object
               type: object
@@ -4743,23 +4743,23 @@ paths:
           description: Bad Request
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
         "500":
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []
@@ -4782,10 +4782,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserList'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserList'
                 error:
                   type: object
               type: object
@@ -4793,12 +4793,12 @@ paths:
           description: Internal Server Error
           schema:
             allOf:
-            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
             - properties:
                 data:
                   type: object
                 error:
-                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
               type: object
       security:
       - ApiKeyAuth: []

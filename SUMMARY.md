@@ -1622,7 +1622,7 @@ Batch of UI responsiveness bugs, fixed across the Go API and the React client.
   optimistically marks the cached notifications read (unread rows/dots clear
   instantly) before the server round-trip + invalidation.
 
-**8. "GopherSocial" brand text overflowed its sidebar column (~768–1220px)**
+**8. "Gaggle" brand text overflowed its sidebar column (~768–1220px)**
 - The sidebar grid column and brand row got `min-w-0`, and the brand span
   `flex-1 min-w-0 truncate`, so it ellipsizes instead of spilling into the main
   column.

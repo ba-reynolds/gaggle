@@ -1,6 +1,6 @@
 package models
 
-import "github.com/ba-reynolds/gophersocial/internal/apperrors"
+import "github.com/ba-reynolds/gaggle/internal/apperrors"
 
 // EnvelopeError is now replaced by AppError for consistency
 // type EnvelopeError struct {

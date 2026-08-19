@@ -12,7 +12,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 
-	"github.com/ba-reynolds/gophersocial/internal/testutil"
+	"github.com/ba-reynolds/gaggle/internal/testutil"
 )
 
 func itoa(i int) string { return strconv.Itoa(i) }
@@ -199,8 +199,8 @@ func TestRefreshTokenExpiredRejected(t *testing.T) {
 		"exp": now.Add(-1 * time.Hour).Unix(),
 		"iat": now.Add(-48 * time.Hour).Unix(),
 		"nbf": now.Add(-48 * time.Hour).Unix(),
-		"iss": "gophersocial-test",
-		"aud": "gophersocial-test",
+		"iss": "gaggle-test",
+		"aud": "gaggle-test",
 		"typ": "refresh",
 	}
 	expired, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte("test-secret"))
@@ -1187,7 +1187,7 @@ func TestBadges(t *testing.T) {
 		Body: map[string]string{
 			"key":         "staff",
 			"label":       "Staff",
-			"description": "GopherSocial staff member",
+			"description": "Gaggle staff member",
 			"icon":        "ShieldCheck",
 		},
 	}))
@@ -1290,8 +1290,8 @@ func TestLists(t *testing.T) {
 	}
 
 	// Update the list (owner).
-	updated, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodPatch, Path: "/api/v1/lists/" + itoa(listID), Token: ownerToken, Body: map[string]string{"name": "Gophers", "description": "updated description"}}))
-	if updated["name"] != "Gophers" || updated["description"] != "updated description" {
+	updated, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodPatch, Path: "/api/v1/lists/" + itoa(listID), Token: ownerToken, Body: map[string]string{"name": "Gagglers", "description": "updated description"}}))
+	if updated["name"] != "Gagglers" || updated["description"] != "updated description" {
 		t.Fatalf("updated list = %v", updated)
 	}
 	// Non-owner cannot update -> 403.
