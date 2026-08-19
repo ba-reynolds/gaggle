@@ -159,6 +159,63 @@ username/email surfaced only a generic toast, discarding the specific
 
 ---
 
+# SUMMARY — improve-message-flow
+
+Direct-message UX rework: the messages page no longer grows unbounded (it keeps
+a fixed height and scrolls the conversation list / message thread), and starting
+a new conversation stops auto-sending "Hello!" — picking a user opens an empty
+chat UI where the first message is written by the sender.
+
+## What was changed and why
+
+- **Fixed-height message views** (`web/src/layout/SocialMediaLayout.tsx`,
+  `web/src/pages/MessagesPage.tsx`, `web/src/pages/ConversationPage.tsx`):
+  the main content column is now `h-screen flex flex-col` and the two message
+  pages use `flex-1 min-h-0 overflow-y-auto` for their scrollable regions, so
+  the page itself never grows beyond the viewport and long threads get an
+  internal scrollbar. Feed/other pages are unaffected (they still scroll
+  naturally inside the same column).
+- **Custom first message** (`web/src/pages/MessagesPage.tsx`): the search
+  "pick a user" action previously fired `sendMessage(..., "Hello!")`; it now
+  navigates to `/messages/new?user=<username>` and sends nothing.
+- **New-conversation route + empty chat UI** (`web/src/App.tsx`,
+  `web/src/pages/ConversationPage.tsx`): added `/messages/new`, handled by
+  ConversationPage in a "new" mode that shows the target's profile header and an
+  empty thread ("You haven't talked to @x yet. Say hello!") with the composer
+  active. Sending the first message creates the conversation server-side and
+  replaces the URL with the real conversation route. If the user was in search
+  results but a conversation already exists, it redirects straight into it.
+- **Profile "Message" button** (`web/src/pages/ProfilePage.tsx`): now links to
+  `/messages/new?user=...` so first contact opens the empty chat UI instead of
+  the old inline pre-filled composer.
+- **Blocked users** (`web/src/pages/ConversationPage.tsx`): when the current
+  user has blocked the target, the new-conversation composer is disabled with an
+  explanatory note. Server-side, the existing `DmService.Send` block check
+  (both directions) already rejects messaging blocked users and is covered by
+  `TestDMs` in `server/internal/handlers/integration_test.go`.
+
+## Files touched
+
+- `web/src/App.tsx`
+- `web/src/layout/SocialMediaLayout.tsx`
+- `web/src/pages/MessagesPage.tsx`
+- `web/src/pages/ConversationPage.tsx`
+- `web/src/pages/ProfilePage.tsx`
+
+## Reviewer double-checks
+
+- Message pages: verify threads/conversation lists scroll internally at both
+  mobile and desktop widths and that the fixed-height column doesn't clip
+  headers or composer.
+- New conversation: from `/messages`, search → click user → empty chat UI →
+  type + send → lands on `/messages/:id`; revisiting shows the full history.
+- Block UX: messaging someone you've blocked disables the composer with the
+  note; messaging someone who blocked you still hits the server 403 (toasted as
+  an error).
+- No backend/migration changes landed on this branch.
+
+---
+
 # SUMMARY — chat-ui-fixes
 
 Three small UI fixes: long DM messages now wrap instead of overflowing into a

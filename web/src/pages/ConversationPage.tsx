@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { useConversation, useConversationMessages, useMarkConversationRead, useSendMessage } from '@/hooks/useDms';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useConversation, useConversationMessages, useMarkConversationRead, useSentConversationForUser, useSendMessage } from '@/hooks/useDms';
 import { useUser } from '@/contexts/UserContext';
+import { useFetchProfile } from '@/hooks/useUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,10 +10,26 @@ import { ArrowLeft, Loader2, Send } from 'lucide-react';
 import { getMediaUrl } from '@/util/media';
 import { formatMessageDayLabel, formatMessageHour, getMessageDayKey } from '@/util/date';
 import { toast } from 'sonner';
+import type { ConversationOtherParticipant, UserProfileResponse } from '@/types/api';
 
 export default function ConversationPage() {
   const { conversationId: conversationIdStr } = useParams();
+  const [params] = useSearchParams();
+
+  // Opening a brand-new conversation (/messages/new?user=X) shows an empty chat
+  // UI against the target's profile; the conversation is created on first send.
+  const isNew = conversationIdStr === 'new';
+  const targetUsername = isNew ? params.get('user') ?? '' : '';
+
+  if (isNew) {
+    return <NewConversationPage username={targetUsername} />;
+  }
+
   const conversationId = Number(conversationIdStr);
+  return <ExistingConversationPage conversationId={conversationId} />;
+}
+
+function ExistingConversationPage({ conversationId }: { conversationId: number }) {
   const { user } = useUser();
   const conversation = useConversation(conversationId);
   const messages = useConversationMessages(conversationId, 30);
@@ -72,16 +89,10 @@ export default function ConversationPage() {
     <div className="mx-auto flex h-full w-full max-w-xl flex-col pt-2">
       <header className="border-b border-border px-4 py-3 flex items-center gap-3">
         <Link to="/messages" className="text-muted-foreground hover:text-primary"><ArrowLeft className="h-5 w-5" /></Link>
-        <Link to={`/profile/${other.username}`} className="flex items-center gap-2">
-          <Avatar className="h-9 w-9">
-            <AvatarImage src={getMediaUrl(other.profile_picture_uuid)} alt={other.display_name} />
-            <AvatarFallback>{other.display_name?.charAt(0) ?? '?'}</AvatarFallback>
-          </Avatar>
-          <span className="font-semibold text-primary">{other.display_name || other.username}</span>
-        </Link>
+        <ChatHeader user={other} />
       </header>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-2 p-4">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-2 p-4 min-h-0">
         {messages.isLoading ? (
           <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin" /></div>
         ) : (
@@ -136,5 +147,102 @@ export default function ConversationPage() {
         </Button>
       </div>
     </div>
+  );
+}
+
+// NewConversationPage shows an empty chat UI against a target user who the
+// current user hasn't spoken to yet. The conversation is created server-side on
+// first send, at which point we switch to the real conversation route.
+function NewConversationPage({ username }: { username: string }) {
+  const navigate = useNavigate();
+  const send = useSendMessage();
+  const [body, setBody] = useState('');
+
+  // If a conversation with this user already exists, go straight in.
+  const existing = useSentConversationForUser(username);
+  useEffect(() => {
+    if (username && existing) {
+      navigate(`/messages/${existing.id}`, { replace: true });
+    }
+  }, [username, existing, navigate]);
+
+  const { data: profileData, isLoading: profileLoading } = useFetchProfile(username, Boolean(username));
+  const profile = profileData?.data;
+  const blocked = Boolean(profile?.is_blocked);
+
+  const sendMessage = () => {
+    if (!profile || !body.trim()) return;
+    send.mutate(
+      { username: profile.username, body: body.trim() },
+      {
+        onSuccess: (response) => {
+          navigate(`/messages/${response.data.conversation_id}`, { replace: true });
+        },
+        onError: () => toast.error('Could not send message'),
+      }
+    );
+  };
+
+  if (!username) {
+    return <div className="py-20 text-center text-muted-foreground">No user specified.</div>;
+  }
+
+  if (profileLoading) {
+    return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
+
+  if (!profile) {
+    return <div className="py-20 text-center text-muted-foreground">User not found.</div>;
+  }
+
+  return (
+    <div className="mx-auto flex h-full w-full max-w-xl flex-col pt-2">
+      <header className="border-b border-border px-4 py-3 flex items-center gap-3">
+        <Link to="/messages" className="text-muted-foreground hover:text-primary"><ArrowLeft className="h-5 w-5" /></Link>
+        <ChatHeader user={profile} />
+      </header>
+
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-2 p-4">
+        <div className="flex h-full min-h-0 flex-col items-center justify-center gap-3 p-8 text-center text-muted-foreground">
+          <Avatar className="h-16 w-16">
+            <AvatarImage src={getMediaUrl(profile.profile_picture_uuid)} alt={profile.display_name} />
+            <AvatarFallback>{profile.display_name?.charAt(0) ?? '?'}</AvatarFallback>
+          </Avatar>
+          <p className="font-semibold text-primary text-lg">{profile.display_name || profile.username}</p>
+          {blocked ? (
+            <p className="text-sm">You've blocked @{profile.username}, so you can't message them.</p>
+          ) : (
+            <p className="text-sm">You haven't talked to @{profile.username} yet. Say hello!</p>
+          )}
+        </div>
+      </div>
+
+      <div className="border-t border-border p-3 flex gap-2">
+        <Input
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+          placeholder={`Message @${profile.username}`}
+          maxLength={2000}
+          disabled={blocked}
+          className="flex-1"
+        />
+        <Button onClick={sendMessage} disabled={!body.trim() || send.isPending || blocked}>
+          <Send className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function ChatHeader({ user }: { user: ConversationOtherParticipant | UserProfileResponse }) {
+  return (
+    <Link to={`/profile/${user.username}`} className="flex items-center gap-2">
+      <Avatar className="h-9 w-9">
+        <AvatarImage src={getMediaUrl(user.profile_picture_uuid)} alt={user.display_name} />
+        <AvatarFallback>{user.display_name?.charAt(0) ?? '?'}</AvatarFallback>
+      </Avatar>
+      <span className="font-semibold text-primary">{user.display_name || user.username}</span>
+    </Link>
   );
 }
