@@ -260,7 +260,7 @@ const ProfilePage: React.FC = () => {
               <Button
                 variant="outline"
                 className="text-foreground"
-                onClick={() => navigate(`/messages?user=${encodeURIComponent(safeUsername)}`)}
+                onClick={() => navigate(`/messages/new?user=${encodeURIComponent(safeUsername)}`)}
               >
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Message

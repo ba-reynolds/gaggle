@@ -63,6 +63,7 @@ function App() {
                   <Route path="/notifications" element={<SocialMediaLayout><NotificationsPage /></SocialMediaLayout>} />
                   <Route path="/mentions" element={<SocialMediaLayout><MentionsPage /></SocialMediaLayout>} />
                   <Route path="/messages" element={<SocialMediaLayout><MessagesPage /></SocialMediaLayout>} />
+                  <Route path="/messages/new" element={<SocialMediaLayout><ConversationPage /></SocialMediaLayout>} />
                   <Route path="/messages/:conversationId" element={<SocialMediaLayout><ConversationPage /></SocialMediaLayout>} />
                   <Route path="/search" element={<SocialMediaLayout><SearchPage /></SocialMediaLayout>} />
                   <Route path="/hashtags/:tag" element={<SocialMediaLayout><HashtagPage /></SocialMediaLayout>} />
