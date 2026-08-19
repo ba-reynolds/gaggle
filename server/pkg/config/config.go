@@ -121,6 +121,16 @@ func LoadConfig() (AllConfigs, error) {
 		RateLimitWindow:      time.Duration(getEnvInt("RATE_LIMIT_WINDOW_SECONDS", 60)) * time.Second,
 	}
 
+	// Production fails fast: never boot with a shipped dev secret.
+	if getEnv("APP_ENV", "development") == "production" {
+		if !isStrongSecret(authConfig.JWTSecret) {
+			return AllConfigs{}, fmt.Errorf("APP_ENV=production requires a real JWT_SECRET (got %q)", authConfig.JWTSecret)
+		}
+		if !isStrongSecret(dbConfig.DBPassword) {
+			return AllConfigs{}, fmt.Errorf("APP_ENV=production requires a real DB_PASSWORD (got %q)", dbConfig.DBPassword)
+		}
+	}
+
 	return AllConfigs{
 		DBConfig:      dbConfig,
 		LoggingConfig: loggingConfig,
@@ -130,6 +140,20 @@ func LoadConfig() (AllConfigs, error) {
 		RedisConfig:   redisConfig,
 	}, nil
 
+}
+
+// isStrongSecret rejects empty values and every secret default currently
+// shipped anywhere in the repo (config.go, .env.example, compose.yaml).
+func isStrongSecret(value string) bool {
+	if value == "" {
+		return false
+	}
+	for _, dev := range []string{"secret", "dev-secret-change-me", "change-me", "teeth", "password"} {
+		if value == dev {
+			return false
+		}
+	}
+	return true
 }
 
 func getEnv(key, defaultValue string) string {
