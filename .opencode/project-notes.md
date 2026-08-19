@@ -1,3 +1,16 @@
+## Goose branding assets (agent/gaggle-goose-branding)
+- `web/` had NO `public/` dir and `index.html` referenced a nonexistent
+  `/vite.svg` → the favicon 404'd before this branch added
+  `web/public/favicon.svg` (goose on orange tile) and `web/public/gaggle-goose.svg`
+  (transparent goose for the sidebar).
+- Both SVGs are full 1024×1024 VTracer path traces (~3.1–3.6MB). Payload size
+  matters → consider re-tracing at lower resolution or a small PNG favicon.
+- Branding "G" logo lived solely in `web/src/layout/SocialMediaLayout.tsx`
+  (App Logo block); no other file rendered it.
+- Beware: `glob`/search tools in this setup skip hidden dirs — always check
+  `.opencode/` explicitly (writing project-notes.md as "new" overwrote the
+  existing shared log; restore via `git checkout HEAD -- .opencode/project-notes.md`).
+
 ## GitHub / git on NixOS
 - `~/.config/git/config` is a read-only home-manager symlink into the nix
   store. Anything writing the *global* git config fails ("could not lock config
