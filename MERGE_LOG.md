@@ -2,6 +2,18 @@
 
 Running log of agent-branch merges into main. Newest on top.
 
+## 2026-08-19 — agent/seed-data-strategy
+
+- Status: **conflicted** (spec-only branch, no code)
+- Files conflicting, and how resolved:
+  - `SUMMARY.md` — kept **every** section from both sides, newest on top
+    (all prior sections → seed-data-strategy → base), `---` separated.
+  - `.opencode/project-notes.md` — kept **every** section from both sides,
+    newest on top (goose branding, auth-validation, seed backdating, then base).
+- No real code conflicts (`docs/superpowers/specs/2026-08-19-seed-strategy-design.md`
+  is the only new file). Migration duplicate check clean after merge. No
+  migration added on this branch.
+
 ## 2026-08-19 — agent/profile-loading-spinner
 
 - Status: **conflicted**
