@@ -1,3 +1,20 @@
+## Theme merge + kanagawa light + radius removal (agent/trim-theme-catalog)
+- Catppuccin catalog is now ONE flavor (mocha), 3 entries: `catppuccin-mocha-mauve` /
+  `blue` / `peach`. Macchiato/frappe ids removed from `THEME_CATALOG` AND their
+  CSS blocks deleted from `theme-themes.css` — a stored macchiato/frappe id
+  falls back to Claude via `findTheme`.
+- Radius is theme-owned now: `setRadius`/`radius`/`vite-ui-radius` gone from
+  `ThemeContext.tsx`. On themeId change the provider sets `--radius` from
+  `definition.defaultRadius`. The per-theme `--radius: 0.5rem/0.625rem/0rem`
+  lines left in `theme-themes.css` are dead weight (inline style wins).
+- Kanagawa light ≠ dark: `:root[data-theme="icon-kanagawa"]` = washi light
+  palette, `.dark[...]` = wave dark palette. The old
+  `:root[data-theme="icon-kanagawa"]:not(.dark) .text-gray-800` override is
+  deleted — pointless now that the light sidebar is light.
+- On this NixOS box `npm` isn't on PATH: run frontend commands via
+  `nix shell nixpkgs#nodejs --command npm ...` (works with the checked-in
+  node_modules-free worktree; `npm ci` first).
+
 ## Profile page action buttons (agent/profile-action-buttons-align)
 - ProfilePage's action row (`<div class="flex justify-end …">`) used to ALWAYS
   render "Edit profile" and hide it with `visible/invisible` — `visibility:hidden`

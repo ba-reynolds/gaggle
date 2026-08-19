@@ -1,6 +1,5 @@
 import { useTheme, FONT_STACKS, THEME_CATALOG, type ThemeFont } from "@/contexts/ThemeContext";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -13,7 +12,7 @@ const FONTS: { id: ThemeFont; label: string }[] = [
 ];
 
 const ThemeCustomizer: React.FC = () => {
-  const { themeId, setThemeId, font, setFont, radius, setRadius } = useTheme();
+  const { themeId, setThemeId, font, setFont } = useTheme();
   const groups = ["Brands", "Catppuccin", "Editor", "Fun"] as const;
 
   return (
@@ -33,7 +32,7 @@ const ThemeCustomizer: React.FC = () => {
                 className={cn(
                   "flex items-center gap-2 rounded-md border px-2 py-1.5 text-left text-xs transition-colors",
                   themeId === t.id
-                    ? "border-primary ring-2 ring-ring"
+                    ? "border-primary bg-primary/10 font-medium ring-2 ring-ring"
                     : "border-border hover:border-primary/50"
                 )}
               >
@@ -55,7 +54,9 @@ const ThemeCustomizer: React.FC = () => {
               onClick={() => setFont(f.id)}
               className={cn(
                 "rounded-md border px-2 py-1.5 text-left text-xs transition-colors",
-                font === f.id ? "border-primary ring-2 ring-ring" : "border-border hover:border-primary/50"
+                font === f.id
+                  ? "border-primary bg-primary/10 font-medium ring-2 ring-ring"
+                  : "border-border hover:border-primary/50"
               )}
               style={{ fontFamily: FONT_STACKS[f.id] }}
             >
@@ -63,21 +64,6 @@ const ThemeCustomizer: React.FC = () => {
             </button>
           ))}
         </div>
-      </div>
-
-      {/* Radius */}
-      <div>
-        <Label className="text-primary">Rounded corners</Label>
-        <div className="mt-2">
-          <Slider
-            min={0}
-            max={1.25}
-            step={0.05}
-            value={[radius]}
-            onValueChange={(values) => setRadius(values[0])}
-          />
-        </div>
-        <p className="mt-1 text-xs text-muted-foreground">{radius.toFixed(2)}rem</p>
       </div>
     </div>
   );
