@@ -1,16 +1,33 @@
 #!/usr/bin/env bash
 # EC2 user-data bootstrap for the Gaggle box. Idempotent: safe to re-run when
 # Terraform replaces user_data. Terraform interpolates the two ssh keys.
+#
+# Amazon Linux 2023 notes (why this differs from a Debian/Ubuntu bootstrap):
+#   - `docker-compose-plugin` is NOT a package; the compose CLI is dropped in
+#     as a binary plugin under /usr/libexec/docker/cli-plugins.
+#   - `ufw` is NOT available; the native firewall is firewalld (nftables).
+#     Docker published ports reach the host through it (verified: a port-80
+#     container was reachable externally with dockerd + firewalld running).
 set -euo pipefail
 
 ADMIN_PUBLIC_KEY='${admin_public_key}'
 DEPLOY_PUBLIC_KEY='${deploy_public_key}'
+COMPOSE_VERSION=2.33.1
 DATA_DEV=/dev/nvme1n1
 DATA_MOUNT=/data
 
-echo ">> installing docker + compose plugin"
-dnf install -y docker docker-compose-plugin
+echo ">> installing docker (AL2023 has no docker-compose-plugin package)"
+dnf install -y docker
 systemctl enable --now docker
+
+echo ">> installing compose CLI plugin v$COMPOSE_VERSION"
+mkdir -p /usr/libexec/docker/cli-plugins
+if [[ ! -x /usr/libexec/docker/cli-plugins/docker-compose ]]; then
+  curl -sSL -o /usr/libexec/docker/cli-plugins/docker-compose \
+    "https://github.com/docker/compose/releases/download/v$COMPOSE_VERSION/docker-compose-linux-x86_64"
+  chmod +x /usr/libexec/docker/cli-plugins/docker-compose
+fi
+docker compose version
 
 echo ">> creating deploy user"
 id deploy >/dev/null 2>&1 || useradd -m -s /bin/bash deploy
@@ -27,13 +44,13 @@ sed -i 's/^#\?PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/ssh
 sed -i 's/^#\?PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config
 systemctl try-restart sshd
 
-echo ">> firewall (UFW): 22, 80, 443"
-dnf install -y ufw
-ufw default deny incoming
-ufw allow 22/tcp
-ufw allow 80/tcp
-ufw allow 443/tcp
-ufw --force enable
+echo ">> firewall (firewalld, AL2023 native): 22, 80, 443"
+dnf install -y firewalld
+systemctl enable --now firewalld
+firewall-cmd --permanent --add-service=ssh
+firewall-cmd --permanent --add-port=80/tcp
+firewall-cmd --permanent --add-port=443/tcp
+firewall-cmd --reload
 
 echo ">> fail2ban"
 dnf install -y fail2ban
