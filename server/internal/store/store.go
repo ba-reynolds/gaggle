@@ -125,6 +125,10 @@ type Store struct {
 		GetForPosts(ctx context.Context, postIDs []int, viewerID int) (map[int]*models.Poll, error)
 		Vote(ctx context.Context, tx *sql.Tx, postID, optionID, userID int) error
 	}
+	News interface {
+		Create(ctx context.Context, tx *sql.Tx, news models.NewsLink) error
+		GetForPosts(ctx context.Context, postIDs []int) (map[int]*models.NewsLink, error)
+	}
 	Badges interface {
 		ListCatalog(ctx context.Context) ([]models.Badge, error)
 		CreateBadge(ctx context.Context, payload models.CreateBadgePayload) (*models.Badge, error)
@@ -169,6 +173,7 @@ func NewStore(db *sql.DB, logger *slog.Logger, mediaDir string) *Store {
 		Hashtags:          &hashtagStore{db: db, logger: logger},
 		Mentions:          &mentionStore{db: db, logger: logger},
 		Polls:             &pollStore{db: db, logger: logger},
+		News:              &newsStore{db: db, logger: logger},
 		Badges:            &badgeStore{db: db, logger: logger},
 		Lists:             &listStore{db: db, logger: logger},
 		DMs:               &dmStore{db: db, logger: logger},

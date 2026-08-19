@@ -2,6 +2,24 @@
 
 Running log of agent-branch merges into main. Newest on top.
 
+## 2026-08-19 — agent/news-preview
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md` — kept **every** section from both sides, newest on top
+    (news-preview → settings-language → message-conversation-fixes →
+    login-experiments follow-ups → enable-https → prior sections), `---`
+    separated.
+- Real code (linkmeta package, news_store, post/news handlers, list/search/
+  post services, ComposeContent/FeedPost/PollCard, router, docs/swagger,
+  go.mod, package-lock) **auto-merged cleanly** — including
+  `integration_test.go`, `service.go`, `store.go`, `ComposeContent.tsx`,
+  `FeedPost.tsx`, `types/api.ts` which both settings-language and this branch
+  had touched.
+- Migrations: branch brings `000021_add-post-news.{up,down}.sql`. Pre-merge
+  duplicate check on `main` (versions ≤ 000020) clean; post-merge check clean.
+  No collision, no renumbering needed.
+
 ## 2026-08-19 — agent/settings-language
 
 - Status: **conflicted**

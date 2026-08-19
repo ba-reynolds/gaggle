@@ -132,6 +132,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		AuthorID:    user.ID,
 		ParentID:    payload.ParentID,
 		PollPayload: payload.Poll,
+		NewsPayload: payload.News,
 		Visibility:  payload.Visibility,
 	}
 
@@ -180,6 +181,51 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		util.RespondWithAppError(w, apperrors.InternalServerError(err))
 		return
 	}
+}
+
+// PreviewLink godoc
+//
+//	@Summary		Preview a news link
+//	@Description	Fetches the given URL and returns its OpenGraph metadata
+//	(article title, preview image, site name) so the composer can show a news
+//	attachment card before the post is created. A page with no OpenGraph tags
+//	or an unreachable page still yields a URL-only NewsLink (bare link card).
+//	@Tags		posts
+//	@Accept		json
+//	@Produce	json
+//	@Param		payload	body		models.NewsLinkPreviewRequest	true	"URL to preview"
+//	@Success	200			{object}	models.Envelope{data=models.NewsLink,error=nil}
+//	@Failure	400			{object}	models.Envelope{data=nil,error=apperrors.AppError}
+//	@Failure	500			{object}	models.Envelope{data=nil,error=apperrors.AppError}
+//	@Security	ApiKeyAuth
+//	@Router		/links/preview [post]
+func (h *PostHandler) PreviewLink(w http.ResponseWriter, r *http.Request) {
+	user, err := middleware.GetAuthenticatedUserFromContext(r)
+	if err != nil {
+		h.logger.Error("authentication middleware error", "error", err, "path", r.URL.Path)
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+
+	var payload models.NewsLinkPreviewRequest
+	if err := util.ReadJSON(r, &payload); err != nil {
+		h.logger.Warn("invalid JSON payload in request", "error", err, "userID", user.ID)
+		util.RespondWithAppError(w, apperrors.PayloadValidationError(err))
+		return
+	}
+	if err := util.Validate.Struct(payload); err != nil {
+		h.logger.Warn("payload validation failed", "error", err, "userID", user.ID)
+		util.RespondWithAppError(w, apperrors.PayloadValidationError(err))
+		return
+	}
+
+	news, err := h.service.Posts.PreviewLink(r.Context(), payload.URL)
+	if err != nil {
+		h.logger.Debug("link preview failed, attaching bare link", "url", payload.URL, "error", err)
+	}
+	// PreviewLink returns URL-only metadata on failure; treat that as success so
+	// the composer can attach a plain link. Only internal errors would bubble here.
+	util.RespondWithJson(w, http.StatusOK, news)
 }
 
 // GetPostByID godoc

@@ -6,6 +6,7 @@ import type {
   CreateBookmarkCategoryResponse,
   CreatePostPayload,
   Envelope,
+  NewsLink,
   PaginatedFeedResponse,
   Post,
   PostWithAncestorsAndDescendants,
@@ -16,6 +17,11 @@ import type {
 
 export const createPost = async (payload: CreatePostPayload): Promise<Envelope<Post>> => {
   const response = await api.post<Envelope<Post>>('/posts', payload);
+  return response.data;
+};
+
+export const previewLink = async (url: string): Promise<Envelope<NewsLink>> => {
+  const response = await api.post<Envelope<NewsLink>>('/links/preview', { url });
   return response.data;
 };
 

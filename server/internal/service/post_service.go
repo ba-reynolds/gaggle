@@ -7,6 +7,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/ba-reynolds/gaggle/internal/apperrors"
+	"github.com/ba-reynolds/gaggle/internal/linkmeta"
 	"github.com/ba-reynolds/gaggle/internal/models"
 	"github.com/ba-reynolds/gaggle/internal/store"
 	"github.com/ba-reynolds/gaggle/pkg/config"
@@ -24,7 +25,7 @@ const (
 // polls.question VARCHAR(140). Enforced rune-aware so an over-long payload
 // gets a 400 instead of a Postgres 500.
 const (
-	maxPostContentLength = 280
+	maxPostContentLength  = 280
 	maxPollQuestionLength = 140
 )
 
@@ -202,6 +203,9 @@ func (s *PostService) GetFullPostByID(ctx context.Context, id int, viewerID int)
 	if err := hydratePolls(ctx, s.store, []*models.FullPost{post}, viewerID); err != nil {
 		return nil, err
 	}
+	if err := hydrateNews(ctx, s.store, []*models.FullPost{post}); err != nil {
+		return nil, err
+	}
 	if err := hydrateEngagement(ctx, s.store, s.logger, []*models.FullPost{post}, viewerID); err != nil {
 		return nil, err
 	}
@@ -318,6 +322,32 @@ func hydratePolls(ctx context.Context, st *store.Store, posts []*models.FullPost
 	return nil
 }
 
+// hydrateNews populates each post's news attachment (if any) using a single
+// batched query across the whole set. Package-level like hydratePolls so both
+// PostService and SearchService feed paths share it.
+func hydrateNews(ctx context.Context, st *store.Store, posts []*models.FullPost) error {
+	ids := make([]int, 0, len(posts))
+	for _, p := range posts {
+		if p != nil {
+			ids = append(ids, p.ID)
+		}
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	newsMap, err := st.News.GetForPosts(ctx, ids)
+	if err != nil {
+		return err
+	}
+	for _, p := range posts {
+		if p == nil {
+			continue
+		}
+		p.News = newsMap[p.ID]
+	}
+	return nil
+}
+
 // GetFullPostByIDWithAncestors retrieves a full post with optional ancestor chain
 func (s *PostService) GetFullPostByIDWithAncestors(ctx context.Context, id int, viewerID int, includeAncestors bool, ancestorLimit int) (*models.FullPost, *models.PostChain, error) {
 	post, err := s.GetFullPostByID(ctx, id, viewerID)
@@ -362,6 +392,9 @@ func (s *PostService) GetDescendants(ctx context.Context, postID int, viewerID i
 		return nil, err
 	}
 	if err := hydratePolls(ctx, s.store, descendants.Items, viewerID); err != nil {
+		return nil, err
+	}
+	if err := hydrateNews(ctx, s.store, descendants.Items); err != nil {
 		return nil, err
 	}
 	if err := hydrateParents(ctx, s.store, descendants.Items); err != nil {
@@ -474,6 +507,9 @@ func (s *PostService) Create(ctx context.Context, post *models.Post, mediaItems 
 			return err
 		}
 	}
+	if post.NewsPayload != nil && post.ParentID != nil {
+		return apperrors.BadRequestError("news attachments are only allowed on top-level posts", nil)
+	}
 
 	// Create the post
 	if err := s.store.Posts.Create(ctx, tx, post); err != nil {
@@ -521,6 +557,12 @@ func (s *PostService) Create(ctx context.Context, post *models.Post, mediaItems 
 			return err
 		}
 	}
+	if post.NewsPayload != nil {
+		news := models.ToNewsLink(post.ID, post.NewsPayload)
+		if err := s.store.News.Create(ctx, tx, news); err != nil {
+			return err
+		}
+	}
 
 	// Commit the transaction
 	if err := tx.Commit(); err != nil {
@@ -540,9 +582,18 @@ func (s *PostService) Create(ctx context.Context, post *models.Post, mediaItems 
 		"authorID", post.AuthorID,
 		"parentID", post.ParentID,
 		"mediaCount", len(mediaItems),
+		"newsURL", newsLogURL(post.NewsPayload),
 	)
 
 	return nil
+}
+
+// newsLogURL returns the news URL (or "") for structured logging.
+func newsLogURL(payload *models.CreatePostNewsPayload) string {
+	if payload == nil {
+		return ""
+	}
+	return payload.URL
 }
 
 func (s *PostService) DeleteByID(ctx context.Context, post *models.Post, actorID int) error {
@@ -666,6 +717,9 @@ func (s *PostService) GetPinned(ctx context.Context, authorID, viewerID int) (*m
 	if err := hydratePolls(ctx, s.store, []*models.FullPost{full}, viewerID); err != nil {
 		return nil, err
 	}
+	if err := hydrateNews(ctx, s.store, []*models.FullPost{full}); err != nil {
+		return nil, err
+	}
 	if err := hydrateEngagement(ctx, s.store, s.logger, []*models.FullPost{full}, viewerID); err != nil {
 		return nil, err
 	}
@@ -764,6 +818,9 @@ func (s *PostService) GetParentChain(ctx context.Context, postID int, viewerID i
 	if err := hydratePolls(ctx, s.store, chain.Items, viewerID); err != nil {
 		return nil, err
 	}
+	if err := hydrateNews(ctx, s.store, chain.Items); err != nil {
+		return nil, err
+	}
 	if err := hydrateParents(ctx, s.store, chain.Items); err != nil {
 		return nil, err
 	}
@@ -807,6 +864,9 @@ func (s *PostService) GetHomeFeed(ctx context.Context, userID int, limit int, cu
 	if err := hydratePolls(ctx, s.store, feed.Items, userID); err != nil {
 		return nil, err
 	}
+	if err := hydrateNews(ctx, s.store, feed.Items); err != nil {
+		return nil, err
+	}
 	if err := hydrateParents(ctx, s.store, feed.Items); err != nil {
 		return nil, err
 	}
@@ -848,6 +908,9 @@ func (s *PostService) GetUserFeed(ctx context.Context, userID int, viewerID int,
 		return nil, err
 	}
 	if err := hydratePolls(ctx, s.store, feed.Items, viewerID); err != nil {
+		return nil, err
+	}
+	if err := hydrateNews(ctx, s.store, feed.Items); err != nil {
 		return nil, err
 	}
 	if err := hydrateParents(ctx, s.store, feed.Items); err != nil {
@@ -901,6 +964,9 @@ func (s *PostService) userModeFeed(ctx context.Context, userID int, viewerID int
 	if err := hydratePolls(ctx, s.store, feed.Items, viewerID); err != nil {
 		return nil, err
 	}
+	if err := hydrateNews(ctx, s.store, feed.Items); err != nil {
+		return nil, err
+	}
 	if err := hydrateParents(ctx, s.store, feed.Items); err != nil {
 		return nil, err
 	}
@@ -928,6 +994,9 @@ func (s *PostService) GetBookmarkedPostsFeed(ctx context.Context, userID int, vi
 	if err := hydratePolls(ctx, s.store, feed.Items, viewerID); err != nil {
 		return nil, err
 	}
+	if err := hydrateNews(ctx, s.store, feed.Items); err != nil {
+		return nil, err
+	}
 	if err := hydrateParents(ctx, s.store, feed.Items); err != nil {
 		return nil, err
 	}
@@ -952,6 +1021,9 @@ func (s *PostService) GetLikedPostsFeed(ctx context.Context, userID int, viewerI
 		return nil, err
 	}
 	if err := hydratePolls(ctx, s.store, feed.Items, viewerID); err != nil {
+		return nil, err
+	}
+	if err := hydrateNews(ctx, s.store, feed.Items); err != nil {
 		return nil, err
 	}
 	if err := hydrateParents(ctx, s.store, feed.Items); err != nil {
@@ -983,6 +1055,9 @@ func (s *PostService) GetQuotesFeed(ctx context.Context, postID int, viewerID in
 		return nil, err
 	}
 	if err := hydratePolls(ctx, s.store, feed.Items, viewerID); err != nil {
+		return nil, err
+	}
+	if err := hydrateNews(ctx, s.store, feed.Items); err != nil {
 		return nil, err
 	}
 	if err := hydrateParents(ctx, s.store, feed.Items); err != nil {
@@ -1108,4 +1183,12 @@ func (s *PostService) QuotePost(ctx context.Context, post *models.Post, mediaIte
 		"mediaCount", len(mediaItems),
 	)
 	return nil
+}
+
+// PreviewLink fetches a URL and returns the OpenGraph metadata for a news
+// attachment card (title, image, site name). Used by the composer to show what
+// a news attachment will look like before the post is created. A fetch failure
+// still returns URL-only metadata so the composer can attach a plain link.
+func (s *PostService) PreviewLink(ctx context.Context, rawURL string) (*models.NewsLink, error) {
+	return linkmeta.Preview(ctx, rawURL)
 }

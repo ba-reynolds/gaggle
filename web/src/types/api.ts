@@ -156,11 +156,19 @@ export interface MediaItem {
   alt_text: string;
 }
 
+export interface NewsLink {
+  url: string;
+  title: string;
+  image_url: string;
+  site_name: string;
+}
+
 export interface CreatePostPayload {
   content: string;
   media: MediaItem[];
   parent_id: number | null;
   poll?: CreatePollPayload;
+  news?: NewsLink;
   visibility: 'public' | 'followers' | 'mentions';
 }
 
@@ -214,6 +222,7 @@ export interface Post {
   is_pinned: boolean;
   visibility: 'public' | 'followers' | 'mentions';
   poll?: Poll;
+  news?: NewsLink;
   parent?: PostParent;
 }
 
