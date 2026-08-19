@@ -512,10 +512,10 @@ const ProfilePage: React.FC = () => {
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 required
-                minLength={3}
+                minLength={1}
                 maxLength={50}
               />
-              <p className="text-xs text-muted-foreground">3-50 characters</p>
+              <p className="text-xs text-muted-foreground">1-50 characters</p>
             </div>
 
             {/* Username */}

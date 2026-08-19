@@ -1,3 +1,50 @@
+# SUMMARY — auth-validation-sweep (#1–#6)
+
+Repo-wide validation pass requested after the login-min fix. Six issues listed in
+the audit were fixed (audit item #7, rune-vs-byte accounting, was folded into #3/#4):
+DB limits now enforced rune-aware so over-long payloads get 400s, not Postgres 500s;
+client-only rules are now also enforced server-side (or removed if DB doesn't back them).
+
+## What was changed and why
+
+- **#1 Profile PATCH rejected empty optional fields** (`server/internal/models/user.go`):
+  `UserProfile.Bio` carried `required`, `Location`/`Website` carried `min=3` — the DB defaults
+  these to `''`, so a fresh user could never save a profile edit or clear a field. Removed
+  `required`/`min`, kept `max` bounds. Also `Date.UnmarshalJSON` now accepts `""` as "no date
+  set" (`server/internal/models/date.go`) — the profile form sends `birth_date: ""` for users
+  without one, which used to be a JSON-decode 400. Frontend shows "1-50 characters" for display
+  name and its `minLength` dropped 3→1 (`ProfilePage.tsx`).
+- **#2 Login caps stricter than registration** (`server/internal/models/auth.go`,
+  `web/src/pages/LoginPage.tsx`): login allowed identifier ≤90 / password ≤64 while
+  registration allows 96/72. Aligned login to `max=96` / `max=72` on both the backend
+  `LoginRequest` tags (which previously had none) and the login zod schema (96/72). Registration's
+  `min=8` password floor is NOT mirrored on login (invalid credentials stay a single generic
+  message — don't leak validation detail that enables enumeration).
+- **#3 Post content >280 chars → 500** (`server/internal/service/post_service.go`):
+  `posts.content VARCHAR(280)` had no API check. Added `validateContentLength()` rune-counting
+  against 280, called in `Create`, `Update`, and `QuotePost` — over-long content is now a 400.
+  Composer textarea gets `maxLength={280}` (or 140 in poll mode) plus a live `n/280` counter
+  (`ComposeContent.tsx`); quote dialog textarea capped at 280 (`FeedPost.tsx`; edit dialog already
+  was). NOTE: JS `.length` counts UTF-16 units while Go counts runes — the server is the hard stop.
+- **#4 Poll question >140 chars → 500** (`server/internal/service/post_service.go`): `validatePoll`
+  never checked question length; now rune-checks `≤140` (options already `≤100`, now rune-counted).
+- **#5 Username charset was client-only** (`server/internal/models/auth.go`,
+  `server/internal/util/json.go`): signup UI allows `[a-zA-Z0-9_]` but the API accepted anything.
+  Added `regexp=^[a-zA-Z0-9_]+$` to `RegisterRequest.Username` and registered a `regexp` custom
+  validation tag in `util/json.go` (go-playground ships no arbitrary-regex built-in).
+- **#6 Bookmark category name uncapped in UI** (`web/src/components/FeedPost.tsx`): the new-category
+  input now has `maxLength={50}` (DB backing limit), matching category naming UX.
+- **Tests** (`server/internal/handlers/integration_test.go`): added
+  `TestProfileUpdateAllowsEmptyOptionalFields`, `TestUsernameCharsetEnforced`,
+  `TestPostContentLengthRejected`, `TestPollQuestionLengthRejected` (each would have failed before;
+  the poll test surfaced a prep panic: the `regexp` tag wasn't registered).
+
+## Verification
+- `go test ./...` — all pass (handlers suite 9.7s).
+- `npm run lint` — 0 errors, 14 pre-existing react-refresh warnings.
+- `npm run build` — passes (chunk-size warning pre-existing).
+- Committed on `agent/auth-validation-consistency` in the `agent-branch/auth-validation-consistency` worktree.
+
 # SUMMARY — auth-validation-consistency
 
 Two auth bugs: the login form rejected 3-character usernames even though signup

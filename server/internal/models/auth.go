@@ -37,8 +37,8 @@ var (
 )
 
 type LoginRequest struct {
-	Identifier string `json:"identifier" validate:"required,min=3"`
-	Password   string `json:"password"`
+	Identifier string `json:"identifier" validate:"required,min=3,max=96"`
+	Password   string `json:"password" validate:"required,max=72"`
 }
 
 type LoginResponse struct {
@@ -50,7 +50,7 @@ type RefreshTokenResponse struct {
 }
 
 type RegisterRequest struct {
-	Username string `json:"username" validate:"required,min=3,max=16"`
+	Username string `json:"username" validate:"required,min=3,max=16,regexp=^[a-zA-Z0-9_]+$"`
 	Email    string `json:"email" validate:"required,email,max=96"`
 	Password string `json:"password" validate:"required,min=8,max=72"`
 }

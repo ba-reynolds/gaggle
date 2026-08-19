@@ -595,6 +595,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                     value={newCategoryName}
                     onChange={(e) => setNewCategoryName(e.target.value)}
                     className="h-8"
+                    maxLength={50}
                   />
                   <Button
                     size="sm"
@@ -687,6 +688,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
             className="min-h-24 resize-none text-primary"
             value={quoteText}
             onChange={(e) => setQuoteText(e.target.value)}
+            maxLength={280}
           />
 
           <DialogFooter>

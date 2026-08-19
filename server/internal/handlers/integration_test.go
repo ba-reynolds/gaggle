@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -1885,5 +1886,148 @@ func TestAccountPrivacy(t *testing.T) {
 	}
 	if code := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/posts/" + itoa(postID), Token: carol}).Code; code != http.StatusOK {
 		t.Fatalf("after public, stranger should see post: expected 200 got %d", code)
+	}
+}
+
+// TestProfileUpdateAllowsEmptyOptionalFields: PATCH /users/me used to reject
+// empty/short bio, location, and website (they carried `required`/`min` tags
+// while the DB defaults them to '' for new accounts), so a fresh user could
+// never save a profile edit or clear those fields.
+func TestProfileUpdateAllowsEmptyOptionalFields(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+	token := app.RegisterUser(t, "alicee", "alicee@example.com")
+
+	// All optional fields empty / unset defaults -> 200 (used to 400).
+	rec := app.Do(t, testutil.Request{
+		Method: http.MethodPatch,
+		Path:   "/api/v1/users/me",
+		Token:  token,
+		Body:   map[string]string{"display_name": "Alice", "bio": "", "location": "", "website": "", "birth_date": ""},
+	})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("profile update with empty optional fields: expected 200 got %d body %s", rec.Code, rec.Body.String())
+	}
+
+	// Short values are allowed too (no min floor anymore).
+	if rec := app.Do(t, testutil.Request{
+		Method: http.MethodPatch,
+		Path:   "/api/v1/users/me",
+		Token:  token,
+		Body:   map[string]string{"display_name": "Al", "bio": "hi", "location": "NY", "website": "x.io", "birth_date": ""},
+	}); rec.Code != http.StatusOK {
+		t.Fatalf("profile update with short values: expected 200 got %d body %s", rec.Code, rec.Body.String())
+	}
+
+	// Clearing a previously-set value persists.
+	rec = app.Do(t, testutil.Request{
+		Method: http.MethodPatch,
+		Path:   "/api/v1/users/me",
+		Token:  token,
+		Body:   map[string]string{"display_name": "Alice", "bio": "", "location": "NY", "website": "", "birth_date": ""},
+	})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("clear website: expected 200 got %d body %s", rec.Code, rec.Body.String())
+	}
+	me, _ := testutil.Decode[map[string]any](t, rec)
+	if me["website"] != "" {
+		t.Fatalf("cleared website should persist as '', got %v", me["website"])
+	}
+}
+
+// TestUsernameCharsetEnforced: the signup UI constrains usernames to
+// [a-zA-Z0-9_] but the API previously didn't, so direct callers could create
+// usernames that break mention parsing and profile URLs.
+func TestUsernameCharsetEnforced(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+
+	for _, bad := range []string{"foo bar", "foo-bar", "foo@bar"} {
+		if rec := app.Do(t, testutil.Request{
+			Method: http.MethodPost,
+			Path:   "/api/v1/auth/register",
+			Body:   map[string]string{"username": bad, "email": "x" + strings.ReplaceAll(bad, "@", "_at_") + "@example.com", "password": "password123"},
+		}); rec.Code != http.StatusBadRequest {
+			t.Fatalf("register username %q: expected 400 got %d body %s", bad, rec.Code, rec.Body.String())
+		}
+	}
+
+	if rec := app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/auth/register",
+		Body:   map[string]string{"username": "foo_bar", "email": "foo.bar@example.com", "password": "password123"},
+	}); rec.Code != http.StatusCreated {
+		t.Fatalf("register valid underscored username: expected 201 got %d body %s", rec.Code, rec.Body.String())
+	}
+}
+
+// TestPostContentLengthRejected: posts.content is VARCHAR(280); the API used to
+// rely on Postgres to reject over-length content, which surfaced as a 500.
+func TestPostContentLengthRejected(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+	token := app.RegisterUser(t, "ppp", "ppp@example.com")
+
+	// Exactly 280 chars is fine.
+	rec := app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/posts/",
+		Token:  token,
+		Body:   map[string]string{"content": strings.Repeat("a", 280)},
+	})
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("280-char post: expected 201 got %d body %s", rec.Code, rec.Body.String())
+	}
+	postData, _ := testutil.Decode[map[string]any](t, rec)
+	postID := int(postData["id"].(float64))
+
+	// 281 chars -> 400, not 500.
+	if rec := app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/posts/",
+		Token:  token,
+		Body:   map[string]string{"content": strings.Repeat("a", 281)},
+	}); rec.Code != http.StatusBadRequest {
+		t.Fatalf("281-char post: expected 400 got %d body %s", rec.Code, rec.Body.String())
+	}
+
+	// Update to an over-length content -> 400 too.
+	if rec := app.Do(t, testutil.Request{
+		Method: http.MethodPatch,
+		Path:   "/api/v1/posts/" + itoa(postID),
+		Token:  token,
+		Body:   map[string]string{"content": strings.Repeat("b", 281)},
+	}); rec.Code != http.StatusBadRequest {
+		t.Fatalf("update to 281-char content: expected 400 got %d body %s", rec.Code, rec.Body.String())
+	}
+}
+
+// TestPollQuestionLengthRejected: polls.question is VARCHAR(140) but the
+// question was never length-checked, so an over-long question hit the DB and
+// returned 500.
+func TestPollQuestionLengthRejected(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+	token := app.RegisterUser(t, "ppq", "ppq@example.com")
+
+	rec := app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/posts/",
+		Token:  token,
+		Body: map[string]any{
+			"content": strings.Repeat("q", 141),
+			"poll":    map[string]any{"options": []string{"a", "b"}},
+		},
+	})
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("141-char poll question: expected 400 got %d body %s", rec.Code, rec.Body.String())
+	}
+
+	if rec := app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/posts/",
+		Token:  token,
+		Body: map[string]any{
+			"content": strings.Repeat("p", 140),
+			"poll":    map[string]any{"options": []string{"a", "b"}},
+		},
+	}); rec.Code != http.StatusCreated {
+		t.Fatalf("140-char poll question: expected 201 got %d body %s", rec.Code, rec.Body.String())
 	}
 }

@@ -61,6 +61,17 @@ var Validate *validator.Validate
 // Special go function, executes by itself
 func init() {
 	Validate = validator.New(validator.WithRequiredStructEnabled())
+	// Register a `regexp` validation tag (e.g. `validate:"regexp=^[a-zA-Z0-9_]+$"`).
+	// go-playground ships many built-ins but not arbitrary regex matching.
+	if err := Validate.RegisterValidation("regexp", func(fl validator.FieldLevel) bool {
+		re, err := regexp.Compile(fl.Param())
+		if err != nil {
+			return false
+		}
+		return re.MatchString(fl.Field().String())
+	}); err != nil {
+		panic(err)
+	}
 }
 
 var hexColorRegex = regexp.MustCompile(`^#[0-9A-Fa-f]{6}$`)

@@ -18,11 +18,11 @@ const loginSchema = z.object({
   identifier: z.string()
     .min(1, 'Username or email is required')
     .min(3, 'Username or email must be at least 3 characters long')
-    .max(90, 'Username or email must be at most 90 characters long'),
+    .max(96, 'Username or email must be at most 96 characters long'),
   password: z.string()
     .min(1, 'Password is required')
     .min(8, 'Password must be at least 8 characters long')
-    .max(64, 'Password must be at most 64 characters long'),
+    .max(72, 'Password must be at most 72 characters long'),
 });
 
 // Form schema for password reset

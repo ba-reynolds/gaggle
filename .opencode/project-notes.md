@@ -1,4 +1,17 @@
-## Auth validation + duplicate-account errors (agent/auth-validation-consistency)
+## Auth-validation sweep #1–#6 (agent/auth-validation-consistency)
+- DB column limits (posts.content 280, polls.question 140, options 100) were NOT enforced in the
+  API — over-long payloads 500'd via Postgres. Fix: rune-aware checks in `post_service.go`
+  (`validateContentLength` + `validatePoll`), constants `maxPostContentLength=280` /
+  `maxPollQuestionLength=140`. Rune-aware because Postgres counts characters, JS `.length` counts
+  UTF-16 units — the API check is the hard stop, the frontend `maxLength` just UX.
+- go-playground/validator has NO built-in `regexp` tag — using `regexp=...` panics at first
+  validation unless registered. Added a `regexp` custom validator in `util/json.go` init.
+- Profile `UserProfile` model: Bio had `required`, Location/Website had `min=3` — but the DB
+  defaults those to `''`, so empty/short clears 400'd. Pattern to remember: validation tags must
+  be compatible with actual DB column defaults/NULL semantics.
+- `models.Date` `UnmarshalJSON` rejects `""`; the profile form sends `birth_date: ""` for users
+  without one → 400 "invalid request payload". Date now maps `""` → zero time (matches DB NULL
+  round-trip; zero Time marshals as "0001-01-01").
 - Username length rules live in FOUR places and were inconsistent: `RegisterRequest.Username`
   (server) + `SignupPage.tsx` zod = min 3, `LoginPage.tsx` zod was min 4 (bug — a 3-char
   user couldn't sign in), `LoginRequest.Identifier` had no min. Aligned everything to min 3.
