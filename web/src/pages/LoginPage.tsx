@@ -17,7 +17,7 @@ import * as z from 'zod';
 const loginSchema = z.object({
   identifier: z.string()
     .min(1, 'Username or email is required')
-    .min(4, 'Username or email must be at least 4 characters long')
+    .min(3, 'Username or email must be at least 3 characters long')
     .max(90, 'Username or email must be at most 90 characters long'),
   password: z.string()
     .min(1, 'Password is required')

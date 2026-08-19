@@ -37,7 +37,7 @@ var (
 )
 
 type LoginRequest struct {
-	Identifier string `json:"identifier" validate:"required"`
+	Identifier string `json:"identifier" validate:"required,min=3"`
 	Password   string `json:"password"`
 }
 

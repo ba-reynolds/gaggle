@@ -1,3 +1,13 @@
+## Auth validation + duplicate-account errors (agent/auth-validation-consistency)
+- Username length rules live in FOUR places and were inconsistent: `RegisterRequest.Username`
+  (server) + `SignupPage.tsx` zod = min 3, `LoginPage.tsx` zod was min 4 (bug — a 3-char
+  user couldn't sign in), `LoginRequest.Identifier` had no min. Aligned everything to min 3.
+- Duplicate username/email register errors were already specific on the backend
+  (`USERNAME_EXISTS`/`EMAIL_EXISTS`, matched by index name in `user_store.go.140-153`), but
+  `SignupPage.tsx`'s catch swallowed the axios error. Frontend error surfacing pattern:
+  `(err as AxiosError<Envelope<unknown>>)?.response?.data?.error?.message` (see AuthContext).
+- Login stays intentionally generic ("invalid credentials") — don't leak account existence there.
+
 ## GitHub / git on NixOS
 - `~/.config/git/config` is a read-only home-manager symlink into the nix
   store. Anything writing the *global* git config fails ("could not lock config

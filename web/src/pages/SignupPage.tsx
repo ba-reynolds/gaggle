@@ -6,6 +6,7 @@ import { useUser } from '@/contexts/UserContext';
 import { useRegisterMutation } from '@/hooks/useAuth';
 import api from '@/lib/api';
 import type { Envelope, UserProfileResponse } from '@/types/api';
+import { type AxiosError } from 'axios';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AtSign, Lock, Mail, User } from "lucide-react";
 import { useForm } from 'react-hook-form';
@@ -56,8 +57,9 @@ const SignupPage: React.FC = () => {
       });
       toast.success("Account created successfully");
       navigate('/'); // Redirect to home page after successful signup
-    } catch {
-      toast.error("Sign up failed. Please check your details and try again.");
+    } catch (err) {
+      const apiMessage = (err as AxiosError<Envelope<unknown>> | undefined)?.response?.data?.error?.message;
+      toast.error(apiMessage ?? "Sign up failed. Please check your details and try again.");
     }
   };
 

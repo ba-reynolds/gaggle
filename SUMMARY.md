@@ -1,3 +1,56 @@
+# SUMMARY — auth-validation-consistency
+
+Two auth bugs: the login form rejected 3-character usernames even though signup
+allows them (signup min=3 vs login min=4), and registering an already-taken
+username/email surfaced only a generic toast, discarding the specific
+`USERNAME_EXISTS`/`EMAIL_EXISTS` info the API already returns.
+
+## What was changed and why
+
+- **Login identifier min length aligned to 3** (`web/src/pages/LoginPage.tsx`):
+  the login zod schema required `.min(4)` while signup (`SignupPage.tsx`),
+  profile editing, and the backend `RegisterRequest` all use min 3. A user who
+  registered a 3-char username could never sign in through the form. Changed the
+  login schema to `.min(3)`.
+- **Backend login min aligned too** (`server/internal/models/auth.go`):
+  `LoginRequest.Identifier` was `validate:"required"` only; added `min=3` so the
+  API enforces the same floor as registration (defense in depth).
+- **Duplicate signup error surfaced** (`web/src/pages/SignupPage.tsx`): the catch
+  block swallowed the axios error and toasted a generic message. It now reads
+  `error.response.data.error.message` (e.g. "username already exists" /
+  "email already exists") from the backend 409 and toasts that, falling back to
+  the generic message when the error has no API payload. The backend already
+  returned these codes/messages correctly — the bug was purely client-side
+  (detection in `server/internal/store/user_store.go:140-153` matches the actual
+  index names `unique_username`/`unique_email_case_insensitive` from migration
+  `000001`).
+- **Regression tests** (`server/internal/handlers/integration_test.go`):
+  strengthened `TestAuthFlow` to assert the 409 bodies carry `EMAIL_EXISTS` /
+  `USERNAME_EXISTS` codes with non-empty messages, and added
+  `TestThreeCharacterUsernameSignIn` proving a 3-char user can register and sign
+  in through the API.
+
+## Files touched
+
+- `web/src/pages/LoginPage.tsx`
+- `web/src/pages/SignupPage.tsx`
+- `server/internal/models/auth.go`
+- `server/internal/handlers/integration_test.go`
+
+## Reviewer double-checks
+
+- Frontend build/lint are clean (0 lint errors, 14 pre-existing react-refresh
+  warnings); backend `go test ./...` passes.
+- Confirm the login form now accepts a 3-char username end-to-end (the backend
+  accepted it before too, so no API change beyond the optional `min=3`).
+- Confirm a duplicate-username and duplicate-email signup each toast the specific
+  backend message, and that a non-conflict failure (e.g. network error) still
+  falls back to the generic message.
+- Login error handling for *invalid credentials* is intentionally still generic
+  ("Login failed, invalid credentials") — account enumeration protection, kept.
+
+---
+
 # SUMMARY — chat-ui-fixes
 
 Three small UI fixes: long DM messages now wrap instead of overflowing into a

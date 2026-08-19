@@ -239,7 +239,7 @@ func TestAuthFlow(t *testing.T) {
 		t.Fatal("register response missing access_token")
 	}
 
-	// Duplicate email -> 409
+	// Duplicate email -> 409 with an informative EMAIL_EXISTS code/message
 	rec = app.Do(t, testutil.Request{
 		Method: http.MethodPost,
 		Path:   "/api/v1/auth/register",
@@ -247,6 +247,30 @@ func TestAuthFlow(t *testing.T) {
 	})
 	if rec.Code != http.StatusConflict {
 		t.Fatalf("duplicate email: expected 409 got %d", rec.Code)
+	}
+	_, errObj := testutil.Decode[map[string]any](t, rec)
+	if errObj == nil || (*errObj)["code"] != "EMAIL_EXISTS" {
+		t.Fatalf("duplicate email: expected EMAIL_EXISTS got %v", errObj)
+	}
+	if msg, _ := (*errObj)["message"].(string); msg == "" {
+		t.Fatalf("duplicate email: expected informative message got %v", errObj)
+	}
+
+	// Duplicate username -> 409 with an informative USERNAME_EXISTS code/message
+	rec = app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/auth/register",
+		Body:   map[string]string{"username": "tester", "email": "tester2@example.com", "password": "password123"},
+	})
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("duplicate username: expected 409 got %d body %s", rec.Code, rec.Body.String())
+	}
+	_, errObj = testutil.Decode[map[string]any](t, rec)
+	if errObj == nil || (*errObj)["code"] != "USERNAME_EXISTS" {
+		t.Fatalf("duplicate username: expected USERNAME_EXISTS got %v", errObj)
+	}
+	if msg, _ := (*errObj)["message"].(string); msg == "" {
+		t.Fatalf("duplicate username: expected informative message got %v", errObj)
 	}
 
 	// Login
@@ -273,6 +297,38 @@ func TestAuthFlow(t *testing.T) {
 	rec = app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/users/me"})
 	if rec.Code != http.StatusUnauthorized {
 		t.Fatalf("no token: expected 401 got %d", rec.Code)
+	}
+}
+
+// TestThreeCharacterUsernameSignIn guards the registration/sign-in validation
+// agreement: registration allows a 3-char username (min=3), so sign-in must
+// accept the same identifier instead of rejecting it with a different floor.
+func TestThreeCharacterUsernameSignIn(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+
+	rec := app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/auth/register",
+		Body:   map[string]string{"username": "boo", "email": "boo@example.com", "password": "password123"},
+	})
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("register 3-char username: expected 201 got %d body %s", rec.Code, rec.Body.String())
+	}
+
+	rec = app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/auth/login",
+		Body:   map[string]string{"identifier": "boo", "password": "password123"},
+	})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("sign in with 3-char username: expected 200 got %d body %s", rec.Code, rec.Body.String())
+	}
+	data, errObj := testutil.Decode[map[string]any](t, rec)
+	if errObj != nil {
+		t.Fatalf("sign in with 3-char username: unexpected error %v", errObj)
+	}
+	if data["access_token"] == nil {
+		t.Fatal("sign in with 3-char username: missing access_token")
 	}
 }
 
