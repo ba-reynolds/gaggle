@@ -1756,6 +1756,14 @@ func (store *postStore) ListByHashtag(ctx context.Context, name string, limit in
 	`, []any{name}, limit, cursor)
 }
 
+func (store *postStore) ListMentionedBy(ctx context.Context, userID int, limit int, cursor string) (*models.PostFeed, error) {
+	return store.listDiscoverablePosts(ctx, `
+		FROM posts p
+		JOIN post_mentions pm ON pm.post_id = p.post_id
+		WHERE p.soft_deleted = FALSE AND p.parent_id IS NULL AND pm.user_id = $1
+	`, []any{userID}, limit, cursor)
+}
+
 func (store *postStore) listDiscoverablePosts(ctx context.Context, filters string, args []any, limit int, cursor string) (*models.PostFeed, error) {
 	query := `SELECT p.post_id, p.created_at ` + filters
 	if cursor != "" {

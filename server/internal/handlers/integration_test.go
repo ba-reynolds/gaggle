@@ -585,6 +585,63 @@ func TestSearchHashtagsAndTrends(t *testing.T) {
 	}
 }
 
+func TestMentionsFeed(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+	tokenA := app.RegisterUser(t, "mention_a", "mention-a@example.com")
+	tokenB := app.RegisterUser(t, "mention_b", "mention-b@example.com")
+
+	// Tag mention_b case-insensitively plus a bogus username that must be ignored.
+	post, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/posts/",
+		Token:  tokenA,
+		Body:   map[string]string{"content": "Hello @Mention_B and @ghost"},
+	}))
+	postID := int(post["id"].(float64))
+
+	retrieved := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/mentions", Token: tokenB})
+	if retrieved.Code != http.StatusOK {
+		t.Fatalf("mentions status = %d body = %s", retrieved.Code, retrieved.Body.String())
+	}
+	feed, _ := testutil.Decode[map[string]any](t, retrieved)
+	items := feed["items"].([]any)
+	if len(items) != 1 || int(items[0].(map[string]any)["id"].(float64)) != postID {
+		t.Fatalf("mentions feed did not contain post %d: %v", postID, items)
+	}
+
+	empty, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/mentions", Token: tokenA}))
+	if len(empty["items"].([]any)) != 0 {
+		t.Fatalf("mention_a's mentions feed = %v, want empty", empty["items"])
+	}
+
+	// Mentions inside replies are not surfaced (parity with hashtag feeds, which are top-level only).
+	app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/posts/",
+		Token:  tokenA,
+		Body: map[string]any{
+			"content":   "@mention_b in a reply",
+			"parent_id": postID,
+		},
+	})
+	afterReply, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/mentions", Token: tokenB}))
+	if len(afterReply["items"].([]any)) != 1 {
+		t.Fatalf("mentions feed after reply = %v, want just the top-level post", afterReply["items"])
+	}
+
+	// Removing the mention from an edited post drops it from the feed.
+	app.Do(t, testutil.Request{
+		Method: http.MethodPatch,
+		Path:   "/api/v1/posts/" + itoa(postID) + "/",
+		Token:  tokenA,
+		Body:   map[string]string{"content": "Hello everyone"},
+	})
+	afterEdit, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/mentions", Token: tokenB}))
+	if len(afterEdit["items"].([]any)) != 0 {
+		t.Fatalf("mentions feed after edit = %v, want empty", afterEdit["items"])
+	}
+}
+
 func TestPostPowerFeatures(t *testing.T) {
 	app := testutil.NewApp(t, testutil.Database(t))
 	tokenA := app.RegisterUser(t, "power_a", "power-a@example.com")

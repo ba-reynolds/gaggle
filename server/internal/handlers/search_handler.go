@@ -6,9 +6,13 @@ import (
 
 	"github.com/ba-reynolds/gophersocial/internal/apperrors"
 	"github.com/ba-reynolds/gophersocial/internal/middleware"
+	"github.com/ba-reynolds/gophersocial/internal/models"
 	"github.com/ba-reynolds/gophersocial/internal/service"
 	"github.com/ba-reynolds/gophersocial/internal/util"
 )
+
+// Keep the models import referenced for swag annotation resolution.
+var _ models.PostFeed
 
 type SearchHandler struct {
 	service *service.Service
@@ -58,6 +62,33 @@ func (h *SearchHandler) HashtagPosts(w http.ResponseWriter, r *http.Request) {
 	}
 	limit, cursor, _ := util.ParsePaginationParams(r.URL.Query().Get("limit"), r.URL.Query().Get("cursor"), 20, 100)
 	posts, err := h.service.Search.HashtagPosts(r.Context(), user.ID, r.PathValue("tag"), limit, cursor)
+	if err != nil {
+		h.respondError(w, err)
+		return
+	}
+	util.RespondWithJson(w, http.StatusOK, posts)
+}
+
+// Mentions godoc
+//
+// @Summary      List posts mentioning the viewer
+// @Description  Returns posts that tagged the authenticated user with @username, newest first.
+// @Tags         search
+// @Produce      json
+// @Param        limit query int false "Maximum number of posts"
+// @Param        cursor query string false "Cursor for pagination"
+// @Success      200 {object} models.Envelope{data=models.PostFeed}
+// @Failure      500 {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Security     ApiKeyAuth
+// @Router       /mentions [get]
+func (h *SearchHandler) Mentions(w http.ResponseWriter, r *http.Request) {
+	user, err := middleware.GetAuthenticatedUserFromContext(r)
+	if err != nil {
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+	limit, cursor, _ := util.ParsePaginationParams(r.URL.Query().Get("limit"), r.URL.Query().Get("cursor"), 20, 100)
+	posts, err := h.service.Search.Mentions(r.Context(), user.ID, limit, cursor)
 	if err != nil {
 		h.respondError(w, err)
 		return

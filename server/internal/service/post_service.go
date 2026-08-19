@@ -348,6 +348,9 @@ func (s *PostService) Create(ctx context.Context, post *models.Post, mediaItems 
 	if err := s.store.Hashtags.SyncPost(ctx, tx, post.ID, post.Content); err != nil {
 		return err
 	}
+	if err := s.store.Mentions.SyncPost(ctx, tx, post.ID, post.Content); err != nil {
+		return err
+	}
 	if post.PollPayload != nil {
 		if err := s.store.Polls.Create(ctx, tx, post.ID, post.PollPayload); err != nil {
 			return err
@@ -433,6 +436,9 @@ func (s *PostService) Update(ctx context.Context, post *models.Post, actorID int
 		return nil, err
 	}
 	if err := s.store.Hashtags.SyncPost(ctx, tx, post.ID, content); err != nil {
+		return nil, err
+	}
+	if err := s.store.Mentions.SyncPost(ctx, tx, post.ID, content); err != nil {
 		return nil, err
 	}
 	if err := tx.Commit(); err != nil {
@@ -855,6 +861,9 @@ func (s *PostService) QuotePost(ctx context.Context, post *models.Post, mediaIte
 		}
 	}
 	if err := s.store.Hashtags.SyncPost(ctx, tx, post.ID, post.Content); err != nil {
+		return err
+	}
+	if err := s.store.Mentions.SyncPost(ctx, tx, post.ID, post.Content); err != nil {
 		return err
 	}
 

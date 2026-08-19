@@ -118,6 +118,7 @@ func NewRouter(
 			})
 			protected.Get("/search", searchHandler.Search)
 			protected.Get("/hashtags/{tag}/posts", searchHandler.HashtagPosts)
+			protected.Get("/mentions", searchHandler.Mentions)
 			protected.Get("/trends", searchHandler.Trends)
 
 			protected.Route("/posts", func(r chi.Router) {

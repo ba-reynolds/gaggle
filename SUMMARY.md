@@ -64,6 +64,96 @@ deployment:
   the visible bug was a stale deployment, so a rebuild is the real fix.
 
 ---
+
+# SUMMARY — tag-users-in-posts
+
+Users can now be tagged in a post by writing `@username`, mirroring the
+hashtag feature end-to-end: tags are parsed and stored at write time, `@user`
+renders as a link to their profile everywhere post content is shown (feed,
+post page, and the compose live-highlight), and there is a `/mentions` page
+listing the posts that tagged **you**.
+
+## What was changed and why
+
+Mention *notifications* already existed (create + quote, wired in the post
+handlers), but nothing else did: `@username` was plain text, mentions weren't
+stored or queryable, and there was no feed. This change adds the missing
+hashtag-parallel pieces.
+
+**Server**
+- Migration `000017_add-post-mentions`: `post_mentions (post_id, user_id)`
+  composite PK, both FKs `ON DELETE CASCADE`, index on `(user_id, post_id)`.
+  No catalog table needed (unlike hashtags) because users are first-class —
+  mentions reference `users` directly.
+- `postutil.ExtractMentions`: unicode-aware `@username` extraction
+  (`(?:^|[^\pL\pN_])@([\pL\pN_]{1,16})`), lowercased + deduped, unknown users
+  dropped at resolution time.
+- `mentionStore.SyncPost` runs inside the post transaction at create, update,
+  and quote (`post_service.go`), right beside `Hashtags.SyncPost`. Resolution
+  is case-insensitive (`LOWER(username) = LOWER($1)`) and excludes soft-deleted
+  users.
+- `GET /mentions` (authenticated): keyset-paginated feed of posts mentioning
+  the viewer, hydrated via the shared `search_service.hydrateFeed` (engagement,
+  polls, media, parents). Reuses `postStore.listDiscoverablePosts` like
+  `ListByHashtag`; top-level posts only (parity with hashtag feeds).
+- Swagger annotation added for the new endpoint (`make swag` regenerated —
+  only `/mentions` was added to `server/docs`).
+
+**Frontend**
+- `HashtagText.tsx` replaced by `ContentLinks.tsx`, which renders both `#tag`
+  (→ `/hashtags/tag`) and `@user` (→ `/profile/user`) as accent-colored links.
+  Used by `FeedPost` (covers the post page too) and `ComposeContent`'s
+  live-highlight mirror. Composer CSS class renamed `.hashtag-composer` →
+  `.composer-highlight`.
+- New `MentionsPage` at `/mentions` (mirrors `HashtagPage`), nav entry in the
+  sidebar, `getMentionsFeed` API + `useMentionsFeed` infinite-query hook.
+
+## Files touched
+- Server: `server/cmd/migrate/migrations/000017_add-post-mentions.{up,down}.sql`
+  (new), `server/internal/postutil/mentions.go` (new),
+  `server/internal/store/mention_store.go` (new),
+  `server/internal/store/{store.go,post_store.go}`,
+  `server/internal/service/{post_service.go,search_service.go,service.go}`,
+  `server/internal/handlers/{search_handler.go,integration_test.go}`,
+  `server/internal/api/router.go`, `server/docs/*` (regenerated).
+- Frontend: `web/src/components/ContentLinks.tsx` (new),
+  `web/src/components/HashtagText.tsx` (deleted),
+  `web/src/pages/MentionsPage.tsx` (new), `web/src/components/{FeedPost,ComposeContent}.tsx`,
+  `web/src/index.css`, `web/src/api/search.ts`, `web/src/hooks/useSearch.ts`,
+  `web/src/App.tsx`, `web/src/layout/SocialMediaLayout.tsx`.
+
+## Verification
+- `go build ./...`, `go vet ./...`, full `go test ./...` green; new
+  `TestMentionsFeed` covers case-insensitive tagging, bogus-username dropping,
+  a non-mentioned user's empty feed, reply-mentions exclusion, and
+  mention removal on edit.
+- Frontend `tsc -b && vite build` and `eslint .` pass (0 errors; only
+  pre-existing warnings outside changed files).
+
+## Reviewer double-checks
+1. **Notification/storage regex divergence**: mention *notifications*
+   (`notification_service.go:20`) use ASCII `@([A-Za-z0-9_]{3,16})\b`, while
+   storage uses unicode + case-insensitive resolution. A unicode username (or
+   `@Name` casing) is stored and rendered as a link but may not generate a
+   notification. Left as-is to avoid touching the existing notification
+   behavior — consider aligning them in a follow-up.
+2. **Top-level-only mentions feed** (parity with hashtag feeds): a reply that
+   tags you appears in your mention *notifications* but not in `/mentions`.
+   Confirm that's the desired semantic.
+3. **`GetByUsername` is case-sensitive**; mention resolution
+   intentionally bypasses it with a `LOWER()` query so `@Name` resolves
+   regardless of stored casing. `GetUserProfileByUsername` is case-insensitive,
+   so the rendered `/profile/...` link always resolves.
+4. **Feed caching**: mentions are stored per-post and don't affect the home-feed
+   Redis cache; no invalidation changes were needed.
+5. **Mobile nav** was intentionally left unchanged (bottom bar is full) —
+   `/mentions` is reachable via the desktop sidebar. Add a mobile entry if
+   desired.
+6. **Swag**: `search_handler.go` now imports `models` with a `var _ models.PostFeed`
+   dummy (the settings_handler trick) — swag can't otherwise resolve
+   `models.Envelope` in annotations.
+
+---
 # SUMMARY — refresh-token-rotation
 
 Refresh tokens now rotate on every use, sessions are grouped into families,

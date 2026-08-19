@@ -46,6 +46,16 @@ func (s *SearchService) HashtagPosts(ctx context.Context, viewerID int, name str
 	return s.hydrateFeed(ctx, feed, viewerID)
 }
 
+// Mentions returns the posts that mention the viewer, newest first.
+func (s *SearchService) Mentions(ctx context.Context, viewerID int, limit int, cursor string) (*models.PostFeed, error) {
+	feed, err := s.store.Posts.ListMentionedBy(ctx, viewerID, s.normalizeLimit(limit), cursor)
+	if err != nil {
+		s.logger.Error("mention feed query failed", "error", err)
+		return nil, err
+	}
+	return s.hydrateFeed(ctx, feed, viewerID)
+}
+
 func (s *SearchService) Users(ctx context.Context, query string, limit int) (*models.UserList, error) {
 	query = strings.TrimSpace(query)
 	if query == "" {

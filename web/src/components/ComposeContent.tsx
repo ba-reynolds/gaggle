@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useUser } from "@/contexts/UserContext";
-import HashtagText from "./HashtagText";
+import ContentLinks from "./ContentLinks";
 import MediaGallery, { type GalleryItem } from "./MediaGallery";
 import { useMediaUpload } from "@/hooks/useMediaUpload";
 import { useCreatePost } from "@/hooks/usePost";
@@ -261,13 +261,13 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
       <div className="flex-1">
         {children}
 
-        {/* Live hashtag highlight behind a transparent-caret textarea */}
+        {/* Live hashtag/@mention highlight behind a transparent-caret textarea */}
         <div className="relative">
           <div
             aria-hidden
             className={`absolute inset-0 overflow-hidden whitespace-pre-wrap break-words px-3 py-2 text-sm text-primary pointer-events-none ${textareaHeight}`}
           >
-            {text.length > 0 ? <HashtagText content={text} /> : "\u200B"}
+            {text.length > 0 ? <ContentLinks content={text} /> : "\u200B"}
           </div>
           <Textarea
             placeholder={placeholder}
@@ -279,7 +279,7 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
                 void handleSubmit();
               }
             }}
-            className={`hashtag-composer relative w-full border-none resize-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-md ${textareaHeight} bg-transparent`}
+            className={`composer-highlight relative w-full border-none resize-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-md ${textareaHeight} bg-transparent`}
           />
         </div>
 

@@ -13,6 +13,34 @@
   following/followers does nothing"). Rebuild both from current source before
   debugging "broken" features.
 
+## User @mentions / tagging (tag-users-in-posts)
+- Migration `000017` adds `post_mentions (post_id, user_id)` (composite PK, both FK
+  `ON DELETE CASCADE`, index on `(user_id, post_id)`). No catalog table — users are
+  first-class, unlike hashtags. `mentionStore.SyncPost` runs at create/update/quote
+  in `post_service.go`, right after `Hashtags.SyncPost`.
+- `postutil.ExtractMentions` regex: `(?:^|[^\pL\pN_])@([\pL\pN_]{1,16})` (unicode,
+  min 1 — resolution filters to real users). It is a SUPERSET of the *notification*
+  regex in `notification_service.go:20` (`@([A-Za-z0-9_]{3,16})\b`, ASCII, min 3) —
+  a unicode or 1-2-char username can be STORED as a mention but never produce a
+  mention notification. Known divergence, kept as-is.
+- **`GetByUsername` (user_store.go) is CASE-SENSITIVE** (`WHERE username = $1`) — do
+  NOT use it to resolve mentions. `mentionStore.SyncPost` resolves inline with
+  `LOWER(username) = LOWER($1) AND soft_deleted = FALSE` (matches the case-insensitive
+  unique index). `GetUserProfileByUsername` *is* case-insensitive (line 196), so
+  frontend `@Name` → `/profile/Name` links always resolve.
+- `GET /mentions` = viewer-scoped mentions feed, keyset-paginated via
+  `postStore.ListMentionedBy` → `listDiscoverablePosts`, **top-level only**
+  (`parent_id IS NULL`), mirrors ListByHashtag. Replies linking you appear in your
+  mention *notifications* but NOT the mentions feed — parity with hashtags.
+- Frontend: `HashtagText.tsx` was replaced by `ContentLinks.tsx` (renders both
+  `#tag` → `/hashtags/tag` and `@user` → `/profile/user`); used by FeedPost + the
+  ComposeContent live-highlight mirror. Composer CSS class renamed
+  `.hashtag-composer` → `.composer-highlight`.
+- Swag gotcha (again): annotations using `models.X` need the file to import
+  `models` — `search_handler.go` now has a `var _ models.PostFeed` dummy (mirrors
+  `settings_handler.go`'s `var _ models.UserSettings`) or `models.Envelope` won't
+  resolve and `make swag` exits 1.
+
 ## Server: home feed Redis cache + pin/edit/delete invalidation
 - `GET /posts/feed` is served from a 60s Redis cache (`feed:home:{userID}:{cursor}`,
   `handlers.GetHomeFeed`). Any write that changes `is_pinned`, content, or post
