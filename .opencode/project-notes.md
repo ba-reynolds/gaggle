@@ -1,3 +1,16 @@
+# login-experiments → /login promotion (agent/login-experiments)
+- The keeper favorite (simple step flow, `StepFlow.tsx`) became the real
+  login page: `LoginPage.tsx` now renders `<StepFlow footer={...}/>` with the
+  footer carrying **Test sign in**, **Forgot your password?** (toggles to the
+  reset card), and **Sign up** link. `StepFlow` got an optional
+  `footer?: ReactNode` prop (rendered after `</Form>`, inside the form column).
+- Lab variants at `/login-lab` are untouched — StepFlow there gets no footer
+  (prop defaults to undefined), so experimenting in the lab won't break
+  `/login`. Note the coupling: editing the StepFlow variant changes `/login`.
+- `LoginPage.tsx` uses `h-screen overflow-y-auto` (mirrors the lab pane);
+  `getByRole('button', {name:'Sign in'})` is ambiguous with "Test sign in"
+  — playwright needs `exact: true`.
+
 ## Goose branding assets (agent/gaggle-goose-branding)
 - `web/` had NO `public/` dir and `index.html` referenced a nonexistent
   `/vite.svg` → the favicon 404'd. This branch now ships
