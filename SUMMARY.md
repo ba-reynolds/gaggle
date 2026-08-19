@@ -1,4 +1,56 @@
-# SUMMARY — trim-theme-catalog
+# SUMMARY — sidebar-mobile-nav
+
+Responsive navigation cleanup. At narrow widths the left sidebar used to show a
+ran of icon-only nav items whose hover pill was full-width while the icon sat
+left (looked off-center), the Post button was an empty pill (label hidden but
+no icon), and the icon rail rendered **at the same time** as the fixed bottom
+mobile nav. Decision taken: three distinct responsive tiers instead of the
+previous "both at once" behavior.
+
+## What was changed and why
+
+- **Three-tier nav** (`web/src/layout/SocialMediaLayout.tsx`): the left sidebar
+  is now `hidden md:block` with `md:col-span-2 lg:col-span-2`, so it only
+  exists from `md` (768px) up. Below `md` the app goes fully into the mobile
+  design: fixed bottom nav is the ONLY navigation and the main column is full
+  width. At `md`–`lg` the sidebar is an icon-only rail; at `lg+` it shows the
+  full labels with the right rail, unchanged.
+- **Grid math preserved**: base = main `col-span-12`; `md` = 2+10; `lg` =
+  2+7+3 (sidebar + main + right rail). No overlapping/double nav at any width.
+- **Icon-only hover centering**: `NavItem` switched from
+  `justify-start items-center space-x-4` to
+  `justify-center lg:justify-start gap-x-4`, so when the label is hidden
+  (below `lg`) the icon is horizontally centered inside the full-width hover
+  background; when labels show it stays left-aligned. The Post button, logo
+  wordmark, and user dropdown similarly use `justify-center lg:justify-start/block`
+  for the icon-only state.
+- **Post button write icon**: instead of an empty pill (below `md` the sidebar
+  doesn't render; at `md`–`lg` the label was hidden with no icon), the button is
+  now `md:w-14 md:h-14 md:px-0` circle containing a `PenSquare` icon and returns
+  to the full-width pill + "Post" label at `lg+`.
+- **Mobile bottom nav gained destinations** (`web/src/components/MobileNavigation.tsx`):
+  since below `md` the sidebar is gone, Explore and DMs (Messages) were added to
+  the sidebar-less bottom nav (previously missing), and the DM unread badge now
+  shows. Kept: Home, Alerts, compose FAB, Saved, Profile, Settings.
+- **Mobile bottom padding**: main column gets `pb-16 md:pb-0` so the fixed
+  bottom nav doesn't cover the last content.
+
+## Files touched
+
+- `web/src/layout/SocialMediaLayout.tsx`
+- `web/src/components/MobileNavigation.tsx`
+
+## Review notes
+
+- Below `md` the sidebar (and therefore the account dropdown with Log out,
+  and Admin/Lists/Mentions links) is gone. Logout is only reachable via that
+  dropdown. If losing Log out on phones is unacceptable, it should be added to
+  the Settings page or the mobile nav — flagging for review.
+- The `md`–`lg` icon rail still shows badge dots on Messages/Notifications;
+  verify badge position against the icon-only layout.
+- No server/DB changes; frontend-only.
+
+---
 
 Follow-up to the catalog trim: cut the Catppuccin catalog down to one flavor
 (mocha), gave Kanagawa a real light mode, removed the manual "Rounded corners"
