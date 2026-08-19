@@ -28,6 +28,7 @@ export interface RegisterPayload {
   username: string;
   email: string;
   password: string;
+  language?: string;
 }
 
 export interface RegisterResponse {

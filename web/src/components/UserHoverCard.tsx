@@ -5,6 +5,7 @@ import { useFetchProfile } from "@/hooks/useUser";
 import UserBadges from "@/components/UserBadges";
 import { getMediaUrl } from "@/util/media";
 import { useUser } from "@/contexts/UserContext";
+import { useI18n } from "@/contexts/I18nContext";
 import { Link } from "react-router-dom";
 
 interface UserHoverCardProps {
@@ -33,6 +34,7 @@ const UserHoverCard: React.FC<UserHoverCardProps> = ({
   const profileUrl = `/profile/${username}`;
   const { data: profileData } = useFetchProfile(username, fetchProfile);
   const { user } = useUser();
+  const { t } = useI18n();
   const isCurrentUser = user.username === username;
 
   const profile = profileData?.data;
@@ -63,7 +65,7 @@ const UserHoverCard: React.FC<UserHoverCardProps> = ({
                 size="sm"
                 onClick={(e) => onFollowToggle?.(e)}
               >
-                {isFollowing ? "Following" : "Follow"}
+                {isFollowing ? t("whoToFollow.following") : t("whoToFollow.follow")}
               </Button>
             )}
           </div>
@@ -78,8 +80,8 @@ const UserHoverCard: React.FC<UserHoverCardProps> = ({
             <p className="text-sm mt-2 line-clamp-4">{bio}</p>
 
             <div className="flex space-x-4 mt-2 text-sm">
-              <span><span className="font-semibold">{followingCount.toLocaleString()}</span> Following</span>
-              <span><span className="font-semibold">{followersCount.toLocaleString()}</span> Followers</span>
+              <span><span className="font-semibold">{followingCount.toLocaleString()}</span> {t("whoToFollow.followingNoun")}</span>
+              <span><span className="font-semibold">{followersCount.toLocaleString()}</span> {t("whoToFollow.followersNoun")}</span>
             </div>
           </div>
         </div>

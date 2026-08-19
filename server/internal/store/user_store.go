@@ -489,3 +489,32 @@ func (store *userStore) UpdateSettings(ctx context.Context, userID int, settings
 	}
 	return nil
 }
+
+// CreateSettings seeds the settings row for a brand-new user during
+// registration. Existing row keys are preserved via jsonb merge so defaults and
+// any prior writes survive a re-run.
+func (store *userStore) CreateSettings(ctx context.Context, tx *sql.Tx, userID int, settings *models.UserSettings) error {
+	raw, err := json.Marshal(settings)
+	if err != nil {
+		return apperrors.InternalServerError(err)
+	}
+
+	query := `
+		INSERT INTO user_settings (user_id, settings, updated_at)
+		VALUES ($1, $2, CURRENT_TIMESTAMP)
+		ON CONFLICT (user_id) DO UPDATE SET settings = user_settings.settings || EXCLUDED.settings, updated_at = CURRENT_TIMESTAMP
+	`
+	exec := store.db.ExecContext
+	if tx != nil {
+		exec = tx.ExecContext
+	}
+	if _, err := exec(ctx, query, userID, raw); err != nil {
+		store.logger.Error("database insert failed",
+			"operation", "create_user_settings",
+			"userID", userID,
+			"error", err,
+		)
+		return apperrors.InternalServerError(err)
+	}
+	return nil
+}

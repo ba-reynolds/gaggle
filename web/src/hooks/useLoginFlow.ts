@@ -7,6 +7,7 @@ import api from '@/lib/api';
 import type { Envelope, UserProfileResponse } from '@/types/api';
 import { useLoginMutation } from './useAuth';
 import { useUser } from '@/contexts/UserContext';
+import { useI18n } from '@/contexts/I18nContext';
 
 export const loginSchema = z.object({
   identifier: z.string()
@@ -24,6 +25,7 @@ export type LoginFormValues = z.infer<typeof loginSchema>;
 export function useLoginFlow() {
   const navigate = useNavigate();
   const { setUser } = useUser();
+  const { t } = useI18n();
   const loginMutation = useLoginMutation();
 
   const form = useForm<LoginFormValues>({
@@ -48,10 +50,10 @@ export function useLoginFlow() {
         profilePictureUUID: meResponse.data.data.profile_picture_uuid ?? '',
         isAdmin: meResponse.data.data.is_admin ?? false,
       });
-      toast.success('Login successful');
+      toast.success(t("auth.loginSuccess"));
       navigate('/');
     } catch {
-      toast.error('Login failed, invalid credentials');
+      toast.error(t("auth.loginFailed"));
     }
   };
 

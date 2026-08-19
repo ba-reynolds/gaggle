@@ -2,6 +2,28 @@
 
 Running log of agent-branch merges into main. Newest on top.
 
+## 2026-08-19 — agent/settings-language
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md` — kept **every** section from both sides, newest on top
+    (settings-language → message-conversation-fixes → login-experiments
+    follow-ups → enable-https → prior sections), `---` separated.
+  - `web/src/App.tsx` — settings-language added the `I18nProvider` wrapper;
+    login-experiments had added the `/login-lab` route. Kept BOTH: the
+    provider wraps the Router and the `/login-lab` route is preserved.
+  - `web/src/pages/LoginPage.tsx` — genuine design collision: login-experiments
+    promoted the StepFlow variant on `/login`, while settings-language (branched
+    earlier) reworked the old card page with i18n. Resolution: kept the
+    **promoted StepFlow design** and applied the branch's **i18n `t()` labels**
+    (auth.* keys) to the footer, reset card, and copy. Also routed
+    `useLoginFlow`'s toasts through `t("auth.loginSuccess"/"auth.loginFailed")`
+    so localized behavior is preserved on the honored design.
+  - `.opencode/project-notes.md` auto-merged cleanly.
+- Real code (I18nContext, i18n/*.ts, SettingsPage/SignupPage/UserHoverCard/
+  AuthContext/useSettings/store/user_store/auth_service & handler) auto-merged
+  cleanly. Migration duplicate check clean. No DB migrations added.
+
 ## 2026-08-19 — agent/message-conversation-fixes
 
 - Status: **conflicted**

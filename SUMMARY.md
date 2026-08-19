@@ -1,3 +1,94 @@
+# SUMMARY — settings-language
+
+Makes the Settings language selector actually switch the UI language and
+persist, and seeds a new account's language from the browser before an account
+exists. No i18n library added — a lightweight dependency-free layer mirrors the
+existing `ThemeContext` pattern.
+
+## What was changed and why
+
+### Server: register seeds the `user_settings` row
+- `RegisterRequest` (`server/internal/models/auth.go`) gained an optional
+  `language` field (`validate:"omitempty,oneof=en es fr de"`). This is the only
+  place the browser language can be captured for a brand-new account: Settings
+  is only reachable once logged in.
+- `AuthService.Register` now accepts `language` and seeds the user's settings
+  row atomically with the user, via a new `Users.CreateSettings` store method
+  (`server/internal/store/store.go` / `user_store.go`). The seeded JSONB is the
+  full defaults object (mirroring the `user_settings` column default) with the
+  requested language substituted, so notification/privacy/appearance defaults
+  are never lost. `CreateSettings` uses `ON CONFLICT ... settings ||
+  EXCLUDED.settings` so any pre-existing row keeps its keys.
+  - `server/internal/service/auth_service.go` — `defaultSettings(language)`
+    helper builds the defaults; posted inside the register transaction.
+  - `server/internal/handlers/auth_handler.go`, `server/internal/service/
+    service.go` — signature threaded through.
+- New integration test `TestRegisterSeedsLanguageSetting` in
+  `server/internal/handlers/integration_test.go` posts `language: "es"` and
+  asserts the created account's `GET /users/settings` returns `es` and the
+  notifications defaults are intact.
+
+### Frontend: dependency-free i18n layer + browser-language default
+- `web/src/i18n/` — new module. `en.ts` is the source of truth for keys; a
+  `WideStrings<T>` mapped type lets `es`/`fr`/`de` (`es.ts`, `fr.ts`, `de.ts`)
+  be type-checked against the same shape (a missing/renamed key is a compile
+  error). `index.ts` exposes `translate`, `detectBrowserLanguage`
+  (`navigator.languages` tags like `es-ES` → `es`, fallback `en`),
+  `SUPPORTED_LANGUAGES`, and module-level `setCurrentLanguage`/`getCurrentLanguage`
+  so non-React code (session-expiry toast) can translate too.
+- `web/src/contexts/I18nContext.tsx` — `I18nProvider` + `useI18n()` returning
+  `{ language, setLanguage, t }`.
+  - Language resolution: starts at `detectBrowserLanguage()`; once an account
+    is logged in it adopts `settings.language` (via the `settings` query,
+    `enabled` only when `token` is a string). A manual Settings pick is never
+    overwritten mid-session (`isUserSelect` guard), so the whole UI re-renders
+    in the new language immediately — no waiting on the PATCH round-trip to
+    switch strings.
+  - Sets `document.documentElement.lang` (was hardcoded `lang="en"` in
+    `index.html`) and pokes `setCurrentLanguage` for non-hook callers.
+  - `t(key, params?)` resolves dot-paths and interpolates `{name}` params.
+- `web/src/App.tsx` — `I18nProvider` wraps `<Router>` inside `AuthProvider`/
+  `NotificationsProvider` (it needs the auth token gate and the settings query).
+- `web/src/types/api.ts` — `RegisterPayload` gained `language?: string`.
+
+### Strings translated via `t()`
+- Auth pages: `LoginPage` (`Sign in`, reset-password form, validation messages
+  are now t()-based via `useMemo` schemas), `SignupPage` (and it now sends
+  `language: detectBrowserLanguage()` on register).
+- Layout/nav: `SocialMediaLayout` (nav items, trending/who-to-follow cards,
+  account dropdown, compose dialog), `MobileNavigation`.
+- Settings: `SettingsPage` fully translated; language `<Select>` driven by
+  `useI18n().language` so the UI flips instantly while still PATCHing
+  `settings.language`.
+- Shared components: `ComposeContent` (visibility/poll/alt-text dialogs,
+  `Option {n}` interpolation), `FeedPost` (kebab menu, reply/quote/edit/delete
+  dialogs, visibility tooltips, follow/block toasts), `UserHoverCard`.
+- Toasts: `useSettings` (`settings.updated`/`settings.updateFailed`),
+  `AuthContext` (`auth.sessionExpired` via module-level language).
+
+## Files touched
+
+- Server: `models/auth.go`, `handlers/auth_handler.go`,
+  `handlers/integration_test.go`, `service/auth_service.go`,
+  `service/service.go`, `store/store.go`, `store/user_store.go`
+- Web: `src/i18n/{en,es,fr,de,index}.ts` (new), `src/contexts/I18nContext.tsx`
+  (new), `src/App.tsx`, `src/types/api.ts`, `src/pages/{Login,Signup,
+  Settings}Page.tsx`, `src/components/{ComposeContent,FeedPost,
+  MobileNavigation,UserHoverCard}.tsx`, `src/layout/SocialMediaLayout.tsx`,
+  `src/hooks/useSettings.ts`, `src/contexts/AuthContext.tsx`,
+  `package-lock.json` (docker `npm install` inside web-tools)
+
+## Verification
+
+- `docker compose --profile tools run --rm web-tools npm run build` — passes
+  (tsc + vite).
+- `docker compose --profile tools run --rm web-tools npm run lint` — 0 errors
+  (16 pre-existing fast-refresh warnings, same class as `ThemeContext`).
+- `docker compose --profile tools run --rm tools go test ./...` — all packages
+  pass, including the new `TestRegisterSeedsLanguageSetting` and existing
+  `TestSettings`.
+- Migration version uniqueness check on the branch — clean (no new migrations).
+---
 # SUMMARY — message-conversation-fixes
 
 Three direct-messaging issues reported against the live app:

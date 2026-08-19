@@ -7,6 +7,7 @@ import SignupPage from '@/pages/SignupPage';
 import { UserProvider } from './contexts/UserContext';
 import { Toaster } from './components/ui/sonner';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { I18nProvider } from './contexts/I18nContext';
 import SocialMediaLayout from '@/layout/SocialMediaLayout';
 import FeedPage from './pages/FeedPage';
 import ProfilePage from './pages/ProfilePage';
@@ -47,31 +48,33 @@ function App() {
         <UserProvider>
           <AuthProvider>
             <NotificationsProvider>
-              <Router>
-                <Routes>
-                  <Route path="/" element={<SocialMediaLayout><FeedPage /></SocialMediaLayout>} />
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/login-lab" element={<LoginLabPage />} />
-                  <Route path="/signup" element={<SignupPage />} />
-                  <Route path="/profile/:username" element={<SocialMediaLayout><ProfilePage /></SocialMediaLayout>} />
-                  <Route path="/profile/:username/followers" element={<SocialMediaLayout><FollowListPage listType="followers" /></SocialMediaLayout>} />
-                  <Route path="/profile/:username/following" element={<SocialMediaLayout><FollowListPage listType="following" /></SocialMediaLayout>} />
-                  <Route path="/bookmarks" element={<SocialMediaLayout><BookmarksPage /></SocialMediaLayout>} />
-                  <Route path="/lists" element={<SocialMediaLayout><ListsPage /></SocialMediaLayout>} />
-                  <Route path="/lists/:id" element={<SocialMediaLayout><ListPage /></SocialMediaLayout>} />
-                  <Route path="/explore" element={<SocialMediaLayout><ExplorePage /></SocialMediaLayout>} />
-                  <Route path="/settings" element={<SocialMediaLayout><SettingsPage /></SocialMediaLayout>} />
-                  <Route path="/post/:id" element={<SocialMediaLayout><PostPage /></SocialMediaLayout>} />
-                  <Route path="/notifications" element={<SocialMediaLayout><NotificationsPage /></SocialMediaLayout>} />
-                  <Route path="/mentions" element={<SocialMediaLayout><MentionsPage /></SocialMediaLayout>} />
-                  <Route path="/messages" element={<SocialMediaLayout><MessagesPage /></SocialMediaLayout>} />
-                  <Route path="/messages/new" element={<SocialMediaLayout><ConversationPage /></SocialMediaLayout>} />
-                  <Route path="/messages/:conversationId" element={<SocialMediaLayout><ConversationPage /></SocialMediaLayout>} />
-                  <Route path="/search" element={<SocialMediaLayout><SearchPage /></SocialMediaLayout>} />
-                  <Route path="/hashtags/:tag" element={<SocialMediaLayout><HashtagPage /></SocialMediaLayout>} />
-                  <Route path="/admin" element={<SocialMediaLayout><AdminPage /></SocialMediaLayout>} />
-                </Routes>
-              </Router>
+              <I18nProvider>
+                <Router>
+                  <Routes>
+                    <Route path="/" element={<SocialMediaLayout><FeedPage /></SocialMediaLayout>} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/login-lab" element={<LoginLabPage />} />
+                    <Route path="/signup" element={<SignupPage />} />
+                    <Route path="/profile/:username" element={<SocialMediaLayout><ProfilePage /></SocialMediaLayout>} />
+                    <Route path="/profile/:username/followers" element={<SocialMediaLayout><FollowListPage listType="followers" /></SocialMediaLayout>} />
+                    <Route path="/profile/:username/following" element={<SocialMediaLayout><FollowListPage listType="following" /></SocialMediaLayout>} />
+                    <Route path="/bookmarks" element={<SocialMediaLayout><BookmarksPage /></SocialMediaLayout>} />
+                    <Route path="/lists" element={<SocialMediaLayout><ListsPage /></SocialMediaLayout>} />
+                    <Route path="/lists/:id" element={<SocialMediaLayout><ListPage /></SocialMediaLayout>} />
+                    <Route path="/explore" element={<SocialMediaLayout><ExplorePage /></SocialMediaLayout>} />
+                    <Route path="/settings" element={<SocialMediaLayout><SettingsPage /></SocialMediaLayout>} />
+                    <Route path="/post/:id" element={<SocialMediaLayout><PostPage /></SocialMediaLayout>} />
+                    <Route path="/notifications" element={<SocialMediaLayout><NotificationsPage /></SocialMediaLayout>} />
+                    <Route path="/mentions" element={<SocialMediaLayout><MentionsPage /></SocialMediaLayout>} />
+                    <Route path="/messages" element={<SocialMediaLayout><MessagesPage /></SocialMediaLayout>} />
+                    <Route path="/messages/new" element={<SocialMediaLayout><ConversationPage /></SocialMediaLayout>} />
+                    <Route path="/messages/:conversationId" element={<SocialMediaLayout><ConversationPage /></SocialMediaLayout>} />
+                    <Route path="/search" element={<SocialMediaLayout><SearchPage /></SocialMediaLayout>} />
+                    <Route path="/hashtags/:tag" element={<SocialMediaLayout><HashtagPage /></SocialMediaLayout>} />
+                    <Route path="/admin" element={<SocialMediaLayout><AdminPage /></SocialMediaLayout>} />
+                  </Routes>
+                </Router>
+              </I18nProvider>
             </NotificationsProvider>
           </AuthProvider>
         </UserProvider>

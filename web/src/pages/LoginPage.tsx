@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { useLoginFlow } from '@/hooks/useLoginFlow';
 import { StepFlow } from '@/pages/login-lab/variants/StepFlow';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useI18n } from '@/contexts/I18nContext';
 import { Mail, User } from "lucide-react";
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -12,15 +13,16 @@ import { Link } from 'react-router-dom';
 import { toast } from "sonner";
 import * as z from 'zod';
 
-// Form schema for password reset
-const resetSchema = z.object({
-  identifier: z.string().min(1, 'Username or email is required'),
-});
-
 // Main Login Component
 const LoginPage: React.FC = () => {
+  const { t } = useI18n();
   const [mode, setMode] = useState("login"); // login or forgotPassword
   const { form: loginForm, loginMutation, onSubmit: onLoginSubmit } = useLoginFlow();
+
+  // Form schema for password reset
+  const resetSchema = z.object({
+    identifier: z.string().min(1, t("auth.usernameOrEmail")),
+  });
 
   // Reset password form
   const resetForm = useForm<z.infer<typeof resetSchema>>({
@@ -51,10 +53,10 @@ const LoginPage: React.FC = () => {
     try {
       // Add your password reset API call here
       // For now, just show a success message
-      toast.success("Password reset email sent");
+      toast.success(t("auth.resetSent"));
       setMode("login");
     } catch {
-      toast.error("Reset request failed, please try again later");
+      toast.error(t("auth.resetFailed"));
     }
   };
 
@@ -63,9 +65,9 @@ const LoginPage: React.FC = () => {
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold tracking-tight">Reset your password</CardTitle>
+            <CardTitle className="text-2xl font-bold tracking-tight">{t("auth.resetTitle")}</CardTitle>
             <CardDescription>
-              Enter your email or username and we'll send you a reset link
+              {t("auth.resetDescription")}
             </CardDescription>
           </CardHeader>
 
@@ -77,14 +79,14 @@ const LoginPage: React.FC = () => {
                   name="identifier"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Username or Email</FormLabel>
+                      <FormLabel>{t("auth.usernameOrEmail")}</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
                             {field.value.includes('@') ? <Mail size={18} /> : <User size={18} />}
                           </div>
                           <Input
-                            placeholder="Enter your username or email"
+                            placeholder={t("auth.usernameOrEmailPlaceholder")}
                             className="pl-10"
                             {...field}
                           />
@@ -96,7 +98,7 @@ const LoginPage: React.FC = () => {
                 />
 
                 <Button type="submit" className="w-full">
-                  Send reset link
+                  {t("auth.sendResetLink")}
                 </Button>
 
                 <div className="text-center">
@@ -105,7 +107,7 @@ const LoginPage: React.FC = () => {
                     className="text-sm font-medium text-primary hover:text-primary/80"
                     onClick={() => setMode("login")}
                   >
-                    Back to login
+                    {t("auth.backToLogin")}
                   </button>
                 </div>
               </form>
@@ -128,7 +130,7 @@ const LoginPage: React.FC = () => {
               disabled={loginMutation.isPending}
               onClick={handleTestSignIn}
             >
-              {loginMutation.isPending ? "Logging in..." : "Test sign in"}
+              {loginMutation.isPending ? t("auth.loggingIn") : t("auth.testSignIn")}
             </Button>
 
             <Button
@@ -137,13 +139,13 @@ const LoginPage: React.FC = () => {
               className="w-full text-muted-foreground"
               onClick={() => setMode("forgotPassword")}
             >
-              Forgot your password?
+              {t("auth.forgotPassword")}
             </Button>
 
             <p className="text-center text-sm text-muted-foreground">
-              Don't have an account?{" "}
+              {t("auth.noAccount")}{" "}
               <Link to="/signup" className="font-medium text-primary hover:text-primary/80">
-                Sign up
+                {t("auth.signUp")}
               </Link>
             </p>
           </div>

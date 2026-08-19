@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useUser } from "@/contexts/UserContext";
+import { useI18n } from "@/contexts/I18nContext";
 import ContentLinks from "./ContentLinks";
 import MediaGallery, { type GalleryItem } from "./MediaGallery";
 import { useMediaUpload } from "@/hooks/useMediaUpload";
@@ -65,14 +66,17 @@ export interface ComposeContentProps {
 const ComposeContent: React.FC<ComposeContentProps> = ({
   onSubmit,
   onError,
-  placeholder = "What's happening?",
-  submitLabel = "Post",
+  placeholder,
+  submitLabel,
   textareaHeight = "h-32",
   children,
   handlePostCreation = true,
   parentId = null
 }) => {
   const { user } = useUser();
+  const { t } = useI18n();
+  const resolvedPlaceholder = placeholder ?? t("composer.placeholder");
+  const resolvedSubmitLabel = submitLabel ?? t("app.post");
   const navigate = useNavigate();
   const [text, setText] = useState("");
   const [mediaItems, setMediaItems] = useState<GalleryItem[]>([]);
@@ -121,7 +125,7 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
         // Show success toast with link to the new post
         toast.success(
           <div className="flex flex-col gap-1">
-            <p>Post created successfully!</p>
+            <p>{t("composer.postCreated")}</p>
             <a 
               href={`/post/${response.data.id}`}
               onClick={(e) => {
@@ -130,7 +134,7 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
               }}
               className="text-blue-500 hover:underline"
             >
-              View your post
+              {t("app.viewPost")}
             </a>
           </div>
         );
@@ -157,7 +161,7 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
       if (onError) {
         onError();
       } else {
-        toast.error("Failed to create post. Please try again.");
+        toast.error(t("composer.postFailed"));
       }
     }
   };
@@ -167,7 +171,7 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
     
     // Check if adding more files would exceed the limit
     if (mediaItems.length + e.target.files.length > 4) {
-      alert("You can only upload up to 4 images or GIFs");
+      alert(t("composer.uploadLimit"));
       return;
     }
 
@@ -236,7 +240,7 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
 
   const handleImageButtonClick = () => {
     if (mediaItems.length >= 4) {
-      alert("You can only upload up to 4 images or GIFs");
+      alert(t("composer.uploadLimit"));
       return;
     }
     fileInputRef.current?.click();
@@ -276,7 +280,7 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
             {text.length > 0 ? <ContentLinks content={text} /> : "\u200B"}
           </div>
           <Textarea
-            placeholder={placeholder}
+            placeholder={resolvedPlaceholder}
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => {
@@ -332,7 +336,7 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Add images or GIFs (up to 4)</p>
+                  <p>{t("composer.imageTooltip")}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -360,7 +364,7 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
                     </DropdownMenuTrigger>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Choose who can see this</p>
+                    <p>{t("composer.visibilityTooltip")}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -372,21 +376,21 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
                   onClick={() => setVisibility("Everyone")}
                 >
                   <Globe className="h-4 w-4 mr-2" />
-                  <span>Everyone</span>
+                  <span>{t("composer.visibilityEveryone")}</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className={`cursor-pointer ${visibility === "Followers" ? "bg-accent" : ""}`}
                   onClick={() => setVisibility("Followers")}
                 >
                   <Users className="h-4 w-4 mr-2" />
-                  <span>Followers only</span>
+                  <span>{t("composer.visibilityFollowers")}</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className={`cursor-pointer ${visibility === "Mentions" ? "bg-accent" : ""}`}
                   onClick={() => setVisibility("Mentions")}
                 >
                   <AtSign className="h-4 w-4 mr-2" />
-                  <span>Only people you mention</span>
+                  <span>{t("composer.visibilityMentions")}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -400,16 +404,16 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
             {mediaUploadMutation.isPending || createPostMutation.isPending ? (
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
             ) : null}
-            {submitLabel}
+            {resolvedSubmitLabel}
           </Button>
         </div>
 
         {pollEnabled && !parentId && <div className="mt-3 space-y-2 rounded-xl border border-border p-3">
           {pollOptions.map((option, index) => <div key={index} className="flex gap-2">
-            <Input placeholder={`Option ${index + 1}`} value={option} onChange={(event) => setPollOptions((current) => current.map((item, itemIndex) => itemIndex === index ? event.target.value : item))} maxLength={100} />
+            <Input placeholder={t("composer.pollOption", { n: index + 1 })} value={option} onChange={(event) => setPollOptions((current) => current.map((item, itemIndex) => itemIndex === index ? event.target.value : item))} maxLength={100} />
             {pollOptions.length > 2 && <Button type="button" variant="ghost" size="icon" onClick={() => setPollOptions((current) => current.filter((_, itemIndex) => itemIndex !== index))}><X className="h-4 w-4" /></Button>}
           </div>)}
-          {pollOptions.length < 4 && <Button type="button" variant="ghost" size="sm" onClick={() => setPollOptions((current) => [...current, ""])}><Plus className="mr-1 h-4 w-4" /> Add option</Button>}
+          {pollOptions.length < 4 && <Button type="button" variant="ghost" size="sm" onClick={() => setPollOptions((current) => [...current, ""])}><Plus className="mr-1 h-4 w-4" /> {t("composer.addOption")}</Button>}
         </div>}
       </div>
 
@@ -417,7 +421,7 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
       <Dialog open={!!currentEditingMedia} onOpenChange={(open) => !open && setCurrentEditingMedia(null)}>
         <CustomDialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto bg-card">
           <DialogHeader>
-            <DialogTitle className="text-primary">Add alt text</DialogTitle>
+            <DialogTitle className="text-primary">{t("composer.altTextDialogTitle")}</DialogTitle>
           </DialogHeader>
           
           <div className="flex flex-col gap-4">
@@ -425,17 +429,17 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
               {currentEditingMedia && (
                 <img 
                   src={currentEditingMedia.url} 
-                  alt="Preview" 
+                  alt={t("composer.previewAlt")} 
                   className="max-h-48 object-contain rounded-md"
                 />
               )}
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="alt-text" className="text-primary">Alt text</Label>
+              <Label htmlFor="alt-text" className="text-primary">{t("composer.altTextLabel")}</Label>
               <Textarea
                 id="alt-text"
-                placeholder="Describe this image for people who can't see it..."
+                placeholder={t("composer.altTextPlaceholder")}
                 value={currentEditingMedia?.altText || ""}
                 onChange={(e) => {
                   if (currentEditingMedia && e.target.value.length <= 200) {
@@ -459,13 +463,13 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
               onClick={() => setCurrentEditingMedia(null)}
               className="border-border text-primary"
             >
-              Cancel
+              {t("composer.cancel")}
             </Button>
             <Button 
               onClick={() => saveAltText(currentEditingMedia?.altText || "")}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              Save
+              {t("composer.save")}
             </Button>
           </DialogFooter>
         </CustomDialogContent>

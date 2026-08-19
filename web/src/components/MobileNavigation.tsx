@@ -1,6 +1,7 @@
 import { Bell, Bookmark, Compass, Home, MessageSquare, PenSquare, Settings, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/contexts/UserContext";
+import { useI18n } from "@/contexts/I18nContext";
 import { useNavigate } from "react-router-dom";
 import { useNotifications } from "@/contexts/NotificationsContext";
 import { useDmUnreadCount } from "@/hooks/useDms";
@@ -12,6 +13,7 @@ interface MobileNavigationProps {
 export default function MobileNavigation({ onComposeClick }: MobileNavigationProps) {
   const navigate = useNavigate();
   const { user } = useUser();
+  const { t } = useI18n();
   const { unreadCount } = useNotifications();
   const dmUnread = useDmUnreadCount(true);
 
@@ -26,7 +28,7 @@ export default function MobileNavigation({ onComposeClick }: MobileNavigationPro
             onClick={() => navigate("/")}
           >
             <Home className="h-6 w-6" />
-            <span className="text-xs mt-1">Home</span>
+            <span className="text-xs mt-1">{t("nav.home")}</span>
           </Button>
 
           <Button
@@ -36,7 +38,7 @@ export default function MobileNavigation({ onComposeClick }: MobileNavigationPro
             onClick={() => navigate("/explore")}
           >
             <Compass className="h-6 w-6" />
-            <span className="text-xs mt-1">Explore</span>
+            <span className="text-xs mt-1">{t("nav.explore")}</span>
           </Button>
 
           <Button
@@ -47,7 +49,7 @@ export default function MobileNavigation({ onComposeClick }: MobileNavigationPro
           >
             <Bell className="h-6 w-6" />
             {unreadCount > 0 && <span className="absolute right-1 top-0 h-2 w-2 rounded-full bg-destructive" />}
-            <span className="text-xs mt-1">Alerts</span>
+            <span className="text-xs mt-1">{t("nav.alerts")}</span>
           </Button>
         </div>
 
@@ -67,7 +69,7 @@ export default function MobileNavigation({ onComposeClick }: MobileNavigationPro
           >
             <MessageSquare className="h-6 w-6" />
             {(dmUnread.data?.data?.unread_count ?? 0) > 0 && <span className="absolute right-0 top-0 h-2 w-2 rounded-full bg-destructive" />}
-            <span className="text-xs mt-1">DMs</span>
+            <span className="text-xs mt-1">{t("nav.dms")}</span>
           </Button>
 
           <Button
@@ -77,7 +79,7 @@ export default function MobileNavigation({ onComposeClick }: MobileNavigationPro
             onClick={() => navigate("/bookmarks")}
           >
             <Bookmark className="h-6 w-6" />
-            <span className="text-xs mt-1">Saved</span>
+            <span className="text-xs mt-1">{t("nav.saved")}</span>
           </Button>
 
           <Button
@@ -87,7 +89,7 @@ export default function MobileNavigation({ onComposeClick }: MobileNavigationPro
             onClick={() => navigate(`/profile/${user.username}`)}
           >
             <User className="h-6 w-6" />
-            <span className="text-xs mt-1">Profile</span>
+            <span className="text-xs mt-1">{t("nav.profile")}</span>
           </Button>
 
           <Button
@@ -97,7 +99,7 @@ export default function MobileNavigation({ onComposeClick }: MobileNavigationPro
             onClick={() => navigate("/settings")}
           >
             <Settings className="h-6 w-6" />
-            <span className="text-xs mt-1">Settings</span>
+            <span className="text-xs mt-1">{t("nav.settings")}</span>
           </Button>
         </div>
       </div>
