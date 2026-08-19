@@ -8,10 +8,7 @@ export default function PollCard({ poll, postId }: { poll: Poll; postId: number 
   const voted = poll.selected_option_id != null;
   return (
     <div className="mt-3 space-y-2 rounded-xl border border-border p-3" onClick={(event) => event.stopPropagation()}>
-      <div className="flex items-center justify-between gap-2">
-        <p className="font-medium text-primary">{poll.question}</p>
-        <span className="text-xs text-muted-foreground">{poll.total_votes} votes</span>
-      </div>
+      <span className="block text-right text-xs text-muted-foreground">{poll.total_votes} votes</span>
       {poll.options.map((option) => {
         const percentage = poll.total_votes ? Math.round((option.vote_count / poll.total_votes) * 100) : 0;
         return (

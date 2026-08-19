@@ -456,6 +456,8 @@ func (s *PostService) Create(ctx context.Context, post *models.Post, mediaItems 
 		if post.ParentID != nil {
 			return apperrors.BadRequestError("polls are only allowed on top-level posts", nil)
 		}
+		// The poll question lives in the post text box itself.
+		post.PollPayload.Question = post.Content
 		if err := validatePoll(post.PollPayload); err != nil {
 			return err
 		}
@@ -685,8 +687,8 @@ func (s *PostService) VotePoll(ctx context.Context, postID, optionID, userID int
 }
 
 func validatePoll(poll *models.CreatePollPayload) error {
-	if strings.TrimSpace(poll.Question) == "" || len(poll.Question) > 140 {
-		return apperrors.BadRequestError("poll question must be between 1 and 140 characters", nil)
+	if strings.TrimSpace(poll.Question) == "" {
+		return apperrors.BadRequestError("poll question is required", nil)
 	}
 	if len(poll.Options) < 2 || len(poll.Options) > 4 {
 		return apperrors.BadRequestError("polls must have between 2 and 4 options", nil)

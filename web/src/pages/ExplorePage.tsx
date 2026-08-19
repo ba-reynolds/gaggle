@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import FeedPost from '@/components/FeedPost';
 import UserHoverCard from '@/components/UserHoverCard';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -14,6 +14,8 @@ import { Loader2, Search as SearchIcon, TrendingUp, Users } from 'lucide-react';
 
 export default function ExplorePage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') === 'trending' ? 'trending' : 'suggested';
   const { token } = useAuth();
   const isAuthenticated = typeof token === 'string';
   const [query, setQuery] = useState('');
@@ -62,7 +64,7 @@ export default function ExplorePage() {
         </form>
       </header>
 
-      <Tabs defaultValue="suggested" className="w-full">
+      <Tabs value={activeTab} onValueChange={(value) => setSearchParams(value === 'trending' ? { tab: 'trending' } : {})} className="w-full">
         <TabsList className="m-4 grid w-[calc(100%-2rem)] grid-cols-2">
           <TabsTrigger value="suggested"><Users className="mr-2 h-4 w-4" />Who to follow</TabsTrigger>
           <TabsTrigger value="trending"><TrendingUp className="mr-2 h-4 w-4" />Trending</TabsTrigger>

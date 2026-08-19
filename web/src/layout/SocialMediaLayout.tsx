@@ -220,7 +220,7 @@ export default function SocialMediaLayout({
                   ))}
                   {!trends.isLoading && !trends.data?.length && <p className="text-sm text-muted-foreground">No trends yet.</p>}
                 </div>
-                <Button variant="ghost" className="w-full mt-2 text-primary justify-start p-2">
+                <Button variant="ghost" className="w-full mt-2 text-primary justify-start p-2" onClick={() => navigate(`/explore?tab=trending`)}>
                   Show more
                 </Button>
               </div>

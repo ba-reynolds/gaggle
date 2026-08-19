@@ -868,6 +868,9 @@ func TestPostPowerFeatures(t *testing.T) {
 	if int(postPoll["id"].(float64)) == 0 {
 		t.Fatal("created post poll missing id")
 	}
+	if postPoll["question"] != "pick one" {
+		t.Fatalf("poll question = %v, want mirrored post content", postPoll["question"])
+	}
 	if rec := app.Do(t, testutil.Request{
 		Method: http.MethodPost,
 		Path:   "/api/v1/posts/" + itoa(pollID) + "/poll/vote",
