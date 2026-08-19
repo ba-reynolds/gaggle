@@ -10,11 +10,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLoginFlow } from '@/hooks/useLoginFlow';
 import { ArrowLeft, ArrowRight, Check, Loader2, Lock, Mail, User } from 'lucide-react';
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 
 type Step = 'identifier' | 'password';
 
-export function StepFlow() {
+export function StepFlow({ footer }: { footer?: ReactNode } = {}) {
   const { form, loginMutation, onSubmit } = useLoginFlow();
   const [step, setStep] = useState<Step>('identifier');
   const identifier = form.watch('identifier');
@@ -156,6 +156,8 @@ export function StepFlow() {
             )}
           </form>
         </Form>
+
+        {footer}
       </div>
     </div>
   );

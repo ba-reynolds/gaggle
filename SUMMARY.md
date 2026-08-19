@@ -1,3 +1,41 @@
+# SUMMARY — login-experiments (follow-up: promote step flow to /login)
+
+The chosen keeper design (simple step flow) is now the real login page.
+`/login` renders the `StepFlow` variant with a footer slot carrying the
+affordances the old page had: **Test sign in** button (dev verification
+path), **Forgot your password?** (switches to the existing reset card), and
+on sign-up link. The old "Try other login designs" link is gone from `/login`
+— the lab remains reachable at `/login-lab` and its variants are untouched
+(StepFlow renders no footer there; the new `footer?` prop defaults to
+undefined).
+
+## Files touched
+
+- `web/src/pages/login-lab/variants/StepFlow.tsx` — added optional
+  `footer?: ReactNode` prop rendered inside the form column.
+- `web/src/pages/LoginPage.tsx` — sign-in mode is now `<StepFlow
+  footer=...>`; forgot-password mode kept as the reset card.
+
+## Verification
+
+- `npm run lint`: 0 errors; `npm run build`: passes.
+- Rebuilt `gaggle-web`; headless checks on live `:5173/login`: step flow
+  renders with all footer controls; "Welcome back" color unchanged on an
+  error (error itself is red); forgot → reset card → back to login works;
+  test sign-in navigates to `/`; `/login-lab` still shows 6 variants with
+  no footer on the lab copy.
+
+## Reviewer double-checks
+
+- The promoted page hardcodes `h-screen overflow-y-auto` (mirrors the lab
+  pane); on very short viewports content scrolls.
+- Test sign-in lives only on the production page footer, not in the lab
+  StepFlow variant.
+- Login now reuses the exact StepFlow component from the lab — if the lab
+  variant evolves, `/login` changes too.
+
+---
+
 # SUMMARY — login-experiments (follow-up: error color + title bugfix)
 
 Two root causes fixed for the step-flow keeper design, found during
