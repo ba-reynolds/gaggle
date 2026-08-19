@@ -307,13 +307,15 @@ const ProfilePage: React.FC = () => {
               </DropdownMenu>
             </>
           )}
-          <Button
-            variant="outline"
-            className={`text-foreground ${isCurrentUser ? "visible" : "invisible "}`}
-            onClick={() => setProfileEditOpen(true)}
-          >
-            Edit profile
-          </Button>
+          {isCurrentUser && (
+            <Button
+              variant="outline"
+              className="text-foreground"
+              onClick={() => setProfileEditOpen(true)}
+            >
+              Edit profile
+            </Button>
+          )}
         </div>
 
         {/* Profile info */}
