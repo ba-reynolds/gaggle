@@ -2,6 +2,18 @@
 
 Running log of agent-branch merges into main. Newest on top.
 
+## 2026-08-19 — agent/improve-message-flow
+
+- Status: **conflicted**
+- File conflicting, and how resolved:
+  - `SUMMARY.md` — kept **every** section from both sides, newest on top
+    (gaggle-goose-branding → auth-validation sections → improve-message-flow
+    → base sections), `---` separated.
+- `.opencode/project-notes.md` auto-merged cleanly; real code
+  (`web/src/pages/MessagesPage|ConversationPage|ProfilePage.tsx`, App.tsx,
+  SocialMediaLayout.tsx) auto-merged cleanly. Migration duplicate check clean
+  after merge. No server/DB changes.
+
 ## 2026-08-19 — agent/auth-validation-consistency
 
 - Status: **conflicted**
