@@ -4,7 +4,7 @@
     ],
     "swagger": "2.0",
     "info": {
-        "description": "API for Gaggle, a social network for gophers",
+        "description": "API for Gaggle, a social microblogging app",
         "title": "Gaggle API",
         "contact": {},
         "version": "1.0"

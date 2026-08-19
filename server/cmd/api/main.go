@@ -18,7 +18,7 @@ import (
 
 // @title         Gaggle API
 // @version       1.0
-// @description   API for Gaggle, a social network for gophers
+// @description   API for Gaggle, a social microblogging app
 // @host          localhost:2021
 // @BasePath      /api/v1
 // @schemes       http

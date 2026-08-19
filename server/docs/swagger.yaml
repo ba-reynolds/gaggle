@@ -801,7 +801,7 @@ definitions:
 host: localhost:2021
 info:
   contact: {}
-  description: API for Gaggle, a social network for gophers
+  description: API for Gaggle, a social microblogging app
   title: Gaggle API
   version: "1.0"
 paths:

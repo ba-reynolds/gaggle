@@ -259,8 +259,9 @@ func seedPosts(ctx context.Context, store *store.Store, log *slog.Logger, users 
 		}
 
 		post := &models.Post{
-			Content:  content,
-			AuthorID: users[i].ID,
+			Content:    content,
+			AuthorID:   users[i].ID,
+			Visibility: "public",
 		}
 
 		// Start transaction
@@ -318,9 +319,10 @@ func seedPosts(ctx context.Context, store *store.Store, log *slog.Logger, users 
 		parentPost := posts[i]
 
 		reply := &models.Post{
-			Content:  replyContent,
-			AuthorID: users[authorIndex].ID,
-			ParentID: &parentPost.ID,
+			Content:    replyContent,
+			AuthorID:   users[authorIndex].ID,
+			ParentID:   &parentPost.ID,
+			Visibility: "public",
 		}
 
 		// Start transaction

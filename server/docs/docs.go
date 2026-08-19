@@ -8374,7 +8374,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/api/v1",
 	Schemes:          []string{"http"},
 	Title:            "Gaggle API",
-	Description:      "API for Gaggle, a social network for gophers",
+	Description:      "API for Gaggle, a social microblogging app",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",
