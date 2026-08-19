@@ -1,4 +1,4 @@
-import { getHashtagPosts, getSuggestedUsers, getTrends, searchPosts, searchUsers } from '@/api/search';
+import { getHashtagPosts, getMentionsFeed, getSuggestedUsers, getTrends, searchPosts, searchUsers } from '@/api/search';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
 export function useSearchPosts(query: string) {
@@ -26,6 +26,15 @@ export function useHashtagPosts(tag: string) {
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last.data.next_cursor ?? undefined,
     enabled: tag.trim().length > 0,
+  });
+}
+
+export function useMentionsFeed() {
+  return useInfiniteQuery({
+    queryKey: ['mentions-feed'],
+    queryFn: ({ pageParam }) => getMentionsFeed(pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last) => last.data.next_cursor ?? undefined,
   });
 }
 

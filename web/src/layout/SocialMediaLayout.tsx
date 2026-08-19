@@ -34,7 +34,8 @@ import {
   Shield,
   Compass,
   List as ListIcon,
-  MessageSquare
+  MessageSquare,
+  AtSign
 } from "lucide-react";
 import { useState } from "react";
 import { NavLink, Navigate, useNavigate } from 'react-router-dom';
@@ -134,6 +135,7 @@ export default function SocialMediaLayout({
                 <NavItem icon={ListIcon} label="Lists" to="/lists" />
                 <NavItem icon={MessageSquare} label="Messages" to="/messages" badge={dmUnread.data?.data?.unread_count ?? 0} />
                 <NavItem icon={Bell} label="Notifications" to="/notifications" badge={unreadCount} />
+                <NavItem icon={AtSign} label="Mentions" to="/mentions" />
                 <NavItem icon={User} label="Profile" to={`/profile/${user.username}`} />
                 <NavItem icon={Settings} label="Settings" to="/settings" />
                 {user.isAdmin && <NavItem icon={Shield} label="Admin" to="/admin" />}

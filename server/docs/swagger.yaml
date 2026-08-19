@@ -514,6 +514,10 @@ definitions:
         type: boolean
       revoked_at:
         type: string
+      revoked_reason:
+        type: string
+      session_id:
+        type: string
       token_hash:
         type: string
       user_agent:
@@ -2509,6 +2513,47 @@ paths:
       summary: Upload media
       tags:
       - media
+  /mentions:
+    get:
+      description: Returns posts that tagged the authenticated user with @username,
+        newest first.
+      parameters:
+      - description: Maximum number of posts
+        in: query
+        name: limit
+        type: integer
+      - description: Cursor for pagination
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostFeed'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: List posts mentioning the viewer
+      tags:
+      - search
   /posts:
     post:
       consumes:

@@ -106,6 +106,7 @@ type Service struct {
 		Posts(ctx context.Context, viewerID int, query string, limit int, cursor string) (*models.PostFeed, error)
 		Users(ctx context.Context, query string, limit int) (*models.UserList, error)
 		HashtagPosts(ctx context.Context, viewerID int, name string, limit int, cursor string) (*models.PostFeed, error)
+		Mentions(ctx context.Context, viewerID int, limit int, cursor string) (*models.PostFeed, error)
 		Trends(ctx context.Context, limit int) ([]models.Trend, error)
 	}
 	Badges interface {

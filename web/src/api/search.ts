@@ -22,6 +22,13 @@ export const getHashtagPosts = async (tag: string, cursor?: string): Promise<Env
   return response.data;
 };
 
+export const getMentionsFeed = async (cursor?: string): Promise<Envelope<PaginatedFeedResponse<Post>>> => {
+  const response = await api.get<Envelope<PaginatedFeedResponse<Post>>>('/mentions', {
+    params: { cursor, limit: 20 },
+  });
+  return response.data;
+};
+
 export const getTrends = async (): Promise<Envelope<Trend[]>> => {
   const response = await api.get<Envelope<Trend[]>>('/trends');
   return response.data;

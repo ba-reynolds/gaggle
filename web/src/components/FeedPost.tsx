@@ -51,7 +51,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import ComposeContent from "./ComposeContent";
 import ConfirmDialog from "./ConfirmDialog";
-import HashtagText from "./HashtagText";
+import ContentLinks from "./ContentLinks";
 import MediaGallery, { type GalleryItem } from "./MediaGallery";
 import PollCard from "./PollCard";
 import UserHoverCard from "./UserHoverCard";
@@ -392,7 +392,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                 </div>
               )}
 
-              <p className="mt-2 whitespace-pre-wrap text-sm text-primary"><HashtagText content={content} /></p>
+              <p className="mt-2 whitespace-pre-wrap text-sm text-primary"><ContentLinks content={content} /></p>
               {post.poll && <PollCard poll={post.poll} postId={id} />}
 {isOwnPost && post.edited_at && <button className="mt-2 text-xs text-muted-foreground hover:underline" onClick={(event) => { event.stopPropagation(); setHistoryOpen((open) => !open); }}>
                 {historyOpen ? "Hide edit history" : "View edit history"}

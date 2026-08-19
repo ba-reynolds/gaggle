@@ -70,6 +70,7 @@ type Store struct {
 		GetParentInfo(ctx context.Context, postIDs []int) (map[int]*models.PostParentInfo, error)
 		Search(ctx context.Context, query string, limit int, cursor string) (*models.PostFeed, error)
 		ListByHashtag(ctx context.Context, name string, limit int, cursor string) (*models.PostFeed, error)
+		ListMentionedBy(ctx context.Context, userID int, limit int, cursor string) (*models.PostFeed, error)
 		GetListFeed(ctx context.Context, listID int, limit int, cursor string) (*models.PostFeed, error)
 	}
 	PostEngagements interface {
@@ -110,6 +111,9 @@ type Store struct {
 	Hashtags interface {
 		SyncPost(ctx context.Context, tx *sql.Tx, postID int, content string) error
 		Trends(ctx context.Context, limit int) ([]models.Trend, error)
+	}
+	Mentions interface {
+		SyncPost(ctx context.Context, tx *sql.Tx, postID int, content string) error
 	}
 	Polls interface {
 		Create(ctx context.Context, tx *sql.Tx, postID int, payload *models.CreatePollPayload) error
@@ -159,6 +163,7 @@ func NewStore(db *sql.DB, logger *slog.Logger, mediaDir string) *Store {
 		UserRelationships: &userRelationshipStore{db: db, logger: logger},
 		Notifications:     &notificationStore{db: db, logger: logger},
 		Hashtags:          &hashtagStore{db: db, logger: logger},
+		Mentions:          &mentionStore{db: db, logger: logger},
 		Polls:             &pollStore{db: db, logger: logger},
 		Badges:            &badgeStore{db: db, logger: logger},
 		Lists:             &listStore{db: db, logger: logger},

@@ -16,6 +16,7 @@ import PostPage from './pages/PostPage';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { NotificationsProvider } from './contexts/NotificationsContext';
 import NotificationsPage from './pages/NotificationsPage';
+import MentionsPage from './pages/MentionsPage';
 import SearchPage from './pages/SearchPage';
 import HashtagPage from './pages/HashtagPage';
 import AdminPage from './pages/AdminPage';
@@ -60,6 +61,7 @@ function App() {
                   <Route path="/settings" element={<SocialMediaLayout><SettingsPage /></SocialMediaLayout>} />
                   <Route path="/post/:id" element={<SocialMediaLayout><PostPage /></SocialMediaLayout>} />
                   <Route path="/notifications" element={<SocialMediaLayout><NotificationsPage /></SocialMediaLayout>} />
+                  <Route path="/mentions" element={<SocialMediaLayout><MentionsPage /></SocialMediaLayout>} />
                   <Route path="/messages" element={<SocialMediaLayout><MessagesPage /></SocialMediaLayout>} />
                   <Route path="/messages/:conversationId" element={<SocialMediaLayout><ConversationPage /></SocialMediaLayout>} />
                   <Route path="/search" element={<SocialMediaLayout><SearchPage /></SocialMediaLayout>} />
