@@ -2,6 +2,16 @@
 
 Running log of agent-branch merges into main. Newest on top.
 
+## 2026-08-19 — agent/sidebar-mobile-nav
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md` — kept **every** section from both sides, newest on top
+    (chat-ui-fixes first, then sidebar-mobile-nav, then the base sections).
+- `.opencode/project-notes.md`, `web/src/components/MobileNavigation.tsx`,
+  `web/src/layout/SocialMediaLayout.tsx` auto-merged cleanly. Migration
+  duplicate check clean after merge. Frontend-only; no server/DB changes.
+
 ## 2026-08-19 — agent/chat-ui-fixes
 
 - Status: **clean** (`--no-ff` merge)
