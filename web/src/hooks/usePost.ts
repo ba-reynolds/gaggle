@@ -40,7 +40,7 @@ import type {
 type PostUpdater = (post: Post) => Post;
 
 // Common query keys that contain posts
-const POST_QUERY_KEYS = ['feed', 'bookmarked', 'user-posts', 'user-replies', 'user-media'] as const;
+const POST_QUERY_KEYS = ['feed', 'bookmarked', 'user-posts', 'user-replies', 'user-media', 'search-posts', 'hashtag-posts', 'list-feed'] as const;
 
 interface InfinitePages {
   pages: Envelope<PaginatedFeedResponse>[];
@@ -276,6 +276,20 @@ export function usePinPost() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ postId, pinned }: { postId: number; pinned: boolean; username?: string }) => pinned ? unpinPost(postId) : pinPost(postId),
+    onMutate: async (variables) => {
+      // Optimistically flip `is_pinned` on every cached copy of the post —
+      // the menu label ("Pin to profile" / "Unpin from profile") is driven by
+      // `post.is_pinned`, which lives inside each cached feed/post payload.
+      // Without this the label only changes after a successful feed refetch,
+      // so a slow refetch (or a briefly stale cached home feed from the
+      // server) makes the button look like it "never updates". Rolls back on
+      // error below.
+      await queryClient.cancelQueries({ queryKey: ['post', variables.postId] });
+      updatePostInAllQueries(queryClient, variables.postId, (post) => ({
+        ...post,
+        is_pinned: !post.is_pinned,
+      }));
+    },
     onSuccess: (_, variables) => {
       if (variables.username) {
         if (variables.pinned) {
@@ -288,6 +302,13 @@ export function usePinPost() {
         }
       }
       invalidatePostQueries(queryClient, variables.postId, variables.username);
+    },
+    onError: (_err, variables) => {
+      // The request failed: put the label back the way it was.
+      updatePostInAllQueries(queryClient, variables.postId, (post) => ({
+        ...post,
+        is_pinned: !post.is_pinned,
+      }));
     },
   });
 }

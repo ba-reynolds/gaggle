@@ -1,3 +1,94 @@
+# SUMMARY — pin-unpin-timeline-bug
+
+Pin/unpin from the timeline left the "Pin to profile / Unpin from profile" menu
+stuck on the old value (unpin never flipped the button, pinning a different
+post didn't flip the new one), while the same action from one's own profile
+worked. Root cause was the timeline's **Redis-cached home feed** plus a client
+that had **no optimistic pin update**.
+
+## What was changed and why
+
+**1. Root cause of the timeline/profile difference (server, already in code but
+never actually serving).**
+`GET /posts/feed` is served from a 60s Redis cache; `is_pinned` lives inside
+each cached home-feed payload. The `pinned-post-menu-fixes` merge added
+`invalidateFeedForUserAndFollowers` to `PinPost`/`UnpinPost`/`UpdatePost`/
+`DeletePostByID`, but the live stack never ran that build: HEAD's migrations
+contained **two files numbered 000016** (`000016_add-mute-relationship` and
+`000016_add-refresh-token-session`), so golang-migrate refused to open the
+migration source and the `api` container crash-looped on startup — anything the
+user tested necessarily ran an older api image without the feed invalidation.
+With no invalidation, the timeline kept serving the previous `is_pinned` flags
+for the cache TTL; and because the client feed query is `staleTime: Infinity`
+with `refetchOnWindowFocus: false`, the stale copy latched indefinitely — "the
+button never updates". The profile was unaffected because `/users/{u}/pinned`
+and `/users/{u}/posts` hit the DB directly.
+
+- **Renumbered the migration** `000016_add-refresh-token-session.{up,down}.sql`
+  → `000017_add-refresh-token-session.{up,down}.sql` so HEAD boots (DB state was
+  only ever at migration 15, so nothing renumbered needed backfilling).
+- **Rebuilt + verified the server against the live stack**: after `DELETE
+  /posts/{id}/pin` or `POST /posts/{id}/pin`, the very next `/posts/feed`
+  response carries the correct `is_pinned` flags (Redis invalidation effective).
+
+**2. Client hardening (the actual code fix).** The menu label is driven by
+`post.is_pinned`, which only changed after a successful feed refetch. Pin/unpin
+had **no optimistic update** (unlike like/repost/bookmark) and no error
+rollback, so a slow refetch — or a briefly stale server cache — made the button
+appear stuck. In `web/src/hooks/usePost.ts`:
+
+- `usePinPost.onMutate` now optimistically flips `is_pinned` on **every cached
+  copy** of the post (`updatePostInAllQueries`), cancelling in-flight single-post
+  fetches first — the button flips instantly, before the request or refetch
+  resolves.
+- `usePinPost.onError` flips it back (rollback).
+- Extended `POST_QUERY_KEYS` with `'search-posts'`, `'hashtag-posts'`,
+  `'list-feed'` so posts render in those surfaces too and the optimistic
+  engagement/pin/author updates stay consistent everywhere the post card lives.
+
+## Files touched
+
+- `web/src/hooks/usePost.ts` — optimistic pin flip + rollback; `POST_QUERY_KEYS`
+  extended with search/hashtag/list feeds.
+- `server/cmd/migrate/migrations/000016_add-refresh-token-session.{up,down}.sql`
+  → renamed to `000017_...` (duplicate migration version that blocked `api`
+  startup).
+
+## Verification
+
+- `go build ./...`, `go vet ./...`, `go test ./...` all pass (handler
+  integration suite covers pin/unpin flows; the harness runs without Redis).
+- `npm run build` passes; `npm run lint` reports the same 14 pre-existing
+  warnings as base, zero new.
+- Live stack (rebuilt from this branch): curl repro shows `/posts/feed` reflects
+  pin state immediately after pin/unpin (cache invalidated).
+- Playwright (host chrome) on the timeline:
+  - full cycle flips labels correctly — unpin #61 → "Pin to profile"; pin #40 →
+    #40 "Unpin from profile" AND #61 "Pin to profile"; restore works;
+  - optimistic test (requests artificially delayed) — label flips *before* the
+    response refetch completes;
+  - rollback test (unpin fails with 500) — label flips optimistically then
+    reverts to "Unpin from profile" on error.
+
+## Things a reviewer should double-check
+
+- **Migration renumber**: the new 000017 files were never applied anywhere
+  (migrate before refused to open the source; DB was last at version 15). On
+  real deploys, confirm the refresh-token-session migration runs cleanly.
+- **`POST_QUERY_KEYS` extension** changes behavior of ALL optimistic engagement
+  updaters (like/repost/bookmark/author updates) — they now also update
+  search/hashtag/list feed caches. Shapes are identical (`Envelope<PostFeed>`);
+  validates fine via `setQueriesData` prefix matching (`['search-posts', q]`,
+  `['hashtag-posts', tag]`, `['list-feed', id]`).
+- Redis staleness is not exercised by `go test` (test harness passes `nil` rdb,
+  no seam for a fake). The live-stack repro + browser probes are the regression
+  check; see `.opencode/project-notes.md` "home feed Redis cache".
+- The running Docker stack now serves this branch's build (shared single
+  compose stack); other parallel agent sessions will see their branch's build
+  replaced.
+
+---
+
 # SUMMARY — refresh-token-rotation
 
 Refresh tokens now rotate on every use, sessions are grouped into families,
