@@ -29,6 +29,9 @@ install_git_access() {
   chmod 700 "$SSH_DIR"
   # GAGGLE_DEPLOY_KEY arrives base64-encoded (single line) and is decoded here.
   printf '%s\n' "$GAGGLE_DEPLOY_KEY" | base64 -d > "$SSH_DIR/id_deploy"
+  # base64 -d strips trailing whitespace; OpenSSH rejects a private key whose
+  # END line has no trailing newline ("invalid format"). Restore it if missing.
+  [ -z "$(tail -c 1 "$SSH_DIR/id_deploy" | tr -d '\n')" ] || printf '\n' >> "$SSH_DIR/id_deploy"
   chmod 600 "$SSH_DIR/id_deploy"
   export GIT_SSH_COMMAND="ssh -i $SSH_DIR/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
   ssh-keyscan -H github.com >> "$SSH_DIR/known_hosts" 2>/dev/null || true
