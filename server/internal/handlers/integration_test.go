@@ -388,6 +388,38 @@ func TestSettings(t *testing.T) {
 	}
 }
 
+func TestRegisterSeedsLanguageSetting(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+
+	// Registering with a browser language should persist it as the initial setting.
+	rec := app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/auth/register",
+		Body: map[string]string{
+			"username": "lucia",
+			"email":    "lucia@example.com",
+			"password": "password123",
+			"language": "es",
+		},
+	})
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("register with language: status %d body %s", rec.Code, rec.Body.String())
+	}
+	data, _ := testutil.Decode[map[string]any](t, rec)
+	token := data["access_token"].(string)
+
+	settings, _ := testutil.Decode[map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/users/settings", Token: token}))
+	if settings["language"] != "es" {
+		t.Fatalf("seeded language = %v, want es", settings["language"])
+	}
+
+	// Notifications defaults must still be present (JSONB row is fully seeded).
+	notifications, _ := settings["notifications"].(map[string]any)
+	if notifications["email"] != true {
+		t.Fatalf("notifications.email = %v, want true", notifications["email"])
+	}
+}
+
 func TestPostsAndEngagement(t *testing.T) {
 	app := testutil.NewApp(t, testutil.Database(t))
 	tokenA := app.RegisterUser(t, "user_a", "a@example.com")

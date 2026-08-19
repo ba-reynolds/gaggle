@@ -25,6 +25,7 @@ import {
 } from "@/hooks/usePost";
 import { useBlockUser, useFollowUser, useUnblockUser, useUnfollowUser } from "@/hooks/useUser";
 import { useUser } from "@/contexts/UserContext";
+import { useI18n } from "@/contexts/I18nContext";
 import type { Post } from "@/types/api";
 import { formatPostDate, getFullDateFormat } from "@/util/date";
 import { formatViews } from "@/util/number";
@@ -67,6 +68,7 @@ interface PostProps {
 const FeedPost: React.FC<PostProps> = ({ post }) => {
   const { id, author, content, media, created_at, engagement } = post;
   const { user } = useUser();
+  const { t } = useI18n();
   const isOwnPost = user.username === author.username;
 
   const [replyDialogOpen, setReplyDialogOpen] = useState(false);
@@ -127,7 +129,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
     const mutation = engagement.is_liked ? toggleUnlike : toggleLike;
     mutation(id, {
       onError: () => {
-        toast.error(`Failed to ${engagement.is_liked ? 'unlike' : 'like'} post. Please try again.`);
+        toast.error(engagement.is_liked ? t("post.unlikeFailed") : t("post.likeFailed"));
       },
     });
   };
@@ -136,7 +138,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
     const mutation = engagement.is_reposted ? toggleUnrepost : toggleRepost;
     mutation(id, {
       onError: () => {
-        toast.error(`Failed to ${engagement.is_reposted ? 'undo repost' : 'repost'}. Please try again.`);
+        toast.error(engagement.is_reposted ? t("post.undoRepostFailed") : t("post.repostFailed"));
       },
     });
   };
@@ -147,7 +149,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
     if (!engagement.is_bookmarked) {
       toggleBookmark({ postId: id, categoryId: undefined }, {
         onError: () => {
-          toast.error("Failed to bookmark post. Please try again.");
+          toast.error(t("post.bookmarkFailed"));
         },
       });
     }
@@ -158,7 +160,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
     setBookmarkDropdownOpen(false);
     toggleUnbookmark(id, {
       onError: () => {
-        toast.error("Failed to remove bookmark. Please try again.");
+        toast.error(t("post.unbookmarkFailed"));
       },
     });
   };
@@ -166,7 +168,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
   const handleBookmarkWithCategory = (categoryId: number) => {
     toggleBookmark({ postId: id, categoryId }, {
       onError: () => {
-        toast.error("Failed to bookmark post in category. Please try again.");
+        toast.error(t("post.categoryBookmarkFailed"));
       },
     });
     setCategorySearchQuery("");
@@ -184,7 +186,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
           setNewCategoryName("");
         },
         onError: () => {
-          toast.error("Failed to create category. Please try again.");
+          toast.error(t("post.categoryCreateFailed"));
         },
       }
     );
@@ -197,12 +199,12 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
       { content: quoteText.trim(), media: [], parent_id: null, visibility: 'public' },
       {
         onSuccess: () => {
-          toast.success("Quote posted successfully!");
+          toast.success(t("post.quoteSuccess"));
           setQuoteDialogOpen(false);
           setQuoteText("");
         },
         onError: () => {
-          toast.error("Failed to quote post. Please try again.");
+          toast.error(t("post.quoteFailed"));
         },
       }
     );
@@ -219,6 +221,8 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
       shareTimeoutRef.current = window.setTimeout(() => {
         setIsShared(false);
       }, 2000);
+    }).catch(() => {
+      toast.error(t("post.copyLinkFailed"));
     });
   };
 
@@ -227,11 +231,11 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
     e?.preventDefault();
     if (following) {
       unfollow(author.username, {
-        onError: () => toast.error("Failed to unfollow user."),
+        onError: () => toast.error(t("post.unfollowFailed")),
       });
     } else {
       follow(author.username, {
-        onError: () => toast.error("Failed to follow user."),
+        onError: () => toast.error(t("post.followFailed")),
       });
     }
     setFollowing(!following);
@@ -240,16 +244,16 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
   const handleBlock = (e: React.MouseEvent) => {
     e.stopPropagation();
     block(author.username, {
-      onSuccess: () => toast.success(`Blocked @${author.username}`),
-      onError: () => toast.error("Failed to block user."),
+      onSuccess: () => toast.success(t("post.blocked", { username: author.username })),
+      onError: () => toast.error(t("post.blockFailed")),
     });
   };
 
   const handleUnblock = (e: React.MouseEvent) => {
     e.stopPropagation();
     unblock(author.username, {
-      onSuccess: () => toast.success(`Unblocked @${author.username}`),
-      onError: () => toast.error("Failed to unblock user."),
+      onSuccess: () => toast.success(t("post.unblocked", { username: author.username })),
+      onError: () => toast.error(t("post.unblockFailed")),
     });
   };
 
@@ -328,7 +332,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                         </span>
                       </TooltipTrigger>
                       <TooltipContent side="bottom" className="pointer-events-none">
-                        <p>Only your followers can see this post</p>
+                        <p>{t("post.visibilityFollowers")}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -342,7 +346,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                         </span>
                       </TooltipTrigger>
                       <TooltipContent side="bottom" className="pointer-events-none">
-                        <p>Only the people you mentioned can see this post</p>
+                        <p>{t("post.visibilityMentions")}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -363,15 +367,15 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                     {isOwnPost && <>
                       <DropdownMenuItem className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setEditText(content); setEditDialogOpen(true); }}>
                         <Pencil className="h-4 w-4 mr-2" />
-                        <span>Edit post</span>
+                        <span>{t("post.editPost")}</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="cursor-pointer" onClick={(e) => { e.stopPropagation(); pinMutation.mutate({ postId: id, pinned: post.is_pinned, username: author.username }, { onError: () => toast.error(post.is_pinned ? "Failed to unpin post." : "Failed to pin post.") }); }}>
+                      <DropdownMenuItem className="cursor-pointer" onClick={(e) => { e.stopPropagation(); pinMutation.mutate({ postId: id, pinned: post.is_pinned, username: author.username }, { onError: () => toast.error(post.is_pinned ? t("post.unpinFailed") : t("post.pinFailed")) }); }}>
                         <Pin className="h-4 w-4 mr-2" />
-                        <span>{post.is_pinned ? "Unpin from profile" : "Pin to profile"}</span>
+                        <span>{post.is_pinned ? t("post.unpinFromProfile") : t("post.pinToProfile")}</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteDialogOpen(true); }}>
                         <Trash2 className="h-4 w-4 mr-2" />
-                        <span>Delete post</span>
+                        <span>{t("post.deletePost")}</span>
                       </DropdownMenuItem>
                     </>}
                     {!isOwnPost && (
@@ -381,7 +385,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                         ) : (
                           <UserPlus className="h-4 w-4 mr-2" />
                         )}
-                        <span>{following ? `Unfollow @${author.username}` : `Follow @${author.username}`}</span>
+                        <span>{following ? t("post.unfollowUser", { username: author.username }) : t("post.followUser", { username: author.username })}</span>
                       </DropdownMenuItem>
                     )}
                     {!isOwnPost && (
@@ -389,12 +393,12 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                         {following ? (
                           <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive" onClick={handleUnblock}>
                             <UserX className="h-4 w-4 mr-2" />
-                            <span>Unblock @{author.username}</span>
+                            <span>{t("post.unblockUser", { username: author.username })}</span>
                           </DropdownMenuItem>
                         ) : (
                           <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive" onClick={handleBlock}>
                             <UserX className="h-4 w-4 mr-2" />
-                            <span>Block @{author.username}</span>
+                            <span>{t("post.blockUser", { username: author.username })}</span>
                           </DropdownMenuItem>
                         )}
                       </>
@@ -408,7 +412,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                   <CornerUpLeft className="h-3.5 w-3.5 shrink-0" />
                   {post.parent && !post.parent.deleted && post.parent.author ? (
                     <>
-                      <span>Replying to</span>
+                      <span>{t("post.replyingTo")}</span>
                       <Link
                         to={`/post/${post.parent.id}`}
                         onClick={(e) => e.stopPropagation()}
@@ -418,7 +422,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                       </Link>
                     </>
                   ) : (
-                    <span>Replying to a deleted post</span>
+                    <span>{t("post.replyingToDeleted")}</span>
                   )}
                 </div>
               )}
@@ -426,7 +430,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
               <p className="mt-2 whitespace-pre-wrap text-sm text-primary"><ContentLinks content={content} /></p>
               {post.poll && <PollCard poll={post.poll} postId={id} />}
 {isOwnPost && post.edited_at && <button className="mt-2 text-xs text-muted-foreground hover:underline" onClick={(event) => { event.stopPropagation(); setHistoryOpen((open) => !open); }}>
-                {historyOpen ? "Hide edit history" : "View edit history"}
+                {historyOpen ? t("post.hideEditHistory") : t("post.viewEditHistory")}
               </button>}
               {historyOpen && edits.data?.data.items.map((edit) => <div key={edit.id} className="mt-1 rounded border border-border p-2 text-xs text-muted-foreground">{edit.content_before}</div>)}
 
@@ -437,8 +441,8 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                   className="block"
                 >
                   <div className="mt-2 border border-border rounded-lg p-3 hover:bg-accent transition-colors">
-                    <p className="text-xs text-muted-foreground">Quoted post</p>
-                    <p className="text-sm text-primary mt-1">View quoted post #{post.quoted_post_id}</p>
+                    <p className="text-xs text-muted-foreground">{t("post.quotedPost")}</p>
+                    <p className="text-sm text-primary mt-1">{t("post.viewQuotedPost", { id: post.quoted_post_id })}</p>
                   </div>
                 </Link>
               )}
@@ -488,11 +492,11 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
               <DropdownMenuContent align="start" className="border border-muted">
                 <DropdownMenuItem className="cursor-pointer" onClick={(e) => { e.stopPropagation(); handleRepost(); }}>
                   <Repeat2 className="h-4 w-4 mr-2" />
-                  <span>{engagement.is_reposted ? "Undo repost" : "Repost"}</span>
+                  <span>{engagement.is_reposted ? t("post.undoRepost") : t("post.repost")}</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setQuoteDialogOpen(true); }}>
                   <MessageCircle className="h-4 w-4 mr-2" />
-                  <span>Quote post</span>
+                  <span>{t("post.quotePost")}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -555,7 +559,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                       onClick={handleUnbookmark}
                     >
                       <Bookmark className="h-4 w-4 mr-2" />
-                      <span>Remove bookmark</span>
+                      <span>{t("post.removeBookmark")}</span>
                     </Button>
                     <div className="h-px bg-border" />
                   </>
@@ -563,7 +567,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
 
                 <div className="px-2 py-2">
                   <Input
-                    placeholder="Search categories..."
+                    placeholder={t("post.searchCategories")}
                     value={categorySearchQuery}
                     onChange={(e) => setCategorySearchQuery(e.target.value)}
                     className="h-8"
@@ -591,7 +595,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
 
                 <div className="px-2 py-2 flex gap-2">
                   <Input
-                    placeholder="New category..."
+                    placeholder={t("post.newCategory")}
                     value={newCategoryName}
                     onChange={(e) => setNewCategoryName(e.target.value)}
                     className="h-8"
@@ -629,7 +633,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
       <Dialog open={replyDialogOpen} onOpenChange={setReplyDialogOpen}>
         <CustomDialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto bg-card">
           <DialogHeader className="mb-2">
-            <DialogTitle className="text-primary">Reply</DialogTitle>
+            <DialogTitle className="text-primary">{t("post.replyTitle")}</DialogTitle>
           </DialogHeader>
 
           <div className="relative flex items-start space-x-3">
@@ -653,14 +657,14 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
               )}
 
               <p className="mt-4 mb-8 text-sm text-muted-foreground">
-                Replying to <span className="text-blue-500">@{author.username}</span>
+                {t("post.replyingToLabel")} <span className="text-blue-500">@{author.username}</span>
               </p>
             </div>
           </div>
 
           <ComposeContent
-            placeholder="Post your reply"
-            submitLabel="Reply"
+            placeholder={t("post.replyPlaceholder")}
+            submitLabel={t("post.replyLabel")}
             textareaHeight="h-24"
             parentId={id}
             onSubmit={() => setReplyDialogOpen(false)}
@@ -672,7 +676,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
       <Dialog open={quoteDialogOpen} onOpenChange={setQuoteDialogOpen}>
         <CustomDialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto bg-card">
           <DialogHeader className="mb-2">
-            <DialogTitle className="text-primary">Quote post</DialogTitle>
+            <DialogTitle className="text-primary">{t("post.quoteTitle")}</DialogTitle>
           </DialogHeader>
 
           <div className="border border-border rounded-lg p-3">
@@ -684,7 +688,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
           </div>
 
           <Textarea
-            placeholder="Add a comment..."
+            placeholder={t("post.addComment")}
             className="min-h-24 resize-none text-primary"
             value={quoteText}
             onChange={(e) => setQuoteText(e.target.value)}
@@ -697,7 +701,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
               disabled={!quoteText.trim() || quoteMutation.isPending}
             >
               {quoteMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Quote
+              {t("post.quote")}
             </Button>
           </DialogFooter>
         </CustomDialogContent>
@@ -705,21 +709,21 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
 
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <CustomDialogContent className="sm:max-w-xl bg-card">
-          <DialogHeader><DialogTitle className="text-primary">Edit post</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="text-primary">{t("post.editPostTitle")}</DialogTitle></DialogHeader>
           <Textarea value={editText} onChange={(event) => setEditText(event.target.value)} maxLength={280} className="min-h-32" />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-            <Button disabled={!editText.trim() || updateMutation.isPending} onClick={() => updateMutation.mutate({ postId: id, content: editText, username: author.username }, { onSuccess: () => setEditDialogOpen(false), onError: () => toast.error("Failed to update post.") })}>Save changes</Button>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>{t("app.cancel")}</Button>
+            <Button disabled={!editText.trim() || updateMutation.isPending} onClick={() => updateMutation.mutate({ postId: id, content: editText, username: author.username }, { onSuccess: () => setEditDialogOpen(false), onError: () => toast.error(t("post.updateFailed")) })}>{t("post.saveChanges")}</Button>
           </DialogFooter>
         </CustomDialogContent>
       </Dialog>
 
       <ConfirmDialog
         open={deleteDialogOpen}
-        title="Delete this post?"
-        description="This will permanently delete the post and all its replies."
-        confirmLabel="Delete"
-        onConfirm={() => deleteMutation.mutate({ postId: id, username: author.username }, { onError: () => toast.error("Failed to delete post.") })}
+        title={t("post.deleteTitle")}
+        description={t("post.deleteDescription")}
+        confirmLabel={t("post.deleteConfirm")}
+        onConfirm={() => deleteMutation.mutate({ postId: id, username: author.username }, { onError: () => toast.error(t("post.deleteFailed")) })}
         onOpenChange={setDeleteDialogOpen}
       />
     </>

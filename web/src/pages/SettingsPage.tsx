@@ -4,12 +4,31 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSettings } from "@/hooks/useSettings";
+import { useI18n } from "@/contexts/I18nContext";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
 import { Bell, Eye, Globe, Palette } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SUPPORTED_LANGUAGES, type Language } from "@/i18n";
+import { useMemo } from "react";
 
 const SettingsPage = () => {
     const { settings, isLoading, updateSettings, isUpdating } = useSettings();
+    const { t, setLanguage, language } = useI18n();
+
+    // Keep the i18n provider in sync with the persisted setting so the whole
+    // UI re-renders in the new language immediately.
+    const handleLanguageChange = (value: string) => {
+        setLanguage(value as Language);
+        updateSettings({ language: value });
+    };
+
+    const languageOptions = useMemo(
+        () => SUPPORTED_LANGUAGES.map((code) => ({
+            code,
+            label: t(`settings.language.${code}`),
+        })),
+        [t],
+    );
 
     if (isLoading) {
         return <SettingsSkeleton />;
@@ -18,7 +37,7 @@ const SettingsPage = () => {
     return (
         <div className="container max-w-4xl py-6 space-y-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold">Settings</h1>
+                <h1 className="text-3xl font-bold">{t("settings.title")}</h1>
                 <Button
                     variant="outline"
                     onClick={() => {
@@ -28,7 +47,7 @@ const SettingsPage = () => {
                     }}
                     disabled={isUpdating}
                 >
-                    {isUpdating ? "Saving..." : "Save Changes"}
+                    {isUpdating ? t("settings.saving") : t("settings.saveChanges")}
                 </Button>
             </div>
 
@@ -38,15 +57,15 @@ const SettingsPage = () => {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Bell className="w-5 h-5" />
-                            Notifications
+                            {t("settings.notifications.title")}
                         </CardTitle>
                         <CardDescription>
-                            Manage how you receive notifications
+                            {t("settings.notifications.description")}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <Label htmlFor="email-notifications">Email Notifications</Label>
+                            <Label htmlFor="email-notifications">{t("settings.notifications.email")}</Label>
                             <Switch
                                 id="email-notifications"
                                 checked={settings?.notifications.email}
@@ -58,7 +77,7 @@ const SettingsPage = () => {
                             />
                         </div>
                         <div className="flex items-center justify-between">
-                            <Label htmlFor="push-notifications">Push Notifications</Label>
+                            <Label htmlFor="push-notifications">{t("settings.notifications.push")}</Label>
                             <Switch
                                 id="push-notifications"
                                 checked={settings?.notifications.push}
@@ -70,7 +89,7 @@ const SettingsPage = () => {
                             />
                         </div>
                         <div className="flex items-center justify-between">
-                            <Label htmlFor="mention-notifications">Mention Notifications</Label>
+                            <Label htmlFor="mention-notifications">{t("settings.notifications.mentions")}</Label>
                             <Switch
                                 id="mention-notifications"
                                 checked={settings?.notifications.mentions}
@@ -89,15 +108,15 @@ const SettingsPage = () => {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Eye className="w-5 h-5" />
-                            Privacy
+                            {t("settings.privacy.title")}
                         </CardTitle>
                         <CardDescription>
-                            Control your privacy settings
+                            {t("settings.privacy.description")}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
-                            <Label>Profile Visibility</Label>
+                            <Label>{t("settings.privacy.profileVisibility")}</Label>
                             <Select
                                 value={settings?.privacy.profileVisibility}
                                 onValueChange={(value) =>
@@ -110,14 +129,14 @@ const SettingsPage = () => {
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="public">Public</SelectItem>
-                                    <SelectItem value="private">Private</SelectItem>
-                                    <SelectItem value="friends">Friends Only</SelectItem>
+                                    <SelectItem value="public">{t("settings.privacy.public")}</SelectItem>
+                                    <SelectItem value="private">{t("settings.privacy.private")}</SelectItem>
+                                    <SelectItem value="friends">{t("settings.privacy.friendsOnly")}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                         <div className="flex items-center justify-between">
-                            <Label htmlFor="online-status">Show Online Status</Label>
+                            <Label htmlFor="online-status">{t("settings.privacy.showOnlineStatus")}</Label>
                             <Switch
                                 id="online-status"
                                 checked={settings?.privacy.showOnlineStatus}
@@ -129,7 +148,7 @@ const SettingsPage = () => {
                             />
                         </div>
                         <div className="flex items-center justify-between">
-                            <Label htmlFor="allow-tagging">Allow Tagging</Label>
+                            <Label htmlFor="allow-tagging">{t("settings.privacy.allowTagging")}</Label>
                             <Switch
                                 id="allow-tagging"
                                 checked={settings?.privacy.allowTagging}
@@ -148,15 +167,15 @@ const SettingsPage = () => {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Palette className="w-5 h-5" />
-                            Appearance
+                            {t("settings.appearance.title")}
                         </CardTitle>
                         <CardDescription>
-                            Customize how the app looks
+                            {t("settings.appearance.description")}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
-                            <Label>Theme</Label>
+                            <Label>{t("settings.appearance.theme")}</Label>
                             <Select
                                 value={settings?.appearance.theme}
                                 onValueChange={(value) =>
@@ -169,14 +188,14 @@ const SettingsPage = () => {
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="light">Light</SelectItem>
-                                    <SelectItem value="dark">Dark</SelectItem>
-                                    <SelectItem value="system">System</SelectItem>
+                                    <SelectItem value="light">{t("settings.appearance.light")}</SelectItem>
+                                    <SelectItem value="dark">{t("settings.appearance.dark")}</SelectItem>
+                                    <SelectItem value="system">{t("settings.appearance.system")}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label>Font Size</Label>
+                            <Label>{t("settings.appearance.fontSize")}</Label>
                             <Select
                                 value={settings?.appearance.fontSize}
                                 onValueChange={(value) =>
@@ -189,9 +208,9 @@ const SettingsPage = () => {
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="small">Small</SelectItem>
-                                    <SelectItem value="medium">Medium</SelectItem>
-                                    <SelectItem value="large">Large</SelectItem>
+                                    <SelectItem value="small">{t("settings.appearance.small")}</SelectItem>
+                                    <SelectItem value="medium">{t("settings.appearance.medium")}</SelectItem>
+                                    <SelectItem value="large">{t("settings.appearance.large")}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -206,28 +225,25 @@ const SettingsPage = () => {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Globe className="w-5 h-5" />
-                            Language
+                            {t("settings.language.title")}
                         </CardTitle>
                         <CardDescription>
-                            Choose your preferred language
+                            {t("settings.language.description")}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-2">
                             <Select
-                                value={settings?.language}
-                                onValueChange={(value) =>
-                                    updateSettings({ language: value })
-                                }
+                                value={language}
+                                onValueChange={handleLanguageChange}
                             >
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="en">English</SelectItem>
-                                    <SelectItem value="es">Español</SelectItem>
-                                    <SelectItem value="fr">Français</SelectItem>
-                                    <SelectItem value="de">Deutsch</SelectItem>
+                                    {languageOptions.map(({ code, label }) => (
+                                        <SelectItem key={code} value={code}>{label}</SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -267,4 +283,4 @@ const SettingsSkeleton = () => {
     );
 };
 
-export default SettingsPage; 
+export default SettingsPage;

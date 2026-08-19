@@ -302,7 +302,7 @@ func (s *AuthService) GetUserIDFromRefreshToken(ctx context.Context, tokenString
 	return userID, nil
 }
 
-func (s *AuthService) Register(ctx context.Context, username string, email string, password string, ipAddress string, userAgent string) (*models.User, *models.Token, *models.Token, error) {
+func (s *AuthService) Register(ctx context.Context, username string, email string, password string, language string, ipAddress string, userAgent string) (*models.User, *models.Token, *models.Token, error) {
 	// Hash the password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -346,6 +346,19 @@ func (s *AuthService) Register(ctx context.Context, username string, email strin
 		return nil, nil, nil, err
 	}
 
+	// Seed the settings row so language preference (from the browser) sticks
+	// from day one. Defaults mirror the user_settings column default.
+	settings := defaultSettings(language)
+	if err := s.store.Users.CreateSettings(ctx, tx, user.ID, settings); err != nil {
+		s.logger.Error("failed to seed settings during registration",
+			"operation", "register",
+			"userID", user.ID,
+			"language", language,
+			"error", err,
+		)
+		return nil, nil, nil, err
+	}
+
 	// Commit the transaction
 	if err := tx.Commit(); err != nil {
 		s.logger.Error("failed to commit transaction for user creation",
@@ -382,4 +395,19 @@ func (s *AuthService) Register(ctx context.Context, username string, email strin
 	)
 
 	return user, accessToken, refreshToken, nil
+}
+
+// defaultSettings returns the user_settings JSONB defaults (mirroring the
+// database column default), with language overridden when non-empty.
+func defaultSettings(language string) *models.UserSettings {
+	settings := &models.UserSettings{
+		Notifications: models.NotificationSettings{Email: true, Push: true, Mentions: true},
+		Privacy:       models.PrivacySettings{ProfileVisibility: "public", ShowOnlineStatus: true, AllowTagging: true},
+		Appearance:    models.AppearanceSettings{Theme: "system", FontSize: "medium"},
+		Language:      "en",
+	}
+	if language != "" {
+		settings.Language = language
+	}
+	return settings
 }

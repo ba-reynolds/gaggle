@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import api from '@/lib/api';
 import type { Envelope, RefreshTokenResponse } from '@/types/api';
 import { useUser } from './UserContext';
+import { translate, getCurrentLanguage } from '@/i18n';
 
 
 interface AuthContextType {
@@ -25,7 +26,7 @@ const isSessionExpired = (err: unknown) =>
   (err as AxiosError<Envelope<unknown>> | undefined)?.response?.data?.error?.code === 'SESSION_EXPIRED';
 
 const notifySessionExpired = () => {
-  toast.error("Your session has expired. Please sign in again.");
+  toast.error(translate(getCurrentLanguage(), "auth.sessionExpired"));
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

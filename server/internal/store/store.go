@@ -33,6 +33,7 @@ type Store struct {
 		UpdateUserProfile(ctx context.Context, tx *sql.Tx, user *models.UserWithProfile) error
 		GetSettings(ctx context.Context, userID int) (*models.UserSettings, error)
 		UpdateSettings(ctx context.Context, userID int, settings *models.UserSettings) error
+		CreateSettings(ctx context.Context, tx *sql.Tx, userID int, settings *models.UserSettings) error
 		SetPrivate(ctx context.Context, userID int, isPrivate bool) error
 		GetIsPrivate(ctx context.Context, userIDs []int) (map[int]bool, error)
 		Search(ctx context.Context, query string, limit int) (*models.UserList, error)

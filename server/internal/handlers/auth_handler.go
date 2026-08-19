@@ -203,7 +203,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	// Log the registration request for debugging
 	h.logger.Debug("registration request", "username", payload.Username, "email", payload.Email)
 
-	user, accessToken, refreshToken, err := h.service.Auth.Register(r.Context(), payload.Username, payload.Email, payload.Password, r.RemoteAddr, r.UserAgent())
+	user, accessToken, refreshToken, err := h.service.Auth.Register(r.Context(), payload.Username, payload.Email, payload.Password, payload.Language, r.RemoteAddr, r.UserAgent())
 	if err != nil {
 		// Don't log service errors - they're already logged at appropriate layer
 		// Just handle HTTP response mapping

@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import UserHoverCard from "@/components/UserHoverCard";
 import { useAuth } from "@/contexts/AuthContext";
+import { useI18n } from "@/contexts/I18nContext";
 import { useNotifications } from "@/contexts/NotificationsContext";
 import { useTrends, useSuggestedUsers } from "@/hooks/useSearch";
 import { useUser } from "@/contexts/UserContext";
@@ -49,6 +50,7 @@ export default function SocialMediaLayout({
 }: SocialMediaLayoutProps) {
   const { user } = useUser();
   const { mutate: logout } = useLogoutMutation();
+  const { t } = useI18n();
   const { token } = useAuth();
   const { unreadCount } = useNotifications();
   const navigate = useNavigate();
@@ -90,7 +92,7 @@ export default function SocialMediaLayout({
 
 
   if (token === undefined) {
-    return <div>Loading...</div>;
+    return <div>{t("app.loading")}</div>;
   }
 
   if (token === null) {
@@ -127,16 +129,16 @@ export default function SocialMediaLayout({
 
               {/* Navigation */}
               <nav className="space-y-1">
-                <NavItem icon={Home} label="Home" to="/" />
-                <NavItem icon={Compass} label="Explore" to="/explore" />
-                <NavItem icon={Bookmark} label="Bookmarks" to="/bookmarks" />
-                <NavItem icon={ListIcon} label="Lists" to="/lists" />
-                <NavItem icon={MessageSquare} label="Messages" to="/messages" badge={dmUnread.data?.data?.unread_count ?? 0} />
-                <NavItem icon={Bell} label="Notifications" to="/notifications" badge={unreadCount} />
-                <NavItem icon={AtSign} label="Mentions" to="/mentions" />
-                <NavItem icon={User} label="Profile" to={`/profile/${user.username}`} />
-                <NavItem icon={Settings} label="Settings" to="/settings" />
-                {user.isAdmin && <NavItem icon={Shield} label="Admin" to="/admin" />}
+                <NavItem icon={Home} label={t("nav.home")} to="/" />
+                <NavItem icon={Compass} label={t("nav.explore")} to="/explore" />
+                <NavItem icon={Bookmark} label={t("nav.bookmarks")} to="/bookmarks" />
+                <NavItem icon={ListIcon} label={t("nav.lists")} to="/lists" />
+                <NavItem icon={MessageSquare} label={t("nav.messages")} to="/messages" badge={dmUnread.data?.data?.unread_count ?? 0} />
+                <NavItem icon={Bell} label={t("nav.notifications")} to="/notifications" badge={unreadCount} />
+                <NavItem icon={AtSign} label={t("nav.mentions")} to="/mentions" />
+                <NavItem icon={User} label={t("nav.profile")} to={`/profile/${user.username}`} />
+                <NavItem icon={Settings} label={t("nav.settings")} to="/settings" />
+                {user.isAdmin && <NavItem icon={Shield} label={t("nav.admin")} to="/admin" />}
 
 
                 <Button
@@ -144,7 +146,7 @@ export default function SocialMediaLayout({
                   onClick={() => setIsComposing(true)}
                 >
                   <PenSquare className="h-5 w-5 hidden md:block lg:hidden" />
-                  <span className="hidden lg:inline">Post</span>
+                  <span className="hidden lg:inline">{t("app.post")}</span>
                 </Button>
               </nav>
 
@@ -167,20 +169,20 @@ export default function SocialMediaLayout({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56 border border-muted">
-                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                    <DropdownMenuLabel>{t("nav.myAccount")}</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => navigate(`/profile/${user.username}`)}>
                       <User className="h-4 w-4 mr-2" />
-                      Profile
+                      {t("nav.profile")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate("/settings")}>
                       <Settings className="h-4 w-4 mr-2" />
-                      Settings
+                      {t("nav.settings")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => logout()}>
                       <LogOut className="h-4 w-4 mr-2" />
-                      Log out
+                      {t("nav.logOut")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -200,7 +202,7 @@ export default function SocialMediaLayout({
             <div className="py-2 sticky top-4 space-y-6">
               {/* Search */}
               <Input
-                placeholder="Search"
+                placeholder={t("app.search")}
                 className="bg-transparent p-6 rounded-full focus-visible:ring-0 focus-visible:ring-offset-0 text-primary"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
@@ -211,25 +213,25 @@ export default function SocialMediaLayout({
 
               {/* Trending */}
               <div className="bg-muted rounded-xl p-4">
-                <h3 className="font-bold text-xl mb-4 text-primary">Trending</h3>
+                <h3 className="font-bold text-xl mb-4 text-primary">{t("trends.title")}</h3>
                 <div className="space-y-2">
                   {trends.data?.slice(0, 5).map((trend) => (
                     <button key={trend.name} className="block w-full rounded p-2 text-left hover:bg-accent" onClick={() => navigate(`/hashtags/${trend.name}`)}>
-                      <p className="text-xs text-muted-foreground">Trending now</p>
+                      <p className="text-xs text-muted-foreground">{t("trends.now")}</p>
                       <p className="font-semibold text-primary">#{trend.name}</p>
-                      <p className="text-xs text-muted-foreground">{trend.count} posts</p>
+                      <p className="text-xs text-muted-foreground">{t("trends.posts", { count: trend.count })}</p>
                     </button>
                   ))}
-                  {!trends.isLoading && !trends.data?.length && <p className="text-sm text-muted-foreground">No trends yet.</p>}
+                  {!trends.isLoading && !trends.data?.length && <p className="text-sm text-muted-foreground">{t("trends.empty")}</p>}
                 </div>
                 <Button variant="ghost" className="w-full mt-2 text-primary justify-start p-2" onClick={() => navigate(`/explore?tab=trending`)}>
-                  Show more
+                  {t("trends.showMore")}
                 </Button>
               </div>
 
               {/* Who to follow */}
               <div className="bg-muted rounded-xl p-4">
-                <h3 className="font-bold text-xl mb-4 text-primary">Who to follow</h3>
+                <h3 className="font-bold text-xl mb-4 text-primary">{t("whoToFollow.title")}</h3>
                 <div className="space-y-4">
                   {suggested.data?.items.slice(0, 3).map((profile) => {
                     const username = profile.username;
@@ -262,17 +264,17 @@ export default function SocialMediaLayout({
                           variant={isFollowing ? "outline" : "default"}
                           onClick={handleFollowToggle(username)}
                         >
-                          {isFollowing ? "Following" : "Follow"}
+                          {isFollowing ? t("whoToFollow.following") : t("whoToFollow.follow")}
                         </Button>
                       </div>
                     )
                   })}
                   {!suggested.isLoading && !suggested.data?.items.length && (
-                    <p className="text-sm text-muted-foreground">No suggestions right now.</p>
+                    <p className="text-sm text-muted-foreground">{t("whoToFollow.empty")}</p>
                   )}
                 </div>
                 <Button variant="ghost" className="w-full mt-2 text-primary justify-start p-2" onClick={() => navigate('/explore')}>
-                  Show more
+                  {t("trends.showMore")}
                 </Button>
               </div>
             </div>
@@ -285,13 +287,13 @@ export default function SocialMediaLayout({
           className="sm:max-w-xl max-h-[90vh] overflow-y-auto bg-card"
         >
           <DialogHeader className="mb-2">
-            <DialogTitle className="text-primary">New Post</DialogTitle>
+            <DialogTitle className="text-primary">{t("nav.newPost")}</DialogTitle>
           </DialogHeader>
 
           <ComposeContent
             onSubmit={handleNewPost}
-            placeholder="What's happening?"
-            submitLabel="Post"
+            placeholder={t("composer.placeholder")}
+            submitLabel={t("app.post")}
             textareaHeight="h-32"
           />
         </CustomDialogContent>

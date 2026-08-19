@@ -3,41 +3,43 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useUser } from '@/contexts/UserContext';
+import { useI18n } from '@/contexts/I18nContext';
 import { useLoginMutation } from '@/hooks/useAuth';
 import api from '@/lib/api';
 import type { Envelope, UserProfileResponse } from '@/types/api';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff, Lock, Mail, User } from "lucide-react";
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 import * as z from 'zod';
 
-const loginSchema = z.object({
-  identifier: z.string()
-    .min(1, 'Username or email is required')
-    .min(3, 'Username or email must be at least 3 characters long')
-    .max(96, 'Username or email must be at most 96 characters long'),
-  password: z.string()
-    .min(1, 'Password is required')
-    .min(8, 'Password must be at least 8 characters long')
-    .max(72, 'Password must be at most 72 characters long'),
-});
-
-// Form schema for password reset
-const resetSchema = z.object({
-  identifier: z.string().min(1, 'Username or email is required'),
-});
-
 // Main Login Component
 const LoginPage: React.FC = () => {
+  const { t } = useI18n();
   const [showPassword, setShowPassword] = useState(false);
   const [mode, setMode] = useState("login"); // login or forgotPassword
   const navigate = useNavigate();
   const { setUser } = useUser();
   // Login mutation
   const loginMutation = useLoginMutation();
+
+  const loginSchema = useMemo(() => z.object({
+    identifier: z.string()
+      .min(1, t("auth.usernameOrEmail"))
+      .min(3, t("auth.usernameOrEmail"))
+      .max(96, t("auth.usernameOrEmail")),
+    password: z.string()
+      .min(1, t("auth.password"))
+      .min(8, t("auth.password"))
+      .max(72, t("auth.password")),
+  }), [t]);
+
+  // Form schema for password reset
+  const resetSchema = useMemo(() => z.object({
+    identifier: z.string().min(1, t("auth.usernameOrEmail")),
+  }), [t]);
 
   // Login form
   const loginForm = useForm<z.infer<typeof loginSchema>>({
@@ -71,10 +73,10 @@ const LoginPage: React.FC = () => {
         profilePictureUUID: meResponse.data.data.profile_picture_uuid ?? '',
         isAdmin: meResponse.data.data.is_admin ?? false,
       });
-      toast.success("Login successful");
+      toast.success(t("auth.loginSuccess"));
       navigate('/'); // Redirect to home page after successful login
     } catch {
-      toast.error("Login failed, invalid credentials");
+      toast.error(t("auth.loginFailed"));
     }
   };
 
@@ -99,10 +101,10 @@ const LoginPage: React.FC = () => {
     try {
       // Add your password reset API call here
       // For now, just show a success message
-      toast.success("Password reset email sent");
+      toast.success(t("auth.resetSent"));
       setMode("login");
     } catch {
-      toast.error("Reset request failed, please try again later");
+      toast.error(t("auth.resetFailed"));
     }
   };
 
@@ -112,8 +114,8 @@ const LoginPage: React.FC = () => {
         {mode === "login" ? (
           <>
             <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-bold tracking-tight">Sign in to your account</CardTitle>
-              <CardDescription>Enter your details below to sign in</CardDescription>
+              <CardTitle className="text-2xl font-bold tracking-tight">{t("auth.signInTitle")}</CardTitle>
+              <CardDescription>{t("auth.signInDescription")}</CardDescription>
             </CardHeader>
 
             <CardContent>
@@ -124,14 +126,14 @@ const LoginPage: React.FC = () => {
                     name="identifier"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Username or Email</FormLabel>
+                        <FormLabel>{t("auth.usernameOrEmail")}</FormLabel>
                         <FormControl>
                           <div className="relative">
                             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
                               {field.value.includes('@') ? <Mail size={18} /> : <User size={18} />}
                             </div>
                             <Input
-                              placeholder="Enter your username or email"
+                              placeholder={t("auth.usernameOrEmailPlaceholder")}
                               className="pl-10"
                               {...field}
                             />
@@ -147,7 +149,7 @@ const LoginPage: React.FC = () => {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Password</FormLabel>
+                        <FormLabel>{t("auth.password")}</FormLabel>
                         <FormControl>
                           <div className="relative">
                             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
@@ -155,7 +157,7 @@ const LoginPage: React.FC = () => {
                             </div>
                             <Input
                               type={showPassword ? "text" : "password"}
-                              placeholder="Enter your password"
+                              placeholder={t("auth.passwordPlaceholder")}
                               className="pl-10 pr-10"
                               {...field}
                             />
@@ -182,7 +184,7 @@ const LoginPage: React.FC = () => {
                         className="w-4 h-4 bg-background text-primary border-input rounded focus:ring-ring"
                       />
                       <label htmlFor="remember-me" className="text-sm text-foreground">
-                        Remember me
+                        {t("auth.rememberMe")}
                       </label>
                     </div>
 
@@ -191,7 +193,7 @@ const LoginPage: React.FC = () => {
                       className="text-sm font-medium text-primary hover:text-primary/80"
                       onClick={() => setMode("forgotPassword")}
                     >
-                      Forgot your password?
+                      {t("auth.forgotPassword")}
                     </button>
                   </div>
 
@@ -200,7 +202,7 @@ const LoginPage: React.FC = () => {
                     className="w-full"
                     disabled={loginMutation.isPending}
                   >
-                    {loginMutation.isPending ? "Logging in..." : "Sign in"}
+                    {loginMutation.isPending ? t("auth.loggingIn") : t("auth.signIn")}
                   </Button>
 
                   <Button
@@ -210,15 +212,15 @@ const LoginPage: React.FC = () => {
                     disabled={loginMutation.isPending}
                     onClick={handleTestSignIn}
                   >
-                    {loginMutation.isPending ? "Logging in..." : "Test sign in"}
+                    {loginMutation.isPending ? t("auth.loggingIn") : t("auth.testSignIn")}
                   </Button>
 
 
                   <div className="text-center">
                     <p className="text-sm text-muted-foreground">
-                      Don't have an account?{" "}
+                      {t("auth.noAccount")}{" "}
                       <Link to="/signup" className="font-medium text-primary hover:text-primary/80">
-                        Sign up
+                        {t("auth.signUp")}
                       </Link>
                     </p>
                   </div>
@@ -229,9 +231,9 @@ const LoginPage: React.FC = () => {
         ) : (
           <>
             <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-bold tracking-tight">Reset your password</CardTitle>
+              <CardTitle className="text-2xl font-bold tracking-tight">{t("auth.resetTitle")}</CardTitle>
               <CardDescription>
-                Enter your email or username and we'll send you a reset link
+                {t("auth.resetDescription")}
               </CardDescription>
             </CardHeader>
 
@@ -243,14 +245,14 @@ const LoginPage: React.FC = () => {
                     name="identifier"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Username or Email</FormLabel>
+                        <FormLabel>{t("auth.usernameOrEmail")}</FormLabel>
                         <FormControl>
                           <div className="relative">
                             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
                               {field.value.includes('@') ? <Mail size={18} /> : <User size={18} />}
                             </div>
                             <Input
-                              placeholder="Enter your username or email"
+                              placeholder={t("auth.usernameOrEmailPlaceholder")}
                               className="pl-10"
                               {...field}
                             />
@@ -262,7 +264,7 @@ const LoginPage: React.FC = () => {
                   />
 
                   <Button type="submit" className="w-full">
-                    Send reset link
+                    {t("auth.sendResetLink")}
                   </Button>
 
                   <div className="text-center">
@@ -271,7 +273,7 @@ const LoginPage: React.FC = () => {
                       className="text-sm font-medium text-primary hover:text-primary/80"
                       onClick={() => setMode("login")}
                     >
-                      Back to login
+                      {t("auth.backToLogin")}
                     </button>
                   </div>
                 </form>
