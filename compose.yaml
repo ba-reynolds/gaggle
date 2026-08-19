@@ -1,4 +1,4 @@
-name: gophersocial
+name: gaggle
 
 # One-shot local dev stack: Postgres + Redis + API + Web (nginx).
 #   make dev          # or: docker compose up --build -d
@@ -9,7 +9,7 @@ name: gophersocial
 services:
   db:
     image: postgres:16-alpine
-    container_name: gophersocial-db
+    container_name: gaggle-db
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USER:-white}
@@ -27,7 +27,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: gophersocial-redis
+    container_name: gaggle-redis
     restart: unless-stopped
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
@@ -43,7 +43,7 @@ services:
   api:
     build:
       context: ./server
-    container_name: gophersocial-api
+    container_name: gaggle-api
     restart: unless-stopped
     depends_on:
       db:
@@ -72,7 +72,7 @@ services:
       MEDIA_DIR: /app/media
       LOGGING_FILENAME: /app/logs/logs.log
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
-      JWT_ISSUER: gophersocial
+      JWT_ISSUER: gaggle
       JWT_ACCESS_TOKEN_EXPIRATION_TIME: 900
       JWT_REFRESH_TOKEN_EXPIRATION_TIME: 1296000
       COOKIE_SECURE: "false"
@@ -96,7 +96,7 @@ services:
       context: ./web
       args:
         VITE_API_BASE_URL: /api/v1
-    container_name: gophersocial-web
+    container_name: gaggle-web
     restart: unless-stopped
     depends_on:
       api:

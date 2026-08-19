@@ -6,8 +6,8 @@ import (
 	"errors"
 	"log/slog"
 
-	"github.com/ba-reynolds/gophersocial/internal/apperrors"
-	"github.com/ba-reynolds/gophersocial/internal/postutil"
+	"github.com/ba-reynolds/gaggle/internal/apperrors"
+	"github.com/ba-reynolds/gaggle/internal/postutil"
 )
 
 type mentionStore struct {

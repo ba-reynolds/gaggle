@@ -4,10 +4,10 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/ba-reynolds/gophersocial/internal/apperrors"
-	"github.com/ba-reynolds/gophersocial/internal/models"
-	"github.com/ba-reynolds/gophersocial/internal/store"
-	"github.com/ba-reynolds/gophersocial/internal/util"
+	"github.com/ba-reynolds/gaggle/internal/apperrors"
+	"github.com/ba-reynolds/gaggle/internal/models"
+	"github.com/ba-reynolds/gaggle/internal/store"
+	"github.com/ba-reynolds/gaggle/internal/util"
 )
 
 type PostEngagementService struct {

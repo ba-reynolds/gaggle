@@ -8,9 +8,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/ba-reynolds/gophersocial/internal/models"
-	"github.com/ba-reynolds/gophersocial/internal/store"
-	"github.com/ba-reynolds/gophersocial/pkg/config"
+	"github.com/ba-reynolds/gaggle/internal/models"
+	"github.com/ba-reynolds/gaggle/internal/store"
+	"github.com/ba-reynolds/gaggle/pkg/config"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )

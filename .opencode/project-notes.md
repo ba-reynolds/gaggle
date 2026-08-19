@@ -9,7 +9,7 @@
   `admin:public_key`, so `gh ssh-key add` returns HTTP 404 until you run
   `gh auth refresh -h github.com -s admin:public_key`. Adding a key via the
   web UI (Settings → SSH keys, type "Authentication key") sidesteps the refresh.
-- Repo `main` was pushed to GitHub as `ba-reynolds/gophersocial` over SSH
+- Repo `main` was pushed to GitHub as `ba-reynolds/gaggle` over SSH
   (origin = git@github.com:...); home-manager sets `init.defaultBranch=master`
   but existing repos keep their own branch.
 

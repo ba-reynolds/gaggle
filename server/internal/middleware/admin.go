@@ -3,8 +3,8 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/ba-reynolds/gophersocial/internal/apperrors"
-	"github.com/ba-reynolds/gophersocial/internal/util"
+	"github.com/ba-reynolds/gaggle/internal/apperrors"
+	"github.com/ba-reynolds/gaggle/internal/util"
 )
 
 // AdminOnlyMiddleware requires the authenticated user to be an admin.

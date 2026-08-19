@@ -6,19 +6,19 @@ import (
 	"net/http"
 	"os"
 
-	_ "github.com/ba-reynolds/gophersocial/docs" // Imports Swagger docs
-	"github.com/ba-reynolds/gophersocial/internal/api"
-	"github.com/ba-reynolds/gophersocial/internal/auth"
-	"github.com/ba-reynolds/gophersocial/internal/cache"
-	"github.com/ba-reynolds/gophersocial/internal/service"
-	"github.com/ba-reynolds/gophersocial/internal/store"
-	"github.com/ba-reynolds/gophersocial/pkg/config"
-	"github.com/ba-reynolds/gophersocial/pkg/logger"
+	_ "github.com/ba-reynolds/gaggle/docs" // Imports Swagger docs
+	"github.com/ba-reynolds/gaggle/internal/api"
+	"github.com/ba-reynolds/gaggle/internal/auth"
+	"github.com/ba-reynolds/gaggle/internal/cache"
+	"github.com/ba-reynolds/gaggle/internal/service"
+	"github.com/ba-reynolds/gaggle/internal/store"
+	"github.com/ba-reynolds/gaggle/pkg/config"
+	"github.com/ba-reynolds/gaggle/pkg/logger"
 )
 
-// @title         GopherSocial API
+// @title         Gaggle API
 // @version       1.0
-// @description   API for GopherSocial, a social network for gophers
+// @description   API for Gaggle, a social network for gophers
 // @host          localhost:2021
 // @BasePath      /api/v1
 // @schemes       http

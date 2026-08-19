@@ -15,11 +15,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ba-reynolds/gophersocial/internal/api"
-	"github.com/ba-reynolds/gophersocial/internal/auth"
-	"github.com/ba-reynolds/gophersocial/internal/service"
-	"github.com/ba-reynolds/gophersocial/internal/store"
-	"github.com/ba-reynolds/gophersocial/pkg/config"
+	"github.com/ba-reynolds/gaggle/internal/api"
+	"github.com/ba-reynolds/gaggle/internal/auth"
+	"github.com/ba-reynolds/gaggle/internal/service"
+	"github.com/ba-reynolds/gaggle/internal/store"
+	"github.com/ba-reynolds/gaggle/pkg/config"
 )
 
 const testDBName = "social_test"
@@ -137,7 +137,7 @@ func NewApp(t *testing.T, db *sql.DB) *App {
 		},
 		AuthConfig: config.AuthConfig{
 			JWTSecret:                     "test-secret",
-			JWTIssuer:                     "gophersocial-test",
+			JWTIssuer:                     "gaggle-test",
 			JWTAccessTokenExpirationTime:  15 * time.Minute,
 			JWTRefreshTokenExpirationTime: 24 * time.Hour,
 		},

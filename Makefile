@@ -73,7 +73,7 @@ build-frontend:
 	docker compose build web
 
 help:
-	@echo "GopherSocial Docker targets:"
+	@echo "Gaggle Docker targets:"
 	@echo "  make dev         build + run full stack (db redis api web)"
 	@echo "  make dev-stop    stop the stack"
 	@echo "  make dev-logs    stream logs"

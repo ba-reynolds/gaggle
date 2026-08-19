@@ -66,7 +66,7 @@ const SignupPage: React.FC = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold tracking-tight">Create your account</CardTitle>
-          <CardDescription>Join GopherSocial — it only takes a moment</CardDescription>
+          <CardDescription>Join Gaggle — it only takes a moment</CardDescription>
         </CardHeader>
 
         <CardContent>

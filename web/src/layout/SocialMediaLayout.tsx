@@ -124,7 +124,7 @@ export default function SocialMediaLayout({
                 <div className="w-10 h-10 shrink-0 aspect-square bg-primary rounded-full flex items-center justify-center">
                   <span className="text-primary-foreground font-bold text-xl">G</span>
                 </div>
-                <span className="text-xl font-bold flex-1 min-w-0 truncate hidden lg:inline text-primary">GopherSocial</span>
+                <span className="text-xl font-bold flex-1 min-w-0 truncate hidden lg:inline text-primary">Gaggle</span>
               </div>
 
               {/* Navigation */}

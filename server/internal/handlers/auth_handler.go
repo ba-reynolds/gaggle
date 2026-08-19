@@ -4,10 +4,10 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/ba-reynolds/gophersocial/internal/apperrors"
-	"github.com/ba-reynolds/gophersocial/internal/models"
-	"github.com/ba-reynolds/gophersocial/internal/service"
-	"github.com/ba-reynolds/gophersocial/internal/util"
+	"github.com/ba-reynolds/gaggle/internal/apperrors"
+	"github.com/ba-reynolds/gaggle/internal/models"
+	"github.com/ba-reynolds/gaggle/internal/service"
+	"github.com/ba-reynolds/gaggle/internal/util"
 )
 
 // AuthHandler handles HTTP requests for authentication

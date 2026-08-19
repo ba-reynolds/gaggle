@@ -36,7 +36,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -44,7 +44,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Badge"
+                                                "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Badge"
                                             }
                                         }
                                     }
@@ -57,7 +57,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -66,7 +66,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -78,7 +78,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -87,7 +87,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -120,7 +120,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.CreateBadgePayload"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.CreateBadgePayload"
                         }
                     }
                 ],
@@ -130,13 +130,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Badge"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Badge"
                                         }
                                     }
                                 }
@@ -148,7 +148,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -157,7 +157,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -169,7 +169,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -178,7 +178,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -190,7 +190,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -199,7 +199,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -211,7 +211,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -220,7 +220,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -260,7 +260,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -281,7 +281,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -290,7 +290,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -302,7 +302,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -311,7 +311,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -323,7 +323,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -332,7 +332,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -344,7 +344,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -353,7 +353,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -365,7 +365,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -374,7 +374,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -414,7 +414,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.CreateBadgePayload"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.CreateBadgePayload"
                         }
                     }
                 ],
@@ -424,13 +424,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Badge"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Badge"
                                         }
                                     }
                                 }
@@ -442,7 +442,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -451,7 +451,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -463,7 +463,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -472,7 +472,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -484,7 +484,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -493,7 +493,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -505,7 +505,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -514,7 +514,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -561,7 +561,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -582,7 +582,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -591,7 +591,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -603,7 +603,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -612,7 +612,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -624,7 +624,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -633,7 +633,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -645,7 +645,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -654,7 +654,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -666,7 +666,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -675,7 +675,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -720,7 +720,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -741,7 +741,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -750,7 +750,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -762,7 +762,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -771,7 +771,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -783,7 +783,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -792,7 +792,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -819,7 +819,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.LoginRequest"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.LoginRequest"
                         }
                     }
                 ],
@@ -827,7 +827,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.LoginResponse"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.LoginResponse"
                         }
                     },
                     "400": {
@@ -835,7 +835,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -844,7 +844,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -856,7 +856,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -865,7 +865,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -877,7 +877,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -886,7 +886,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -912,7 +912,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -933,7 +933,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -942,7 +942,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -954,7 +954,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -963,7 +963,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -975,7 +975,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -984,7 +984,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -1011,7 +1011,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.RefreshToken"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.RefreshToken"
                         }
                     }
                 ],
@@ -1019,7 +1019,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.RefreshTokenResponse"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.RefreshTokenResponse"
                         }
                     },
                     "400": {
@@ -1027,7 +1027,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -1036,7 +1036,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -1048,7 +1048,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -1057,7 +1057,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -1069,7 +1069,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -1078,7 +1078,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -1105,7 +1105,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.RegisterRequest"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.RegisterRequest"
                         }
                     }
                 ],
@@ -1113,7 +1113,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.RegisterResponse"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.RegisterResponse"
                         }
                     },
                     "400": {
@@ -1121,7 +1121,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -1130,7 +1130,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -1142,7 +1142,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -1151,7 +1151,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -1163,7 +1163,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -1172,7 +1172,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -1203,7 +1203,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.BookmarkCategory"
+                                "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.BookmarkCategory"
                             }
                         }
                     },
@@ -1212,7 +1212,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -1221,7 +1221,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -1254,7 +1254,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.CreateBookmarkCategoryRequest"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.CreateBookmarkCategoryRequest"
                         }
                     }
                 ],
@@ -1262,7 +1262,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.CreateBookmarkCategoryResponse"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.CreateBookmarkCategoryResponse"
                         }
                     },
                     "400": {
@@ -1270,7 +1270,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -1279,7 +1279,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -1291,7 +1291,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -1300,7 +1300,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -1312,7 +1312,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -1321,7 +1321,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -1361,7 +1361,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -1370,7 +1370,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -1382,7 +1382,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -1391,7 +1391,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -1422,13 +1422,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.ConversationFeed"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.ConversationFeed"
                                         }
                                     }
                                 }
@@ -1440,7 +1440,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -1449,7 +1449,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -1489,13 +1489,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Conversation"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Conversation"
                                         }
                                     }
                                 }
@@ -1507,7 +1507,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -1516,7 +1516,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -1528,7 +1528,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -1537,7 +1537,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -1589,13 +1589,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.MessageFeed"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.MessageFeed"
                                         },
                                         "error": {
                                             "type": "object"
@@ -1610,7 +1610,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -1619,7 +1619,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -1631,7 +1631,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -1640,7 +1640,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -1680,7 +1680,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -1701,7 +1701,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -1710,7 +1710,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -1722,7 +1722,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -1731,7 +1731,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -1762,7 +1762,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -1783,7 +1783,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -1792,7 +1792,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -1834,7 +1834,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.SendMessagePayload"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.SendMessagePayload"
                         }
                     }
                 ],
@@ -1844,13 +1844,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Message"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Message"
                                         }
                                     }
                                 }
@@ -1862,7 +1862,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -1871,7 +1871,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -1883,7 +1883,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -1892,7 +1892,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -1904,7 +1904,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -1913,7 +1913,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -1925,7 +1925,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -1934,7 +1934,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -1965,7 +1965,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -1973,7 +1973,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.List"
+                                                "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.List"
                                             }
                                         }
                                     }
@@ -1986,7 +1986,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -1995,7 +1995,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -2028,7 +2028,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.CreateListPayload"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.CreateListPayload"
                         }
                     }
                 ],
@@ -2038,13 +2038,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.List"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.List"
                                         }
                                     }
                                 }
@@ -2056,7 +2056,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -2065,7 +2065,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -2077,7 +2077,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -2086,7 +2086,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -2098,7 +2098,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -2107,7 +2107,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -2147,13 +2147,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.List"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.List"
                                         }
                                     }
                                 }
@@ -2165,7 +2165,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -2174,7 +2174,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -2186,7 +2186,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -2195,7 +2195,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -2233,7 +2233,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -2254,7 +2254,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -2263,7 +2263,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -2275,7 +2275,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -2284,7 +2284,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -2296,7 +2296,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -2305,7 +2305,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -2345,7 +2345,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.CreateListPayload"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.CreateListPayload"
                         }
                     }
                 ],
@@ -2355,13 +2355,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.List"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.List"
                                         }
                                     }
                                 }
@@ -2373,7 +2373,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -2382,7 +2382,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -2394,7 +2394,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -2403,7 +2403,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -2415,7 +2415,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -2424,7 +2424,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -2436,7 +2436,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -2445,7 +2445,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -2457,7 +2457,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -2466,7 +2466,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -2518,13 +2518,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostFeed"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostFeed"
                                         },
                                         "error": {
                                             "type": "object"
@@ -2539,7 +2539,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -2548,7 +2548,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -2560,7 +2560,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -2569,7 +2569,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -2621,13 +2621,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.ListMembersResponse"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.ListMembersResponse"
                                         },
                                         "error": {
                                             "type": "object"
@@ -2642,7 +2642,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -2651,7 +2651,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -2663,7 +2663,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -2672,7 +2672,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -2719,7 +2719,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -2740,7 +2740,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -2749,7 +2749,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -2761,7 +2761,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -2770,7 +2770,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -2782,7 +2782,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -2791,7 +2791,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -2803,7 +2803,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -2812,7 +2812,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -2824,7 +2824,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -2833,7 +2833,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -2878,7 +2878,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -2899,7 +2899,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -2908,7 +2908,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -2920,7 +2920,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -2929,7 +2929,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -2941,7 +2941,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -2950,7 +2950,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -2990,13 +2990,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.MediaUploadResponse"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.MediaUploadResponse"
                                         },
                                         "error": {
                                             "type": "object"
@@ -3011,7 +3011,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -3020,7 +3020,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -3032,7 +3032,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -3041,7 +3041,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -3087,7 +3087,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -3096,7 +3096,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -3108,7 +3108,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -3117,7 +3117,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -3129,7 +3129,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -3138,7 +3138,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -3183,13 +3183,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostFeed"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostFeed"
                                         }
                                     }
                                 }
@@ -3201,7 +3201,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -3210,7 +3210,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -3245,7 +3245,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.CreatePostPayload"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.CreatePostPayload"
                         }
                     }
                 ],
@@ -3255,13 +3255,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.FullPost"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.FullPost"
                                         },
                                         "error": {
                                             "type": "object"
@@ -3276,7 +3276,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -3285,7 +3285,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -3297,7 +3297,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -3306,7 +3306,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -3358,7 +3358,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostFeed"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostFeed"
                         }
                     },
                     "400": {
@@ -3366,7 +3366,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -3375,7 +3375,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -3387,7 +3387,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -3396,7 +3396,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -3444,13 +3444,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostFeed"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostFeed"
                                         },
                                         "error": {
                                             "type": "object"
@@ -3465,7 +3465,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -3474,7 +3474,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -3486,7 +3486,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -3495,7 +3495,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -3568,13 +3568,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostWithAncestorsAndDescendants"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostWithAncestorsAndDescendants"
                                         },
                                         "error": {
                                             "type": "object"
@@ -3589,7 +3589,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -3598,7 +3598,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -3610,7 +3610,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -3619,7 +3619,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -3631,7 +3631,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -3640,7 +3640,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -3681,7 +3681,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -3702,7 +3702,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -3711,7 +3711,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -3723,7 +3723,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -3732,7 +3732,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -3772,7 +3772,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UpdatePostPayload"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.UpdatePostPayload"
                         }
                     }
                 ],
@@ -3780,7 +3780,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.FullPost"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.FullPost"
                         }
                     },
                     "400": {
@@ -3788,7 +3788,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -3797,7 +3797,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -3809,7 +3809,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -3818,7 +3818,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -3830,7 +3830,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -3839,7 +3839,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -3851,7 +3851,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -3860,7 +3860,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -3902,7 +3902,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.BookmarkRequest"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.BookmarkRequest"
                         }
                     }
                 ],
@@ -3910,7 +3910,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.BookmarkResponse"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.BookmarkResponse"
                         }
                     },
                     "400": {
@@ -3918,7 +3918,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -3927,7 +3927,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -3939,7 +3939,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -3948,7 +3948,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -3987,7 +3987,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.BookmarkResponse"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.BookmarkResponse"
                         }
                     },
                     "400": {
@@ -3995,7 +3995,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -4004,7 +4004,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -4016,7 +4016,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -4025,7 +4025,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -4063,7 +4063,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostEditHistory"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostEditHistory"
                         }
                     },
                     "404": {
@@ -4071,7 +4071,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -4080,7 +4080,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -4092,7 +4092,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -4101,7 +4101,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -4142,7 +4142,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.LikeResponse"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.LikeResponse"
                         }
                     },
                     "400": {
@@ -4150,7 +4150,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -4159,7 +4159,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -4171,7 +4171,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -4180,7 +4180,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -4219,7 +4219,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.LikeResponse"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.LikeResponse"
                         }
                     },
                     "400": {
@@ -4227,7 +4227,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -4236,7 +4236,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -4248,7 +4248,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -4257,7 +4257,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -4312,13 +4312,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserList"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserList"
                                         },
                                         "error": {
                                             "type": "object"
@@ -4333,7 +4333,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -4342,7 +4342,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -4354,7 +4354,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -4363,7 +4363,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -4403,7 +4403,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -4424,7 +4424,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -4433,7 +4433,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -4445,7 +4445,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -4454,7 +4454,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -4466,7 +4466,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -4475,7 +4475,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -4513,7 +4513,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -4534,7 +4534,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -4543,7 +4543,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -4555,7 +4555,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -4564,7 +4564,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -4576,7 +4576,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -4585,7 +4585,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -4635,7 +4635,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Poll"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Poll"
                         }
                     },
                     "400": {
@@ -4643,7 +4643,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -4652,7 +4652,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -4664,7 +4664,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -4673,7 +4673,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -4685,7 +4685,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -4694,7 +4694,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -4706,7 +4706,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -4715,7 +4715,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -4757,7 +4757,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.CreatePostPayload"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.CreatePostPayload"
                         }
                     }
                 ],
@@ -4767,13 +4767,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Post"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Post"
                                         }
                                     }
                                 }
@@ -4785,7 +4785,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -4794,7 +4794,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -4806,7 +4806,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -4815,7 +4815,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -4870,13 +4870,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostFeed"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostFeed"
                                         },
                                         "error": {
                                             "type": "object"
@@ -4891,7 +4891,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -4900,7 +4900,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -4912,7 +4912,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -4921,7 +4921,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -4962,7 +4962,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.RepostResponse"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.RepostResponse"
                         }
                     },
                     "400": {
@@ -4970,7 +4970,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -4979,7 +4979,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -4991,7 +4991,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -5000,7 +5000,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -5039,7 +5039,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.RepostResponse"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.RepostResponse"
                         }
                     },
                     "400": {
@@ -5047,7 +5047,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -5056,7 +5056,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -5068,7 +5068,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -5077,7 +5077,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -5132,13 +5132,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserList"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserList"
                                         },
                                         "error": {
                                             "type": "object"
@@ -5153,7 +5153,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -5162,7 +5162,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -5174,7 +5174,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -5183,7 +5183,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -5217,13 +5217,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.User"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.User"
                                         },
                                         "error": {
                                             "type": "object"
@@ -5238,7 +5238,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -5247,7 +5247,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -5259,7 +5259,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -5268,7 +5268,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -5308,7 +5308,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UpdateUserProfileRequest"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.UpdateUserProfileRequest"
                         }
                     }
                 ],
@@ -5318,13 +5318,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserWithProfile"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserWithProfile"
                                         },
                                         "error": {
                                             "type": "object"
@@ -5339,7 +5339,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -5348,7 +5348,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -5360,7 +5360,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -5369,7 +5369,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -5381,7 +5381,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -5390,7 +5390,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -5424,13 +5424,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserSettings"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserSettings"
                                         },
                                         "error": {
                                             "type": "object"
@@ -5445,7 +5445,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -5454,7 +5454,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -5487,7 +5487,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserSettings"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserSettings"
                         }
                     }
                 ],
@@ -5497,13 +5497,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserSettings"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserSettings"
                                         },
                                         "error": {
                                             "type": "object"
@@ -5518,7 +5518,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -5527,7 +5527,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -5539,7 +5539,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -5548,7 +5548,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -5587,13 +5587,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserList"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserList"
                                         },
                                         "error": {
                                             "type": "object"
@@ -5608,7 +5608,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -5617,7 +5617,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -5660,13 +5660,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserWithProfile"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserWithProfile"
                                         },
                                         "error": {
                                             "type": "object"
@@ -5681,7 +5681,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -5690,7 +5690,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -5702,7 +5702,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -5711,7 +5711,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -5754,13 +5754,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserRelationshipResponse"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserRelationshipResponse"
                                         },
                                         "error": {
                                             "type": "object"
@@ -5775,7 +5775,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -5784,7 +5784,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -5796,7 +5796,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -5805,7 +5805,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -5817,7 +5817,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -5826,7 +5826,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -5870,7 +5870,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -5879,7 +5879,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -5891,7 +5891,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -5900,7 +5900,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -5943,13 +5943,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserRelationshipResponse"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserRelationshipResponse"
                                         },
                                         "error": {
                                             "type": "object"
@@ -5964,7 +5964,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -5973,7 +5973,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -5985,7 +5985,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -5994,7 +5994,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -6006,7 +6006,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -6015,7 +6015,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -6059,7 +6059,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -6068,7 +6068,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -6080,7 +6080,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -6089,7 +6089,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -6144,13 +6144,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserFollowersResponse"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserFollowersResponse"
                                         },
                                         "error": {
                                             "type": "object"
@@ -6165,7 +6165,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -6174,7 +6174,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -6186,7 +6186,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -6195,7 +6195,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -6250,13 +6250,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserFollowingResponse"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserFollowingResponse"
                                         },
                                         "error": {
                                             "type": "object"
@@ -6271,7 +6271,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -6280,7 +6280,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -6292,7 +6292,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -6301,7 +6301,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -6354,7 +6354,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostFeed"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostFeed"
                         }
                     },
                     "400": {
@@ -6362,7 +6362,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -6371,7 +6371,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -6383,7 +6383,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -6392,7 +6392,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -6404,7 +6404,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -6413,7 +6413,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -6453,7 +6453,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -6461,7 +6461,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.List"
+                                                "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.List"
                                             }
                                         }
                                     }
@@ -6474,7 +6474,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -6483,7 +6483,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -6495,7 +6495,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -6504,7 +6504,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -6559,13 +6559,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostFeed"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostFeed"
                                         },
                                         "error": {
                                             "type": "object"
@@ -6580,7 +6580,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -6589,7 +6589,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -6601,7 +6601,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -6610,7 +6610,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -6622,7 +6622,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -6631,7 +6631,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -6674,13 +6674,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserRelationshipResponse"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserRelationshipResponse"
                                         },
                                         "error": {
                                             "type": "object"
@@ -6695,7 +6695,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -6704,7 +6704,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -6716,7 +6716,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -6725,7 +6725,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -6737,7 +6737,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -6746,7 +6746,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -6790,7 +6790,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -6799,7 +6799,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -6811,7 +6811,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -6820,7 +6820,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -6858,7 +6858,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.FullPost"
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.FullPost"
                         }
                     },
                     "404": {
@@ -6866,7 +6866,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -6875,7 +6875,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -6887,7 +6887,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -6896,7 +6896,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -6957,13 +6957,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostFeed"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostFeed"
                                         },
                                         "error": {
                                             "type": "object"
@@ -6978,7 +6978,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -6987,7 +6987,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -6999,7 +6999,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -7008,7 +7008,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -7020,7 +7020,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -7029,7 +7029,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -7084,13 +7084,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostFeed"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostFeed"
                                         },
                                         "error": {
                                             "type": "object"
@@ -7105,7 +7105,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -7114,7 +7114,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -7126,7 +7126,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -7135,7 +7135,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -7147,7 +7147,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Envelope"
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
                                 },
                                 {
                                     "type": "object",
@@ -7156,7 +7156,7 @@ const docTemplate = `{
                                             "type": "object"
                                         },
                                         "error": {
-                                            "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                                         }
                                     }
                                 }
@@ -7168,7 +7168,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "github_com_ba-reynolds_gophersocial_internal_apperrors.AppError": {
+        "github_com_ba-reynolds_gaggle_internal_apperrors.AppError": {
             "type": "object",
             "properties": {
                 "code": {
@@ -7182,7 +7182,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.AppearanceSettings": {
+        "github_com_ba-reynolds_gaggle_internal_models.AppearanceSettings": {
             "type": "object",
             "properties": {
                 "fontSize": {
@@ -7193,14 +7193,14 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.Badge": {
+        "github_com_ba-reynolds_gaggle_internal_models.Badge": {
             "type": "object",
             "properties": {
                 "created_at": {
                     "type": "string"
                 },
                 "criteria": {
-                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.BadgeCriteria"
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.BadgeCriteria"
                 },
                 "description": {
                     "type": "string"
@@ -7215,14 +7215,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "kind": {
-                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.BadgeKind"
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.BadgeKind"
                 },
                 "label": {
                     "type": "string"
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.BadgeCriteria": {
+        "github_com_ba-reynolds_gaggle_internal_models.BadgeCriteria": {
             "type": "object",
             "properties": {
                 "metric": {
@@ -7233,7 +7233,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.BadgeKind": {
+        "github_com_ba-reynolds_gaggle_internal_models.BadgeKind": {
             "type": "string",
             "enum": [
                 "earned",
@@ -7244,7 +7244,7 @@ const docTemplate = `{
                 "BadgeKindAssigned"
             ]
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.BookmarkCategory": {
+        "github_com_ba-reynolds_gaggle_internal_models.BookmarkCategory": {
             "type": "object",
             "properties": {
                 "color": {
@@ -7270,7 +7270,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.BookmarkCategorySummary": {
+        "github_com_ba-reynolds_gaggle_internal_models.BookmarkCategorySummary": {
             "type": "object",
             "properties": {
                 "id": {
@@ -7281,7 +7281,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.BookmarkRequest": {
+        "github_com_ba-reynolds_gaggle_internal_models.BookmarkRequest": {
             "type": "object",
             "properties": {
                 "category_id": {
@@ -7289,7 +7289,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.BookmarkResponse": {
+        "github_com_ba-reynolds_gaggle_internal_models.BookmarkResponse": {
             "type": "object",
             "properties": {
                 "success": {
@@ -7297,7 +7297,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.Conversation": {
+        "github_com_ba-reynolds_gaggle_internal_models.Conversation": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -7307,31 +7307,31 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "last_message": {
-                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Message"
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Message"
                 },
                 "last_message_at": {
                     "type": "string"
                 },
                 "other_participant": {
-                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserAPISummary"
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserAPISummary"
                 },
                 "unread_count": {
                     "type": "integer"
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.ConversationFeed": {
+        "github_com_ba-reynolds_gaggle_internal_models.ConversationFeed": {
             "type": "object",
             "properties": {
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Conversation"
+                        "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Conversation"
                     }
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.CreateBadgePayload": {
+        "github_com_ba-reynolds_gaggle_internal_models.CreateBadgePayload": {
             "type": "object",
             "required": [
                 "description",
@@ -7362,7 +7362,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.CreateBookmarkCategoryRequest": {
+        "github_com_ba-reynolds_gaggle_internal_models.CreateBookmarkCategoryRequest": {
             "type": "object",
             "required": [
                 "name"
@@ -7378,18 +7378,18 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.CreateBookmarkCategoryResponse": {
+        "github_com_ba-reynolds_gaggle_internal_models.CreateBookmarkCategoryResponse": {
             "type": "object",
             "properties": {
                 "category": {
-                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.BookmarkCategory"
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.BookmarkCategory"
                 },
                 "success": {
                     "type": "boolean"
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.CreateListPayload": {
+        "github_com_ba-reynolds_gaggle_internal_models.CreateListPayload": {
             "type": "object",
             "required": [
                 "name"
@@ -7406,7 +7406,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.CreatePollPayload": {
+        "github_com_ba-reynolds_gaggle_internal_models.CreatePollPayload": {
             "type": "object",
             "properties": {
                 "ends_at": {
@@ -7423,7 +7423,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.CreatePostPayload": {
+        "github_com_ba-reynolds_gaggle_internal_models.CreatePostPayload": {
             "type": "object",
             "properties": {
                 "content": {
@@ -7432,14 +7432,14 @@ const docTemplate = `{
                 "media": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostMediaRequest"
+                        "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostMediaRequest"
                     }
                 },
                 "parent_id": {
                     "type": "integer"
                 },
                 "poll": {
-                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.CreatePollPayload"
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.CreatePollPayload"
                 },
                 "visibility": {
                     "description": "Visibility is one of \"public\" | \"followers\" | \"mentions\". Empty defaults\nto \"public\" (see PostService.Create).",
@@ -7447,7 +7447,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.Date": {
+        "github_com_ba-reynolds_gaggle_internal_models.Date": {
             "type": "object",
             "properties": {
                 "time.Time": {
@@ -7455,20 +7455,20 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.Envelope": {
+        "github_com_ba-reynolds_gaggle_internal_models.Envelope": {
             "type": "object",
             "properties": {
                 "data": {},
                 "error": {
-                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_apperrors.AppError"
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.FullPost": {
+        "github_com_ba-reynolds_gaggle_internal_models.FullPost": {
             "type": "object",
             "properties": {
                 "author": {
-                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostAuthor"
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostAuthor"
                 },
                 "content": {
                     "type": "string"
@@ -7480,7 +7480,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "engagement": {
-                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostEngagement"
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostEngagement"
                 },
                 "id": {
                     "type": "integer"
@@ -7491,17 +7491,17 @@ const docTemplate = `{
                 "media": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostMedia"
+                        "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostMedia"
                     }
                 },
                 "parent": {
-                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostParentInfo"
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostParentInfo"
                 },
                 "parent_id": {
                     "type": "integer"
                 },
                 "poll": {
-                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Poll"
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Poll"
                 },
                 "quoted_post_id": {
                     "type": "integer"
@@ -7515,7 +7515,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.LikeResponse": {
+        "github_com_ba-reynolds_gaggle_internal_models.LikeResponse": {
             "type": "object",
             "properties": {
                 "success": {
@@ -7523,7 +7523,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.List": {
+        "github_com_ba-reynolds_gaggle_internal_models.List": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -7549,7 +7549,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.ListMembersResponse": {
+        "github_com_ba-reynolds_gaggle_internal_models.ListMembersResponse": {
             "type": "object",
             "properties": {
                 "has_more": {
@@ -7558,7 +7558,7 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserProfileResponse"
+                        "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserProfileResponse"
                     }
                 },
                 "next_cursor": {
@@ -7566,7 +7566,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.LoginRequest": {
+        "github_com_ba-reynolds_gaggle_internal_models.LoginRequest": {
             "type": "object",
             "required": [
                 "identifier"
@@ -7580,7 +7580,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.LoginResponse": {
+        "github_com_ba-reynolds_gaggle_internal_models.LoginResponse": {
             "type": "object",
             "properties": {
                 "access_token": {
@@ -7588,7 +7588,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.MediaUploadResponse": {
+        "github_com_ba-reynolds_gaggle_internal_models.MediaUploadResponse": {
             "type": "object",
             "properties": {
                 "uuids": {
@@ -7599,7 +7599,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.Message": {
+        "github_com_ba-reynolds_gaggle_internal_models.Message": {
             "type": "object",
             "properties": {
                 "body": {
@@ -7618,14 +7618,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "sender": {
-                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.MessageSender"
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.MessageSender"
                 },
                 "sender_id": {
                     "type": "integer"
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.MessageFeed": {
+        "github_com_ba-reynolds_gaggle_internal_models.MessageFeed": {
             "type": "object",
             "properties": {
                 "has_more": {
@@ -7634,7 +7634,7 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Message"
+                        "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Message"
                     }
                 },
                 "next_cursor": {
@@ -7642,7 +7642,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.MessageSender": {
+        "github_com_ba-reynolds_gaggle_internal_models.MessageSender": {
             "type": "object",
             "properties": {
                 "display_name": {
@@ -7656,7 +7656,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.NotificationSettings": {
+        "github_com_ba-reynolds_gaggle_internal_models.NotificationSettings": {
             "type": "object",
             "properties": {
                 "email": {
@@ -7670,7 +7670,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.Poll": {
+        "github_com_ba-reynolds_gaggle_internal_models.Poll": {
             "type": "object",
             "properties": {
                 "closed": {
@@ -7685,7 +7685,7 @@ const docTemplate = `{
                 "options": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PollOption"
+                        "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.PollOption"
                     }
                 },
                 "question": {
@@ -7699,7 +7699,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.PollOption": {
+        "github_com_ba-reynolds_gaggle_internal_models.PollOption": {
             "type": "object",
             "properties": {
                 "id": {
@@ -7716,7 +7716,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.Post": {
+        "github_com_ba-reynolds_gaggle_internal_models.Post": {
             "type": "object",
             "properties": {
                 "content": {
@@ -7749,7 +7749,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.PostAuthor": {
+        "github_com_ba-reynolds_gaggle_internal_models.PostAuthor": {
             "type": "object",
             "properties": {
                 "display_name": {
@@ -7763,7 +7763,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.PostChain": {
+        "github_com_ba-reynolds_gaggle_internal_models.PostChain": {
             "type": "object",
             "properties": {
                 "has_more": {
@@ -7772,7 +7772,7 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.FullPost"
+                        "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.FullPost"
                     }
                 },
                 "next_cursor": {
@@ -7780,7 +7780,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.PostDescendants": {
+        "github_com_ba-reynolds_gaggle_internal_models.PostDescendants": {
             "type": "object",
             "properties": {
                 "has_more": {
@@ -7789,7 +7789,7 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.FullPost"
+                        "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.FullPost"
                     }
                 },
                 "next_cursor": {
@@ -7797,7 +7797,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.PostEdit": {
+        "github_com_ba-reynolds_gaggle_internal_models.PostEdit": {
             "type": "object",
             "properties": {
                 "content_before": {
@@ -7811,22 +7811,22 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.PostEditHistory": {
+        "github_com_ba-reynolds_gaggle_internal_models.PostEditHistory": {
             "type": "object",
             "properties": {
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostEdit"
+                        "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostEdit"
                     }
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.PostEngagement": {
+        "github_com_ba-reynolds_gaggle_internal_models.PostEngagement": {
             "type": "object",
             "properties": {
                 "bookmark_category": {
-                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.BookmarkCategorySummary"
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.BookmarkCategorySummary"
                 },
                 "bookmark_count": {
                     "type": "integer"
@@ -7857,7 +7857,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.PostFeed": {
+        "github_com_ba-reynolds_gaggle_internal_models.PostFeed": {
             "type": "object",
             "properties": {
                 "has_more": {
@@ -7866,7 +7866,7 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.FullPost"
+                        "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.FullPost"
                     }
                 },
                 "next_cursor": {
@@ -7874,7 +7874,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.PostMedia": {
+        "github_com_ba-reynolds_gaggle_internal_models.PostMedia": {
             "type": "object",
             "properties": {
                 "alt_text": {
@@ -7885,7 +7885,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.PostMediaRequest": {
+        "github_com_ba-reynolds_gaggle_internal_models.PostMediaRequest": {
             "type": "object",
             "required": [
                 "uuid"
@@ -7900,11 +7900,11 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.PostParentInfo": {
+        "github_com_ba-reynolds_gaggle_internal_models.PostParentInfo": {
             "type": "object",
             "properties": {
                 "author": {
-                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostAuthor"
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostAuthor"
                 },
                 "deleted": {
                     "type": "boolean"
@@ -7914,21 +7914,21 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.PostWithAncestorsAndDescendants": {
+        "github_com_ba-reynolds_gaggle_internal_models.PostWithAncestorsAndDescendants": {
             "type": "object",
             "properties": {
                 "ancestors": {
-                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostChain"
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostChain"
                 },
                 "descendants": {
-                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PostDescendants"
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostDescendants"
                 },
                 "post": {
-                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.FullPost"
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.FullPost"
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.PrivacySettings": {
+        "github_com_ba-reynolds_gaggle_internal_models.PrivacySettings": {
             "type": "object",
             "properties": {
                 "allowTagging": {
@@ -7942,7 +7942,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.RefreshToken": {
+        "github_com_ba-reynolds_gaggle_internal_models.RefreshToken": {
             "type": "object",
             "properties": {
                 "expires_at": {
@@ -7980,7 +7980,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.RefreshTokenResponse": {
+        "github_com_ba-reynolds_gaggle_internal_models.RefreshTokenResponse": {
             "type": "object",
             "properties": {
                 "access_token": {
@@ -7988,7 +7988,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.RegisterRequest": {
+        "github_com_ba-reynolds_gaggle_internal_models.RegisterRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -8012,18 +8012,18 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.RegisterResponse": {
+        "github_com_ba-reynolds_gaggle_internal_models.RegisterResponse": {
             "type": "object",
             "properties": {
                 "access_token": {
                     "type": "string"
                 },
                 "user": {
-                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.User"
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.User"
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.RepostResponse": {
+        "github_com_ba-reynolds_gaggle_internal_models.RepostResponse": {
             "type": "object",
             "properties": {
                 "success": {
@@ -8031,7 +8031,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.SendMessagePayload": {
+        "github_com_ba-reynolds_gaggle_internal_models.SendMessagePayload": {
             "type": "object",
             "required": [
                 "body"
@@ -8044,7 +8044,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.UpdatePostPayload": {
+        "github_com_ba-reynolds_gaggle_internal_models.UpdatePostPayload": {
             "type": "object",
             "properties": {
                 "content": {
@@ -8052,7 +8052,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.UpdateUserProfileRequest": {
+        "github_com_ba-reynolds_gaggle_internal_models.UpdateUserProfileRequest": {
             "type": "object",
             "required": [
                 "bio",
@@ -8067,7 +8067,7 @@ const docTemplate = `{
                     "maxLength": 160
                 },
                 "birth_date": {
-                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Date"
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Date"
                 },
                 "display_name": {
                     "type": "string",
@@ -8095,7 +8095,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.User": {
+        "github_com_ba-reynolds_gaggle_internal_models.User": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -8109,7 +8109,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.UserAPISummary": {
+        "github_com_ba-reynolds_gaggle_internal_models.UserAPISummary": {
             "type": "object",
             "properties": {
                 "display_name": {
@@ -8123,14 +8123,14 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.UserBadge": {
+        "github_com_ba-reynolds_gaggle_internal_models.UserBadge": {
             "type": "object",
             "properties": {
                 "created_at": {
                     "type": "string"
                 },
                 "criteria": {
-                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.BadgeCriteria"
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.BadgeCriteria"
                 },
                 "description": {
                     "type": "string"
@@ -8148,14 +8148,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "kind": {
-                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.BadgeKind"
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.BadgeKind"
                 },
                 "label": {
                     "type": "string"
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.UserFollowersResponse": {
+        "github_com_ba-reynolds_gaggle_internal_models.UserFollowersResponse": {
             "type": "object",
             "properties": {
                 "has_more": {
@@ -8164,7 +8164,7 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserProfileResponse"
+                        "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserProfileResponse"
                     }
                 },
                 "next_cursor": {
@@ -8172,7 +8172,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.UserFollowingResponse": {
+        "github_com_ba-reynolds_gaggle_internal_models.UserFollowingResponse": {
             "type": "object",
             "properties": {
                 "has_more": {
@@ -8181,7 +8181,7 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserProfileResponse"
+                        "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserProfileResponse"
                     }
                 },
                 "next_cursor": {
@@ -8189,7 +8189,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.UserList": {
+        "github_com_ba-reynolds_gaggle_internal_models.UserList": {
             "type": "object",
             "properties": {
                 "has_more": {
@@ -8198,7 +8198,7 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserProfileResponse"
+                        "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserProfileResponse"
                     }
                 },
                 "next_cursor": {
@@ -8206,7 +8206,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.UserProfile": {
+        "github_com_ba-reynolds_gaggle_internal_models.UserProfile": {
             "type": "object",
             "required": [
                 "bio",
@@ -8221,7 +8221,7 @@ const docTemplate = `{
                     "maxLength": 160
                 },
                 "birth_date": {
-                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Date"
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Date"
                 },
                 "display_name": {
                     "type": "string",
@@ -8249,13 +8249,13 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.UserProfileResponse": {
+        "github_com_ba-reynolds_gaggle_internal_models.UserProfileResponse": {
             "type": "object",
             "properties": {
                 "badges": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserBadge"
+                        "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserBadge"
                     }
                 },
                 "banner_uuid": {
@@ -8265,7 +8265,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "birth_date": {
-                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.Date"
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Date"
                 },
                 "created_at": {
                     "type": "string"
@@ -8309,7 +8309,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.UserRelationshipResponse": {
+        "github_com_ba-reynolds_gaggle_internal_models.UserRelationshipResponse": {
             "type": "object",
             "properties": {
                 "success": {
@@ -8317,30 +8317,30 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.UserSettings": {
+        "github_com_ba-reynolds_gaggle_internal_models.UserSettings": {
             "type": "object",
             "properties": {
                 "appearance": {
-                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.AppearanceSettings"
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.AppearanceSettings"
                 },
                 "language": {
                     "type": "string"
                 },
                 "notifications": {
-                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.NotificationSettings"
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.NotificationSettings"
                 },
                 "privacy": {
-                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.PrivacySettings"
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.PrivacySettings"
                 }
             }
         },
-        "github_com_ba-reynolds_gophersocial_internal_models.UserWithProfile": {
+        "github_com_ba-reynolds_gaggle_internal_models.UserWithProfile": {
             "type": "object",
             "properties": {
                 "badges": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserBadge"
+                        "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserBadge"
                     }
                 },
                 "created_at": {
@@ -8350,7 +8350,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "profile": {
-                    "$ref": "#/definitions/github_com_ba-reynolds_gophersocial_internal_models.UserProfile"
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserProfile"
                 },
                 "username": {
                     "type": "string"
@@ -8373,8 +8373,8 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "localhost:2021",
 	BasePath:         "/api/v1",
 	Schemes:          []string{"http"},
-	Title:            "GopherSocial API",
-	Description:      "API for GopherSocial, a social network for gophers",
+	Title:            "Gaggle API",
+	Description:      "API for Gaggle, a social network for gophers",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

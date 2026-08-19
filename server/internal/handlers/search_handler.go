@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ba-reynolds/gophersocial/internal/apperrors"
-	"github.com/ba-reynolds/gophersocial/internal/middleware"
-	"github.com/ba-reynolds/gophersocial/internal/models"
-	"github.com/ba-reynolds/gophersocial/internal/service"
-	"github.com/ba-reynolds/gophersocial/internal/util"
+	"github.com/ba-reynolds/gaggle/internal/apperrors"
+	"github.com/ba-reynolds/gaggle/internal/middleware"
+	"github.com/ba-reynolds/gaggle/internal/models"
+	"github.com/ba-reynolds/gaggle/internal/service"
+	"github.com/ba-reynolds/gaggle/internal/util"
 )
 
 // Keep the models import referenced for swag annotation resolution.
