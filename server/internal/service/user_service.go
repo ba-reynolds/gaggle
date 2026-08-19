@@ -193,6 +193,12 @@ func (s *UserService) UpdateSettings(ctx context.Context, userID int, settings *
 	return s.store.Users.UpdateSettings(ctx, userID, settings)
 }
 
+// SetPrivate toggles the query-time account privacy flag (mirrors the
+// profileVisibility preference persisted in settings).
+func (s *UserService) SetPrivate(ctx context.Context, userID int, isPrivate bool) error {
+	return s.store.Users.SetPrivate(ctx, userID, isPrivate)
+}
+
 // Suggested returns accounts the viewer might want to follow.
 func (s *UserService) Suggested(ctx context.Context, viewerID int, limit int) (*models.UserList, error) {
 	return s.store.Users.Suggested(ctx, viewerID, validateLimit(limit, 20, 100))

@@ -68,6 +68,7 @@ export interface UserProfileResponse {
   following_count: number;
   created_at: string;
   is_admin?: boolean;
+  is_private?: boolean;
   is_following?: boolean;
   is_blocked?: boolean;
   is_muted?: boolean;
@@ -159,6 +160,7 @@ export interface CreatePostPayload {
   media: MediaItem[];
   parent_id: number | null;
   poll?: CreatePollPayload;
+  visibility: 'public' | 'followers' | 'mentions';
 }
 
 export interface CreatePollPayload {
@@ -209,6 +211,7 @@ export interface Post {
   engagement: PostEngagement;
   edited_at?: string;
   is_pinned: boolean;
+  visibility: 'public' | 'followers' | 'mentions';
   poll?: Poll;
   parent?: PostParent;
 }

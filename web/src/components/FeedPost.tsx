@@ -29,6 +29,7 @@ import type { Post } from "@/types/api";
 import { formatPostDate, getFullDateFormat } from "@/util/date";
 import { formatViews } from "@/util/number";
 import {
+  AtSign,
   Bookmark,
   Check,
   CornerUpLeft,
@@ -45,6 +46,7 @@ import {
   Trash2,
   UserPlus,
   UserX,
+  Users,
 } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -192,7 +194,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
     if (!quoteText.trim()) return;
 
     quoteMutation.mutate(
-      { content: quoteText.trim(), media: [], parent_id: null },
+      { content: quoteText.trim(), media: [], parent_id: null, visibility: 'public' },
       {
         onSuccess: () => {
           toast.success("Quote posted successfully!");
@@ -316,6 +318,35 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
+
+                {post.visibility === "followers" && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="inline-flex items-center gap-1 ml-1 text-xs text-muted-foreground cursor-default">
+                          <Users className="h-3 w-3" />
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="pointer-events-none">
+                        <p>Only your followers can see this post</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+                {post.visibility === "mentions" && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="inline-flex items-center gap-1 ml-1 text-xs text-muted-foreground cursor-default">
+                          <AtSign className="h-3 w-3" />
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="pointer-events-none">
+                        <p>Only the people you mentioned can see this post</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
 
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild className="ml-auto">

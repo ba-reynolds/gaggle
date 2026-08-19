@@ -33,6 +33,8 @@ type Store struct {
 		UpdateUserProfile(ctx context.Context, tx *sql.Tx, user *models.UserWithProfile) error
 		GetSettings(ctx context.Context, userID int) (*models.UserSettings, error)
 		UpdateSettings(ctx context.Context, userID int, settings *models.UserSettings) error
+		SetPrivate(ctx context.Context, userID int, isPrivate bool) error
+		GetIsPrivate(ctx context.Context, userIDs []int) (map[int]bool, error)
 		Search(ctx context.Context, query string, limit int) (*models.UserList, error)
 		Suggested(ctx context.Context, viewerID int, limit int) (*models.UserList, error)
 	}
@@ -58,6 +60,7 @@ type Store struct {
 		GetPinned(ctx context.Context, authorID int) (*models.Post, error)
 		ListEdits(ctx context.Context, postID int) (*models.PostEditHistory, error)
 		CreateEdit(ctx context.Context, tx *sql.Tx, postID int, contentBefore string) error
+		GetPostVisibilities(ctx context.Context, postIDs []int) (map[int]*models.Post, error)
 		GetParentChain(ctx context.Context, postID int, limit int, cursor string) (*models.PostChain, error)
 		GetDescendants(ctx context.Context, postID int, limit int, cursor string) (*models.PostDescendants, error)
 		GetHomeFeed(ctx context.Context, userID int, limit int, cursor string) (*models.PostFeed, error)

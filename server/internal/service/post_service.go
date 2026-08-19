@@ -12,6 +12,13 @@ import (
 	"github.com/google/uuid"
 )
 
+// Post visibility values (stored on posts.visibility).
+const (
+	VisibilityPublic    = "public"
+	VisibilityFollowers = "followers"
+	VisibilityMentions  = "mentions"
+)
+
 type PostService struct {
 	store  *store.Store
 	logger *slog.Logger
@@ -39,6 +46,133 @@ func (s *PostService) GetByID(ctx context.Context, id int) (*models.Post, error)
 	return post, nil
 }
 
+// resolveVisibilityAndMentions normalizes and validates the visibility rule on
+// a post being created, and resolves @mentions to user IDs when the rule is
+// "mentions". It sets post.Visibility (defaulting to "public") and
+// post.MentionedUserIDs; a "mentions" post that mentions nobody is rejected.
+func (s *PostService) resolveVisibilityAndMentions(ctx context.Context, post *models.Post) error {
+	if post.Visibility == "" {
+		post.Visibility = VisibilityPublic
+	}
+	switch post.Visibility {
+	case VisibilityPublic, VisibilityFollowers:
+		return nil
+	case VisibilityMentions:
+		seen := make(map[int]struct{})
+		for _, match := range mentionPattern.FindAllStringSubmatch(post.Content, -1) {
+			user, err := s.store.Users.GetByUsername(ctx, match[1])
+			if err != nil {
+				if apperrors.Is(err, apperrors.NotFound) {
+					continue
+				}
+				return err
+			}
+			if user.ID == post.AuthorID {
+				continue
+			}
+			if _, ok := seen[user.ID]; ok {
+				continue
+			}
+			seen[user.ID] = struct{}{}
+			post.MentionedUserIDs = append(post.MentionedUserIDs, user.ID)
+		}
+		if len(post.MentionedUserIDs) == 0 {
+			return apperrors.BadRequestError("a mentions-only post must @mention at least one person", nil)
+		}
+		return nil
+	default:
+		return apperrors.BadRequestError("invalid visibility: must be public, followers or mentions", nil)
+	}
+}
+
+// CanViewPost reports whether the viewer may see the given post, enforcing
+// account-level privacy and per-post visibility. Used by engagement write
+// handlers so a stranger cannot like/bookmark/vote on a post they cannot read.
+func (s *PostService) CanViewPost(ctx context.Context, postID, viewerID int) (bool, error) {
+	post, err := s.store.Posts.GetFullPostByID(ctx, postID)
+	if err != nil {
+		return false, err
+	}
+	visible, err := filterVisiblePosts(ctx, s.store, []*models.FullPost{post}, viewerID)
+	if err != nil {
+		return false, err
+	}
+	return len(visible) == 1, nil
+}
+
+// filterVisiblePosts prunes a hydrated post list down to the posts the viewer
+// may actually see, enforcing both account-level privacy (private authors only
+// expose posts to followers) and per-post visibility (public / followers /
+// mentions). The author always sees their own posts. Runs batched: one
+// relationship-status query and one account-privacy query per unique author.
+func filterVisiblePosts(ctx context.Context, st *store.Store, posts []*models.FullPost, viewerID int) ([]*models.FullPost, error) {
+	if len(posts) == 0 {
+		return posts, nil
+	}
+	authorSet := make(map[int]struct{})
+	for _, p := range posts {
+		if p == nil {
+			continue
+		}
+		if p.AuthorID == viewerID {
+			continue
+		}
+		authorSet[p.AuthorID] = struct{}{}
+	}
+	authorIDs := make([]int, 0, len(authorSet))
+	for id := range authorSet {
+		authorIDs = append(authorIDs, id)
+	}
+
+	var statuses map[int]*models.RelationshipStatus
+	var isPrivate map[int]bool
+	var err error
+	if len(authorIDs) > 0 {
+		statuses, err = st.UserRelationships.GetRelationshipStatuses(ctx, viewerID, authorIDs)
+		if err != nil {
+			return nil, err
+		}
+		isPrivate, err = st.Users.GetIsPrivate(ctx, authorIDs)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	out := posts[:0]
+	for _, p := range posts {
+		if p == nil {
+			continue
+		}
+		if p.AuthorID == viewerID {
+			out = append(out, p)
+			continue
+		}
+		if isPrivate[p.AuthorID] && !statuses[p.AuthorID].IsFollowing {
+			continue
+		}
+		switch p.Visibility {
+		case VisibilityFollowers:
+			if statuses[p.AuthorID].IsFollowing {
+				out = append(out, p)
+			}
+		case VisibilityMentions:
+			mentioned := false
+			for _, id := range p.MentionedUserIDs {
+				if id == viewerID {
+					mentioned = true
+					break
+				}
+			}
+			if mentioned {
+				out = append(out, p)
+			}
+		default:
+			out = append(out, p)
+		}
+	}
+	return out, nil
+}
+
 // GetFullPostByID retrieves a full post with author information and the
 // requesting user's engagement state.
 func (s *PostService) GetFullPostByID(ctx context.Context, id int, viewerID int) (*models.FullPost, error) {
@@ -64,6 +198,14 @@ func (s *PostService) GetFullPostByID(ctx context.Context, id int, viewerID int)
 	}
 	if err := hydrateParents(ctx, s.store, []*models.FullPost{post}); err != nil {
 		return nil, err
+	}
+
+	visible, err := filterVisiblePosts(ctx, s.store, []*models.FullPost{post}, viewerID)
+	if err != nil {
+		return nil, err
+	}
+	if len(visible) == 0 {
+		return nil, apperrors.NotFoundError("post not found", nil)
 	}
 
 	return post, nil
@@ -217,6 +359,11 @@ func (s *PostService) GetDescendants(ctx context.Context, postID int, viewerID i
 		return nil, err
 	}
 
+	descendants.Items, err = filterVisiblePosts(ctx, s.store, descendants.Items, viewerID)
+	if err != nil {
+		return nil, err
+	}
+
 	return descendants, nil
 }
 
@@ -250,6 +397,10 @@ func (s *PostService) GetFullPostByIDWithAncestorsAndDescendants(ctx context.Con
 
 // Create creates a new post
 func (s *PostService) Create(ctx context.Context, post *models.Post, mediaItems []models.PostMediaRequest) error {
+	if err := s.resolveVisibilityAndMentions(ctx, post); err != nil {
+		return err
+	}
+
 	// Start a transaction for post creation
 	tx, err := s.store.DB.BeginTx(ctx, nil)
 	if err != nil {
@@ -504,6 +655,13 @@ func (s *PostService) GetPinned(ctx context.Context, authorID, viewerID int) (*m
 	if err := hydrateParents(ctx, s.store, []*models.FullPost{full}); err != nil {
 		return nil, err
 	}
+	visible, err := filterVisiblePosts(ctx, s.store, []*models.FullPost{full}, viewerID)
+	if err != nil {
+		return nil, err
+	}
+	if len(visible) == 0 {
+		return nil, apperrors.NotFoundError("post not found", nil)
+	}
 	return full, nil
 }
 
@@ -582,6 +740,11 @@ func (s *PostService) GetParentChain(ctx context.Context, postID int, viewerID i
 		return nil, err
 	}
 
+	chain.Items, err = filterVisiblePosts(ctx, s.store, chain.Items, viewerID)
+	if err != nil {
+		return nil, err
+	}
+
 	return chain, nil
 }
 
@@ -620,6 +783,11 @@ func (s *PostService) GetHomeFeed(ctx context.Context, userID int, limit int, cu
 		return nil, err
 	}
 
+	feed.Items, err = filterVisiblePosts(ctx, s.store, feed.Items, userID)
+	if err != nil {
+		return nil, err
+	}
+
 	return feed, nil
 }
 
@@ -655,6 +823,11 @@ func (s *PostService) GetUserFeed(ctx context.Context, userID int, viewerID int,
 		return nil, err
 	}
 	if err := hydrateParents(ctx, s.store, feed.Items); err != nil {
+		return nil, err
+	}
+
+	feed.Items, err = filterVisiblePosts(ctx, s.store, feed.Items, viewerID)
+	if err != nil {
 		return nil, err
 	}
 
@@ -704,6 +877,11 @@ func (s *PostService) userModeFeed(ctx context.Context, userID int, viewerID int
 		return nil, err
 	}
 
+	feed.Items, err = filterVisiblePosts(ctx, s.store, feed.Items, viewerID)
+	if err != nil {
+		return nil, err
+	}
+
 	return feed, nil
 }
 
@@ -723,6 +901,10 @@ func (s *PostService) GetBookmarkedPostsFeed(ctx context.Context, userID int, vi
 		return nil, err
 	}
 	if err := hydrateParents(ctx, s.store, feed.Items); err != nil {
+		return nil, err
+	}
+	feed.Items, err = filterVisiblePosts(ctx, s.store, feed.Items, viewerID)
+	if err != nil {
 		return nil, err
 	}
 	s.logger.Info("bookmarked posts feed fetched", "userID", userID, "categoryIDs", categoryIDs, "count", len(feed.Items))
@@ -745,6 +927,10 @@ func (s *PostService) GetLikedPostsFeed(ctx context.Context, userID int, viewerI
 		return nil, err
 	}
 	if err := hydrateParents(ctx, s.store, feed.Items); err != nil {
+		return nil, err
+	}
+	feed.Items, err = filterVisiblePosts(ctx, s.store, feed.Items, viewerID)
+	if err != nil {
 		return nil, err
 	}
 	s.logger.Info("liked posts feed fetched", "userID", userID, "count", len(feed.Items))
@@ -774,6 +960,10 @@ func (s *PostService) GetQuotesFeed(ctx context.Context, postID int, viewerID in
 	if err := hydrateParents(ctx, s.store, feed.Items); err != nil {
 		return nil, err
 	}
+	feed.Items, err = filterVisiblePosts(ctx, s.store, feed.Items, viewerID)
+	if err != nil {
+		return nil, err
+	}
 	return feed, nil
 }
 
@@ -789,6 +979,9 @@ func (s *PostService) GetPostReposters(ctx context.Context, postID int, limit in
 
 // QuotePost creates a new post quoting another post (with quoted_post_id set)
 func (s *PostService) QuotePost(ctx context.Context, post *models.Post, mediaItems []models.PostMediaRequest) error {
+	if err := s.resolveVisibilityAndMentions(ctx, post); err != nil {
+		return err
+	}
 	tx, err := s.store.DB.BeginTx(ctx, nil)
 	if err != nil {
 		s.logger.Error("failed to begin transaction for quote post creation",

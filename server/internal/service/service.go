@@ -38,6 +38,7 @@ type Service struct {
 		GetUserProfileByUsername(ctx context.Context, username string) (*models.UserWithProfile, error)
 		GetSettings(ctx context.Context, userID int) (*models.UserSettings, error)
 		UpdateSettings(ctx context.Context, userID int, settings *models.UserSettings) error
+		SetPrivate(ctx context.Context, userID int, isPrivate bool) error
 		Suggested(ctx context.Context, viewerID int, limit int) (*models.UserList, error)
 	}
 	Media interface {
@@ -50,6 +51,7 @@ type Service struct {
 		GetFullPostByID(ctx context.Context, id int, viewerID int) (*models.FullPost, error)
 		GetFullPostByIDWithAncestors(ctx context.Context, id int, viewerID int, includeAncestors bool, ancestorLimit int) (*models.FullPost, *models.PostChain, error)
 		GetFullPostByIDWithAncestorsAndDescendants(ctx context.Context, id int, viewerID int, includeAncestors bool, ancestorLimit int, includeDescendants bool, descendantLimit int) (*models.FullPost, *models.PostChain, *models.PostDescendants, error)
+		CanViewPost(ctx context.Context, postID, viewerID int) (bool, error)
 		Create(ctx context.Context, post *models.Post, mediaItems []models.PostMediaRequest) error
 		QuotePost(ctx context.Context, post *models.Post, mediaItems []models.PostMediaRequest) error
 		DeleteByID(ctx context.Context, post *models.Post, actorID int) error

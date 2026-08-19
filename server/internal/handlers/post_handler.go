@@ -132,6 +132,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		AuthorID:    user.ID,
 		ParentID:    payload.ParentID,
 		PollPayload: payload.Poll,
+		Visibility:  payload.Visibility,
 	}
 
 	if err := h.service.Posts.Create(r.Context(), post, payload.Media); err != nil {
@@ -969,6 +970,10 @@ func (h *PostHandler) GetPostQuotesFeed(w http.ResponseWriter, r *http.Request) 
 		util.RespondWithAppError(w, apperrors.BadRequestError("invalid post ID", err))
 		return
 	}
+	if visible, err := h.service.Posts.CanViewPost(r.Context(), postID, user.ID); err != nil || !visible {
+		util.RespondWithAppError(w, apperrors.NotFoundError("post not found", err))
+		return
+	}
 	limitStr := r.URL.Query().Get("limit")
 	cursor := r.URL.Query().Get("cursor")
 	limit, _, _ := util.ParsePaginationParams(limitStr, cursor, 20, 100)
@@ -1000,7 +1005,7 @@ func (h *PostHandler) GetPostQuotesFeed(w http.ResponseWriter, r *http.Request) 
 // @Security     ApiKeyAuth
 // @Router       /posts/{postID}/likers [get]
 func (h *PostHandler) GetPostLikers(w http.ResponseWriter, r *http.Request) {
-	_, err := middleware.GetAuthenticatedUserFromContext(r)
+	viewer, err := middleware.GetAuthenticatedUserFromContext(r)
 	if err != nil {
 		h.logger.Error("authentication middleware error", "error", err)
 		util.RespondWithAppError(w, apperrors.InternalServerError(err))
@@ -1010,6 +1015,10 @@ func (h *PostHandler) GetPostLikers(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.logger.Warn("invalid post ID parameter", "postID", r.PathValue("postID"), "error", err)
 		util.RespondWithAppError(w, apperrors.BadRequestError("invalid post ID", err))
+		return
+	}
+	if visible, err := h.service.Posts.CanViewPost(r.Context(), postID, viewer.ID); err != nil || !visible {
+		util.RespondWithAppError(w, apperrors.NotFoundError("post not found", err))
 		return
 	}
 	limitStr := r.URL.Query().Get("limit")
@@ -1048,7 +1057,7 @@ func (h *PostHandler) GetPostLikers(w http.ResponseWriter, r *http.Request) {
 // @Security     ApiKeyAuth
 // @Router       /posts/{postID}/reposters [get]
 func (h *PostHandler) GetPostReposters(w http.ResponseWriter, r *http.Request) {
-	_, err := middleware.GetAuthenticatedUserFromContext(r)
+	viewer, err := middleware.GetAuthenticatedUserFromContext(r)
 	if err != nil {
 		h.logger.Error("authentication middleware error", "error", err)
 		util.RespondWithAppError(w, apperrors.InternalServerError(err))
@@ -1058,6 +1067,10 @@ func (h *PostHandler) GetPostReposters(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.logger.Warn("invalid post ID parameter", "postID", r.PathValue("postID"), "error", err)
 		util.RespondWithAppError(w, apperrors.BadRequestError("invalid post ID", err))
+		return
+	}
+	if visible, err := h.service.Posts.CanViewPost(r.Context(), postID, viewer.ID); err != nil || !visible {
+		util.RespondWithAppError(w, apperrors.NotFoundError("post not found", err))
 		return
 	}
 	limitStr := r.URL.Query().Get("limit")

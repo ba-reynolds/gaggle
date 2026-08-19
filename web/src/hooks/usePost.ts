@@ -30,7 +30,6 @@ import type {
   CreateBookmarkCategoryResponse,
   CreatePostPayload,
   Envelope,
-  MediaItem,
   PaginatedFeedResponse,
   Post,
   PostWithAncestorsAndDescendants,
@@ -462,7 +461,7 @@ export function useUnbookmarkPost() {
 export function useQuotePost(postId: number) {
   const queryClient = useQueryClient();
 
-  return useMutation<Envelope<Post>, Error, { content: string; media: MediaItem[]; parent_id: number | null }>({
+  return useMutation<Envelope<Post>, Error, CreatePostPayload>({
     mutationFn: (payload) => quotePost(postId, payload),
     onSuccess: (response) => {
       // Add the quote to the beginning of the feed

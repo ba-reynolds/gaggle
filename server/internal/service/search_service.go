@@ -122,6 +122,10 @@ func (s *SearchService) hydrateFeed(ctx context.Context, feed *models.PostFeed, 
 		s.logger.Error("search parent hydration failed", "error", err)
 		return nil, err
 	}
+	feed.Items, err = filterVisiblePosts(ctx, s.store, feed.Items, viewerID)
+	if err != nil {
+		return nil, err
+	}
 	return feed, nil
 }
 
