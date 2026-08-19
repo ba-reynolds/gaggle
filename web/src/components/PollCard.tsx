@@ -1,5 +1,5 @@
 import { useVotePoll } from '@/hooks/usePost';
-import type { Poll } from '@/types/api';
+import type { NewsLink, Poll } from '@/types/api';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -25,5 +25,24 @@ export default function PollCard({ poll, postId }: { poll: Poll; postId: number 
       {poll.closed && <p className="text-xs text-muted-foreground">Poll closed</p>}
       <span className="block text-right text-xs text-muted-foreground">{poll.total_votes} votes</span>
     </div>
+  );
+}
+
+export function NewsCard({ news }: { news?: NewsLink }) {
+  if (!news) return null;
+  return (
+    <a
+      href={news.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={(event) => event.stopPropagation()}
+      className="mt-3 block overflow-hidden rounded-xl border border-border"
+    >
+      {news.image_url && <img src={news.image_url} alt="" className="aspect-video w-full object-cover" onError={(event) => (event.currentTarget.style.display = 'none')} />}
+      <div className="p-3">
+        {news.site_name && <p className="text-xs font-medium text-muted-foreground">{news.site_name}</p>}
+        <p className="mt-1 text-sm font-semibold leading-snug">{news.title || news.url}</p>
+      </div>
+    </a>
   );
 }

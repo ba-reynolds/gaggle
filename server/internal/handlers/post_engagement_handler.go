@@ -523,6 +523,7 @@ func (h *PostEngagementHandler) Quote(w http.ResponseWriter, r *http.Request) {
 		AuthorID:     user.ID,
 		ParentID:     payload.ParentID,
 		QuotedPostID: &quotedPostID,
+		NewsPayload:  payload.News,
 		Visibility:   payload.Visibility,
 	}
 	if err := h.service.Posts.QuotePost(r.Context(), post, payload.Media); err != nil {

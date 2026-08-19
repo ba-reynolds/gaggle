@@ -171,6 +171,23 @@ definitions:
       question:
         type: string
     type: object
+  github_com_ba-reynolds_gaggle_internal_models.CreatePostNewsPayload:
+    properties:
+      image_url:
+        maxLength: 2000
+        type: string
+      site_name:
+        maxLength: 200
+        type: string
+      title:
+        maxLength: 300
+        type: string
+      url:
+        maxLength: 2000
+        type: string
+    required:
+    - url
+    type: object
   github_com_ba-reynolds_gaggle_internal_models.CreatePostPayload:
     properties:
       content:
@@ -179,6 +196,8 @@ definitions:
         items:
           $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostMediaRequest'
         type: array
+      news:
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.CreatePostNewsPayload'
       parent_id:
         type: integer
       poll:
@@ -220,6 +239,8 @@ definitions:
         items:
           $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostMedia'
         type: array
+      news:
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.NewsLink'
       parent:
         $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostParentInfo'
       parent_id:
@@ -273,11 +294,15 @@ definitions:
   github_com_ba-reynolds_gaggle_internal_models.LoginRequest:
     properties:
       identifier:
+        maxLength: 96
+        minLength: 3
         type: string
       password:
+        maxLength: 72
         type: string
     required:
     - identifier
+    - password
     type: object
   github_com_ba-reynolds_gaggle_internal_models.LoginResponse:
     properties:
@@ -327,6 +352,25 @@ definitions:
         type: string
       username:
         type: string
+    type: object
+  github_com_ba-reynolds_gaggle_internal_models.NewsLink:
+    properties:
+      image_url:
+        type: string
+      site_name:
+        type: string
+      title:
+        type: string
+      url:
+        type: string
+    type: object
+  github_com_ba-reynolds_gaggle_internal_models.NewsLinkPreviewRequest:
+    properties:
+      url:
+        maxLength: 2000
+        type: string
+    required:
+    - url
     type: object
   github_com_ba-reynolds_gaggle_internal_models.NotificationSettings:
     properties:
@@ -610,16 +654,13 @@ definitions:
         type: integer
       location:
         maxLength: 30
-        minLength: 3
         type: string
       profile_picture_uuid:
         type: string
       website:
         maxLength: 50
-        minLength: 3
         type: string
     required:
-    - bio
     - display_name
     type: object
   github_com_ba-reynolds_gaggle_internal_models.User:
@@ -713,16 +754,13 @@ definitions:
         type: integer
       location:
         maxLength: 30
-        minLength: 3
         type: string
       profile_picture_uuid:
         type: string
       website:
         maxLength: 50
-        minLength: 3
         type: string
     required:
-    - bio
     - display_name
     type: object
   github_com_ba-reynolds_gaggle_internal_models.UserProfileResponse:
@@ -1872,6 +1910,59 @@ paths:
       summary: Get unread DM count
       tags:
       - dms
+  /links/preview:
+    post:
+      consumes:
+      - application/json
+      description: Fetches the given URL and returns its OpenGraph metadata
+      parameters:
+      - description: URL to preview
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.NewsLinkPreviewRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.NewsLink'
+                error:
+                  type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Preview a news link
+      tags:
+      - posts
   /lists:
     get:
       description: Returns the lists owned by the authenticated user.

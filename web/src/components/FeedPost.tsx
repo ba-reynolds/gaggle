@@ -55,7 +55,7 @@ import ComposeContent from "./ComposeContent";
 import ConfirmDialog from "./ConfirmDialog";
 import ContentLinks from "./ContentLinks";
 import MediaGallery, { type GalleryItem } from "./MediaGallery";
-import PollCard from "./PollCard";
+import PollCard, { NewsCard } from "./PollCard";
 import UserHoverCard from "./UserHoverCard";
 import { getMediaUrl } from "@/util/media";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -425,6 +425,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
 
               <p className="mt-2 whitespace-pre-wrap text-sm text-primary"><ContentLinks content={content} /></p>
               {post.poll && <PollCard poll={post.poll} postId={id} />}
+              {post.news && <NewsCard news={post.news} />}
 {isOwnPost && post.edited_at && <button className="mt-2 text-xs text-muted-foreground hover:underline" onClick={(event) => { event.stopPropagation(); setHistoryOpen((open) => !open); }}>
                 {historyOpen ? "Hide edit history" : "View edit history"}
               </button>}

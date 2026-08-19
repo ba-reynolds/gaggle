@@ -1944,6 +1944,102 @@ const docTemplate = `{
                 }
             }
         },
+        "/links/preview": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Fetches the given URL and returns its OpenGraph metadata",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "Preview a news link",
+                "parameters": [
+                    {
+                        "description": "URL to preview",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.NewsLinkPreviewRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.NewsLink"
+                                        },
+                                        "error": {
+                                            "type": "object"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/lists": {
             "get": {
                 "security": [
@@ -7423,6 +7519,30 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_ba-reynolds_gaggle_internal_models.CreatePostNewsPayload": {
+            "type": "object",
+            "required": [
+                "url"
+            ],
+            "properties": {
+                "image_url": {
+                    "type": "string",
+                    "maxLength": 2000
+                },
+                "site_name": {
+                    "type": "string",
+                    "maxLength": 200
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 300
+                },
+                "url": {
+                    "type": "string",
+                    "maxLength": 2000
+                }
+            }
+        },
         "github_com_ba-reynolds_gaggle_internal_models.CreatePostPayload": {
             "type": "object",
             "properties": {
@@ -7434,6 +7554,9 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostMediaRequest"
                     }
+                },
+                "news": {
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.CreatePostNewsPayload"
                 },
                 "parent_id": {
                     "type": "integer"
@@ -7493,6 +7616,9 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostMedia"
                     }
+                },
+                "news": {
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.NewsLink"
                 },
                 "parent": {
                     "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.PostParentInfo"
@@ -7569,14 +7695,18 @@ const docTemplate = `{
         "github_com_ba-reynolds_gaggle_internal_models.LoginRequest": {
             "type": "object",
             "required": [
-                "identifier"
+                "identifier",
+                "password"
             ],
             "properties": {
                 "identifier": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 96,
+                    "minLength": 3
                 },
                 "password": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 72
                 }
             }
         },
@@ -7653,6 +7783,35 @@ const docTemplate = `{
                 },
                 "username": {
                     "type": "string"
+                }
+            }
+        },
+        "github_com_ba-reynolds_gaggle_internal_models.NewsLink": {
+            "type": "object",
+            "properties": {
+                "image_url": {
+                    "type": "string"
+                },
+                "site_name": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_ba-reynolds_gaggle_internal_models.NewsLinkPreviewRequest": {
+            "type": "object",
+            "required": [
+                "url"
+            ],
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "maxLength": 2000
                 }
             }
         },
@@ -8055,7 +8214,6 @@ const docTemplate = `{
         "github_com_ba-reynolds_gaggle_internal_models.UpdateUserProfileRequest": {
             "type": "object",
             "required": [
-                "bio",
                 "display_name"
             ],
             "properties": {
@@ -8082,16 +8240,14 @@ const docTemplate = `{
                 },
                 "location": {
                     "type": "string",
-                    "maxLength": 30,
-                    "minLength": 3
+                    "maxLength": 30
                 },
                 "profile_picture_uuid": {
                     "type": "string"
                 },
                 "website": {
                     "type": "string",
-                    "maxLength": 50,
-                    "minLength": 3
+                    "maxLength": 50
                 }
             }
         },
@@ -8209,7 +8365,6 @@ const docTemplate = `{
         "github_com_ba-reynolds_gaggle_internal_models.UserProfile": {
             "type": "object",
             "required": [
-                "bio",
                 "display_name"
             ],
             "properties": {
@@ -8236,16 +8391,14 @@ const docTemplate = `{
                 },
                 "location": {
                     "type": "string",
-                    "maxLength": 30,
-                    "minLength": 3
+                    "maxLength": 30
                 },
                 "profile_picture_uuid": {
                     "type": "string"
                 },
                 "website": {
                     "type": "string",
-                    "maxLength": 50,
-                    "minLength": 3
+                    "maxLength": 50
                 }
             }
         },

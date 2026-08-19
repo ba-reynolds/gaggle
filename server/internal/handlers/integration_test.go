@@ -1891,7 +1891,7 @@ func TestAccountPrivacy(t *testing.T) {
 
 // TestProfileUpdateAllowsEmptyOptionalFields: PATCH /users/me used to reject
 // empty/short bio, location, and website (they carried `required`/`min` tags
-// while the DB defaults them to '' for new accounts), so a fresh user could
+// while the DB defaults them to ” for new accounts), so a fresh user could
 // never save a profile edit or clear those fields.
 func TestProfileUpdateAllowsEmptyOptionalFields(t *testing.T) {
 	app := testutil.NewApp(t, testutil.Database(t))
@@ -2029,5 +2029,143 @@ func TestPollQuestionLengthRejected(t *testing.T) {
 		},
 	}); rec.Code != http.StatusCreated {
 		t.Fatalf("140-char poll question: expected 201 got %d body %s", rec.Code, rec.Body.String())
+	}
+}
+
+// TestNewsAttachmentLifecycle covers the news link attachment on posts:
+// create with news round-trips the OpenGraph metadata, feeds hydrate it, and
+// posts without news simply omit the field.
+func TestNewsAttachmentLifecycle(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+	token := app.RegisterUser(t, "news_a", "news_a@example.com")
+	follower := app.RegisterUser(t, "news_b", "news_b@example.com")
+	followRec := app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/users/" + "news_a" + "/follow",
+		Token:  follower,
+	})
+	if followRec.Code != http.StatusOK {
+		t.Fatalf("follow failed: %d %s", followRec.Code, followRec.Body.String())
+	}
+
+	news := map[string]any{
+		"url":       "https://news.example.com/rescue",
+		"title":     "Firefighters rescue kitten from a tree",
+		"image_url": "https://news.example.com/firetruck.jpg",
+		"site_name": "Daily News",
+	}
+
+	rec := app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/posts/",
+		Token:  token,
+		Body: map[string]any{
+			"content": "breaking: check the article",
+			"media":   []any{},
+			"news":    news,
+		},
+	})
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("create news post: expected 201 got %d body %s", rec.Code, rec.Body.String())
+	}
+	created, _ := testutil.Decode[map[string]any](t, rec)
+	postID := int(created["id"].(float64))
+
+	// Single-post read hydrates news.
+	got := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/posts/" + itoa(postID), Token: token})
+	postData, _ := testutil.Decode[map[string]any](t, got)
+	detailed := postData["post"].(map[string]any)
+	if detailed["news"] == nil {
+		t.Fatalf("created post missing news attachment: %s", got.Body.String())
+	}
+	gotNews := detailed["news"].(map[string]any)
+	if gotNews["title"] != news["title"] {
+		t.Fatalf("news title = %v, want %v", gotNews["title"], news["title"])
+	}
+	if gotNews["image_url"] != news["image_url"] {
+		t.Fatalf("news image_url = %v, want %v", gotNews["image_url"], news["image_url"])
+	}
+	if gotNews["site_name"] != news["site_name"] {
+		t.Fatalf("news site_name = %v, want %v", gotNews["site_name"], news["site_name"])
+	}
+
+	// Home feed hydrates news on the follower side.
+	feedRec := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/posts/feed", Token: follower})
+	feed, _ := testutil.Decode[map[string]any](t, feedRec)
+	found := false
+	for _, item := range feed["items"].([]any) {
+		post := item.(map[string]any)
+		if int(post["id"].(float64)) != postID {
+			continue
+		}
+		found = true
+		if post["news"] == nil {
+			t.Fatalf("home feed post %d missing news hydration", postID)
+		}
+	}
+	if !found {
+		t.Fatalf("home feed did not include the news post")
+	}
+
+	// User feed hydrates news too.
+	userFeed := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/users/news_a/posts", Token: token})
+	feedData, _ := testutil.Decode[map[string]any](t, userFeed)
+	foundUser := false
+	for _, item := range feedData["items"].([]any) {
+		post := item.(map[string]any)
+		if int(post["id"].(float64)) != postID {
+			continue
+		}
+		foundUser = true
+		if post["news"] == nil {
+			t.Fatalf("user feed post %d missing news hydration", postID)
+		}
+	}
+	if !foundUser {
+		t.Fatalf("user feed did not include the news post")
+	}
+
+	// A plain post has no news field at all.
+	plain := app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/posts/",
+		Token:  token,
+		Body:   map[string]any{"content": "no news here", "media": []any{}},
+	})
+	plainData, _ := testutil.Decode[map[string]any](t, plain)
+	if _, present := plainData["news"]; present {
+		t.Fatalf("plain post should not carry a news field")
+	}
+
+	// Search hydration includes news.
+	searchRec := app.Do(t, testutil.Request{
+		Method: http.MethodGet,
+		Path:   "/api/v1/search?type=posts&q=breaking",
+		Token:  token,
+	})
+	searchData, _ := testutil.Decode[map[string]any](t, searchRec)
+	for _, item := range searchData["items"].([]any) {
+		post := item.(map[string]any)
+		if int(post["id"].(float64)) != postID {
+			continue
+		}
+		if post["news"] == nil {
+			t.Fatalf("search result post %d missing news hydration", postID)
+		}
+	}
+
+	// News is rejected on replies (mirrors the poll rule).
+	replyRec := app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/posts/",
+		Token:  token,
+		Body: map[string]any{
+			"content":   "a reply with news",
+			"parent_id": postID,
+			"news":      news,
+		},
+	})
+	if replyRec.Code != http.StatusBadRequest {
+		t.Fatalf("news on a reply: expected 400 got %d body %s", replyRec.Code, replyRec.Body.String())
 	}
 }

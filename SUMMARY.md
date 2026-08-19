@@ -1,3 +1,103 @@
+# SUMMARY — news-preview
+
+Adds the ability to attach a single news article link to a post. The post then
+renders a card with the article's headline + photo preview (OpenGraph-style),
+and the composer has an "attach news" flow that unfurls a pasted URL before
+posting. There was no news concept in the codebase before this — it follows the
+existing poll-attachment pattern.
+
+## What was changed and why
+
+- **Posts can carry one news link.** New `post_news` table (one row per post, so
+  a post may attach at most one article; `post_id PRIMARY KEY`, cascading delete).
+  Columns: `url`, `title`, `image_url`, `site_name`. A post with no news simply
+  has no row, and the API omits the field.
+- **`GET /links/preview` unfurls a URL in the composer.** Because a client-side
+  scrape would hit CORS, the server fetches the link and extracts OpenGraph
+  metadata (`og:title`, `og:image`, `og:site_name`, falling back to `<title>`),
+  resolving relative image URLs to absolute. New package `internal/linkmeta`
+  (`golang.org/x/net/html` seen in the wild: both `property=` and `name=` —
+  attempts are blocked by redirects/cap).
+- **Snapshots travel with the post.** The client fetches `/links/preview` at
+  compose time and sends the resulting title/image/site_name in the create
+  payload; the server persists that snapshot rather than re-scraping server-side.
+  Models: `NewsLink` for the wire/feed shape, `NewsPayload` on `models.Post`
+  (`json:"-"` so it never leaks in APIs), `CreatePostNewsPayload` for create
+  validation (`required,url,max=2000` on url, `max=300` title, `omitempty,url`
+  image, `max=200` site_name).
+- **All feeds hydrate news.** `hydrateNews` batches one `GetForPosts` per page
+  (using `pq.Array`) alongside the existing `hydratePolls` calls — home feed,
+  user feed, replies/media/likes/bookmarks/pins/quotes, post detail + ancestors/
+  descendants/chain, and search results.
+- **Allowed on quote posts, disallowed on replies.** Quote and top-level posts
+  accept news; replies do not (mirrors the poll rule — enforced both in the
+  composer, which hides the attach button when replying, and server-side in
+  `PostService.Create`, which rejects `news` + `parent_id` with a 400).
+- **Frontend.** New `NewsCard` component (image header + site name + title;
+  hides the image on load error; link opens in a new tab). Rendered under the
+  post body in `FeedPost` and as a removable preview in `ComposeContent`. The
+  composer toolbar gains a link button that opens a URL input; on "Preview" it
+  calls `/links/preview` and swaps in the card, which is sent with the post.
+
+## Files touched
+
+- `server/cmd/migrate/migrations/000021_add-post-news.{up,down}.sql` — `post_news`
+  table (new; `000021` is above the highest existing `000020` so no version
+  collision).
+- `server/internal/models/post.go` — `NewsLink`, `CreatePostNewsPayload`,
+  `NewsLinkPreviewRequest`, `News` on `FullPost`, `NewsPayload` on `Post`,
+  `News` on `CreatePostPayload`.
+- `server/internal/store/news_store.go` (new) + `store.go` — `News.Create`,
+  `News.GetForPosts`, wired into the `Store.News` interface.
+- `server/internal/linkmeta/linkmeta.go` + `linkmeta_test.go` (new) — OpenGraph
+  unfurl, URL-only fallback on fetch failure. `server/go.mod`: `golang.org/x/net`
+  promoted from indirect to direct.
+- `server/internal/service/post_service.go` — `hydrateNews` + call sites,
+  `NewsPayload` persistence in `Create`, `PreviewLink` (delegates to linkmeta).
+- `server/internal/service/{service,search_service,list_service}.go` — `PreviewLink`
+  on the `Posts` interface, news hydration in search + list feeds.
+- `server/internal/handlers/post_handler.go` — `CreatePost` maps news,
+  new `PreviewLink` handler (swagger-annotated).
+- `server/internal/handlers/post_engagement_handler.go` — `Quote` maps news.
+- `server/internal/api/router.go` — `POST /links/preview` (protected).
+- `server/internal/handlers/integration_test.go` — `TestNewsAttachmentLifecycle`
+  (create round-trip, detail + home feed + user feed + search hydration, absence
+  on plain posts, reply rejection).
+- `web/src/types/api.ts` — `NewsLink`, `Post.news`, `CreatePostPayload.news`.
+- `web/src/api/posts.ts` — `previewLink`.
+- `web/src/components/PollCard.tsx` — added `NewsCard` export (colocated with the
+  other post-attachment card).
+- `web/src/components/FeedPost.tsx` — renders `NewsCard` under the post body.
+- `web/src/components/ComposeContent.tsx` — attach-news toolbar button, URL
+  input, preview via `/links/preview`, removable card, sent with the post.
+- `web/package-lock.json` — unchanged deps (lockfile touched by `npm install`).
+- `server/docs/{docs.go,swagger.json,swagger.yaml}` — regenerated via swag
+  (includes `POST /links/preview`).
+
+## Verification
+
+- Backend: `go build ./...`, `go vet ./...`, `go test ./...` all pass
+  (handlers 35s, linkmeta ok).
+- Frontend: `npm run build` (tsc + vite) and `npm run lint` pass (0 errors;
+  only pre-existing warnings).
+
+## Things a reviewer should double-check
+
+- News is disallowed on replies (composer hides the attach button when quoting/
+  replying). Confirm that's the desired scope.
+- The snapshot approach means a post keeps whatever the composer previewed at
+  create time, even if the article's page changes later. If metadata should
+  refresh, a future job could re-unfurl existing `post_news` rows.
+- `internal/linkmeta` reads at most `2 MiB` of the fetched body and times out
+  after 8s; a slow/unreachable link degrades to a URL-only card rather than
+  failing the post. Image loading in `NewsCard` is client-side and may be
+  blocked by hotlink protection on some sites; the card still shows the
+  headline + site name.
+- `web/package-lock.json` shows modified; deps are unchanged (only the install
+  timestamp/registry metadata). Verify no stray dep changes before merging.
+
+---
+
 # SUMMARY — gaggle-goose-branding
 
 Replaces the placeholder Vite favicon and the sidebar "G" text logo with the

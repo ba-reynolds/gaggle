@@ -96,6 +96,14 @@ func (s *SearchService) hydrateFeed(ctx context.Context, feed *models.PostFeed, 
 	for _, item := range feed.Items {
 		item.Poll = polls[item.ID]
 	}
+	news, err := s.store.News.GetForPosts(ctx, ids)
+	if err != nil {
+		s.logger.Error("search news hydration failed", "error", err)
+		return nil, err
+	}
+	for _, item := range feed.Items {
+		item.News = news[item.ID]
+	}
 	if err := s.store.Media.FetchPostMedia(ctx, feed.Items); err != nil {
 		s.logger.Error("search media hydration failed", "error", err)
 		return nil, err

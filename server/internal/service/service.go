@@ -72,6 +72,7 @@ type Service struct {
 		GetQuotesFeed(ctx context.Context, postID int, viewerID int, limit int, cursor string) (*models.PostFeed, error)
 		GetPostLikers(ctx context.Context, postID int, limit int, cursor string) (*models.UserList, error)
 		GetPostReposters(ctx context.Context, postID int, limit int, cursor string) (*models.UserList, error)
+		PreviewLink(ctx context.Context, rawURL string) (*models.NewsLink, error)
 	}
 	PostEngagements interface {
 		Like(ctx context.Context, postID, userID int) (bool, error)

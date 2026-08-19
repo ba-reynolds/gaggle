@@ -35,22 +35,23 @@ type Post struct {
 	Visibility string `json:"visibility"`
 	// MentionedUserIDs is the resolved user id set of @mentions in the content,
 	// used by the "mentions" visibility rule. Never serialized.
-	MentionedUserIDs []int `json:"-"`
-	ParentID         *int  `json:"parent_id"`
-	SoftDeleted      bool  `json:"-"`
-	SoftDeletedAt  *time.Time         `json:"-"`
-	CreatedAt      time.Time          `json:"created_at"`
-	UpdatedAt      time.Time          `json:"updated_at"`
-	EditedAt       *time.Time         `json:"edited_at,omitempty"`
-	IsPinned       bool               `json:"is_pinned"`
-	LikesCount     int                `json:"-"`
-	RepostsCount   int                `json:"-"`
-	QuotesCount    int                `json:"-"`
-	BookmarksCount int                `json:"-"`
-	ViewsCount     int                `json:"-"`
-	RepliesCount   int                `json:"-"`
-	QuotedPostID   *int               `json:"quoted_post_id"`
-	PollPayload    *CreatePollPayload `json:"-"`
+	MentionedUserIDs []int                  `json:"-"`
+	ParentID         *int                   `json:"parent_id"`
+	SoftDeleted      bool                   `json:"-"`
+	SoftDeletedAt    *time.Time             `json:"-"`
+	CreatedAt        time.Time              `json:"created_at"`
+	UpdatedAt        time.Time              `json:"updated_at"`
+	EditedAt         *time.Time             `json:"edited_at,omitempty"`
+	IsPinned         bool                   `json:"is_pinned"`
+	LikesCount       int                    `json:"-"`
+	RepostsCount     int                    `json:"-"`
+	QuotesCount      int                    `json:"-"`
+	BookmarksCount   int                    `json:"-"`
+	ViewsCount       int                    `json:"-"`
+	RepliesCount     int                    `json:"-"`
+	QuotedPostID     *int                   `json:"quoted_post_id"`
+	PollPayload      *CreatePollPayload     `json:"-"`
+	NewsPayload      *CreatePostNewsPayload `json:"-"`
 }
 
 // PostEngagement captures the per-viewer engagement state of a post:
@@ -84,13 +85,29 @@ type PostMediaRequest struct {
 }
 
 type CreatePostPayload struct {
-	Content  string             `json:"content"`
-	Media    []PostMediaRequest `json:"media" validate:"dive"`
-	ParentID *int               `json:"parent_id"`
-	Poll     *CreatePollPayload `json:"poll,omitempty"`
+	Content  string                 `json:"content"`
+	Media    []PostMediaRequest     `json:"media" validate:"dive"`
+	ParentID *int                   `json:"parent_id"`
+	Poll     *CreatePollPayload     `json:"poll,omitempty"`
+	News     *CreatePostNewsPayload `json:"news,omitempty"`
 	// Visibility is one of "public" | "followers" | "mentions". Empty defaults
 	// to "public" (see PostService.Create).
 	Visibility string `json:"visibility"`
+}
+
+// CreatePostNewsPayload is the news attachment snapshot the client sends when
+// creating a post. It is the metadata the /links/preview endpoint returned for
+// the pasted URL (client preview → same snapshot stored on create).
+type CreatePostNewsPayload struct {
+	URL      string `json:"url" validate:"required,url,max=2000"`
+	Title    string `json:"title" validate:"max=300"`
+	ImageURL string `json:"image_url" validate:"omitempty,url,max=2000"`
+	SiteName string `json:"site_name" validate:"max=200"`
+}
+
+// NewsLinkPreviewRequest is the body of POST /links/preview.
+type NewsLinkPreviewRequest struct {
+	URL string `json:"url" validate:"required,url,max=2000"`
 }
 
 type UpdatePostPayload struct {
@@ -151,12 +168,38 @@ type PostMedia struct {
 }
 
 // FullPost represents a post with author, media, and per-viewer engagement
+// NewsLink is the persisted news attachment on a post: the article URL plus
+// the OpenGraph metadata scraped at create time (headline + preview image).
+type NewsLink struct {
+	PostID   int    `json:"-"`
+	URL      string `json:"url"`
+	Title    string `json:"title"`
+	ImageURL string `json:"image_url,omitempty"`
+	SiteName string `json:"site_name,omitempty"`
+}
+
+// ToNewsLink converts a create-time news payload into the persisted form.
+func ToNewsLink(postID int, payload *CreatePostNewsPayload) NewsLink {
+	news := NewsLink{PostID: postID, URL: payload.URL}
+	if payload.Title != "" {
+		news.Title = payload.Title
+	}
+	if payload.ImageURL != "" {
+		news.ImageURL = payload.ImageURL
+	}
+	if payload.SiteName != "" {
+		news.SiteName = payload.SiteName
+	}
+	return news
+}
+
 type FullPost struct {
 	Post
 	Author     PostAuthor      `json:"author"`
 	Media      []PostMedia     `json:"media"`
 	Engagement *PostEngagement `json:"engagement"`
 	Poll       *Poll           `json:"poll,omitempty"`
+	News       *NewsLink       `json:"news,omitempty"`
 	Parent     *PostParentInfo `json:"parent,omitempty"`
 }
 
