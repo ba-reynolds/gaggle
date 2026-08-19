@@ -227,7 +227,11 @@ const ProfilePage: React.FC = () => {
   };
 
   if (profileLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="w-full max-w-4xl mx-auto flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   return (
