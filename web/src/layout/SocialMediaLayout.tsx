@@ -34,7 +34,8 @@ import {
   Compass,
   List as ListIcon,
   MessageSquare,
-  AtSign
+  AtSign,
+  PenSquare
 } from "lucide-react";
 import { useState } from "react";
 import { NavLink, Navigate, useNavigate } from 'react-router-dom';
@@ -76,13 +77,13 @@ export default function SocialMediaLayout({
     <NavLink
       to={to}
       className={({ isActive }) => `
-        flex justify-start items-center space-x-4 w-full p-2 rounded-md
+        flex items-center justify-center lg:justify-start gap-x-4 w-full p-2 rounded-md
         ${isActive ? "bg-foreground/10 hover:bg-foreground/15" : "hover:bg-foreground/5"}
         text-gray-800 dark:text-gray-100
       `}
     >
       <span className="relative"><Icon className="h-5 w-5" />{badge ? <span className="absolute -right-2 -top-2 rounded-full bg-destructive px-1.5 text-[10px] leading-4 text-destructive-foreground">{badge > 99 ? '99+' : badge}</span> : null}</span>
-      <span className="hidden md:inline">{label}</span>
+      <span className="hidden lg:inline">{label}</span>
     </NavLink>
   );
 
@@ -116,14 +117,14 @@ export default function SocialMediaLayout({
         <div className="grid grid-cols-12 gap-4">
 
           {/* Left Sidebar */}
-          <div className="col-span-2 md:col-span-3 lg:col-span-2 min-w-0">
+          <div className="hidden md:block md:col-span-2 lg:col-span-2 min-w-0">
             <div className="sticky top-4 space-y-6 min-w-0">
               {/* App Logo */}
-              <div className="flex items-center gap-2 mb-6 min-w-0">
+              <div className="flex items-center justify-center lg:justify-start gap-2 mb-6 min-w-0">
                 <div className="w-10 h-10 shrink-0 aspect-square bg-primary rounded-full flex items-center justify-center">
                   <span className="text-primary-foreground font-bold text-xl">G</span>
                 </div>
-                <span className="text-xl font-bold flex-1 min-w-0 truncate hidden md:inline text-primary">GopherSocial</span>
+                <span className="text-xl font-bold flex-1 min-w-0 truncate hidden lg:inline text-primary">GopherSocial</span>
               </div>
 
               {/* Navigation */}
@@ -141,10 +142,11 @@ export default function SocialMediaLayout({
 
 
                 <Button
-                  className="w-full rounded-full mt-4 md:py-6 flex items-center justify-center"
+                  className="w-full rounded-full mt-4 flex items-center justify-center md:w-12 md:h-12 md:px-0 md:mx-auto lg:w-full lg:mx-0"
                   onClick={() => setIsComposing(true)}
                 >
-                  <span className="hidden md:inline">Post</span>
+                  <PenSquare className="h-5 w-5 hidden md:block lg:hidden" />
+                  <span className="hidden lg:inline">Post</span>
                 </Button>
               </nav>
 
@@ -152,18 +154,18 @@ export default function SocialMediaLayout({
               <div className="mt-auto">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="w-full flex items-center justify-between text-primary">
+                    <Button variant="ghost" className="w-full flex items-center justify-center lg:justify-between text-primary">
                       <div className="flex items-center">
                         <Avatar className="h-8 w-8 mr-2">
                           <AvatarImage src={getMediaUrl(user.profilePictureUUID)} />
                           <AvatarFallback>{user.displayName[0]}</AvatarFallback>
                         </Avatar>
-                        <div className="hidden md:block text-left">
+                        <div className="hidden lg:block text-left">
                           <p className="text-sm font-medium text-primary">{user.displayName}</p>
                           <p className="text-xs text-muted-foreground">@{user.username}</p>
                         </div>
                       </div>
-                      <MoreHorizontal className="h-4 w-4" />
+                      <MoreHorizontal className="h-4 w-4 hidden lg:block" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56 border border-muted">
@@ -189,7 +191,7 @@ export default function SocialMediaLayout({
           </div>
 
           {/* Main Content */}
-          <div className="col-span-10 md:col-span-9 lg:col-span-7 border-x border-border bg-background/25 min-h-screen px-6">
+          <div className="col-span-12 md:col-span-10 lg:col-span-7 border-x border-border bg-background/25 min-h-screen px-6 pb-16 md:pb-0">
             {children}
           </div>
 

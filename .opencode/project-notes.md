@@ -1,3 +1,15 @@
+## Sidebar/mobile nav tiers (agent/sidebar-mobile-nav)
+- Three responsive nav tiers: below `md` = fixed bottom nav is the ONLY nav
+  (left sidebar `hidden md:block`), `md`–`lg` = icon-only sidebar rail
+  (labels `hidden lg:inline`), `lg+` = full sidebar labels + right rail.
+  Grid keeps 12 cols: base main `col-span-12`, md 2+10, lg 2+7+3.
+- Icon-only mode centers content: `NavItem` uses `justify-center lg:justify-start gap-x-4`
+  instead of left-aligned `space-x-4`, Post button becomes a `md:w-14 md:h-14`
+  circle with a `PenSquare` icon (returns to full pill + "Post" at `lg+`).
+- Below `md` the account dropdown (Log out, and Lists/Mentions/Admin links)
+  is NOT reachable — sidebar is hidden; bottom nav now carries Explore + DMs
+  (with unread badge), but logout still only lives in the sidebar dropdown.
+
 ## Theme merge + kanagawa light + radius removal (agent/trim-theme-catalog)
 - Catppuccin catalog is now ONE flavor (mocha), 3 entries: `catppuccin-mocha-mauve` /
   `blue` / `peach`. Macchiato/frappe ids removed from `THEME_CATALOG` AND their
