@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useConversations } from '@/hooks/useDms';
 import { useSearchUsers } from '@/hooks/useSearch';
+import { SEARCH_DEBOUNCE_MS, useDebounce } from '@/hooks/useDebounce';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Loader2, Mail } from 'lucide-react';
@@ -64,12 +65,13 @@ export default function MessagesPage() {
 
 function NewMessageComposer({ onPick }: { onPick: (username: string) => void }) {
   const [query, setQuery] = useState('');
-  const results = useSearchUsers(query);
+  const debouncedQuery = useDebounce(query, SEARCH_DEBOUNCE_MS);
+  const results = useSearchUsers(debouncedQuery);
 
   return (
     <div className="mx-4 mb-4">
       <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search users to message..." />
-      {query && (
+      {debouncedQuery && (
         <div className="mt-2 space-y-1">
           {results.data?.data.items.slice(0, 5).map((u) => (
             <button

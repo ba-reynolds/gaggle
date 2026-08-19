@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { useDebounce } from "@/hooks/useDebounce";
+import { SEARCH_DEBOUNCE_MS, useDebounce } from "@/hooks/useDebounce";
 import { searchUsers } from "@/api/search";
 import { useBadgeCatalog, useCreateBadge, useDeleteBadge, useGrantBadge, useRevokeBadge, useUpdateBadge } from "@/hooks/useAdmin";
 import { useQuery } from "@tanstack/react-query";
@@ -28,7 +28,7 @@ const AdminPage: React.FC = () => {
   const revokeBadge = useRevokeBadge();
 
   const [userQuery, setUserQuery] = useState("");
-  const debouncedQuery = useDebounce(userQuery, 300);
+  const debouncedQuery = useDebounce(userQuery, SEARCH_DEBOUNCE_MS);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<{ id: number } | null>(null);
   const [form, setForm] = useState<CreateBadgePayload>(emptyForm());

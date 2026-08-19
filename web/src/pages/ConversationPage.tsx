@@ -18,7 +18,9 @@ export default function ConversationPage() {
 
   // Opening a brand-new conversation (/messages/new?user=X) shows an empty chat
   // UI against the target's profile; the conversation is created on first send.
-  const isNew = conversationIdStr === 'new';
+  // /messages/new is a STATIC route (no :conversationId param), so params has no
+  // conversationId key there — the dynamic route only yields 'new' as a fallback.
+  const isNew = !conversationIdStr || conversationIdStr === 'new';
   const targetUsername = isNew ? params.get('user') ?? '' : '';
 
   if (isNew) {

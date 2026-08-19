@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useList, useListFeed, useListMembers, useAddUserToList, useRemoveUserFromList } from '@/hooks/useLists';
 import { useSearchUsers } from '@/hooks/useSearch';
+import { SEARCH_DEBOUNCE_MS, useDebounce } from '@/hooks/useDebounce';
 import { useUser } from '@/contexts/UserContext';
 import { getMediaUrl } from '@/util/media';
 import { List as ListIcon, Loader2, UserPlus, UserMinus, Users } from 'lucide-react';
@@ -120,7 +121,8 @@ export default function ListPage() {
 
 function MemberSearch({ onAdd }: { listId: number; onAdd: (username: string) => void }) {
   const [query, setQuery] = useState('');
-  const results = useSearchUsers(query);
+  const debouncedQuery = useDebounce(query, SEARCH_DEBOUNCE_MS);
+  const results = useSearchUsers(debouncedQuery);
   return (
     <div>
       <input
@@ -129,7 +131,7 @@ function MemberSearch({ onAdd }: { listId: number; onAdd: (username: string) => 
         placeholder="Search users to add..."
         className="w-full rounded-lg border border-border bg-transparent px-3 py-2 text-sm text-primary"
       />
-      {query && (
+      {debouncedQuery && (
         <div className="space-y-1 mt-2">
           {results.data?.data.items.slice(0, 5).map((u) => (
             <div key={u.username} className="flex items-center justify-between rounded-lg border border-border p-2">

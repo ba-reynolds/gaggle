@@ -2,6 +2,20 @@
 
 Running log of agent-branch merges into main. Newest on top.
 
+## 2026-08-19 — agent/message-conversation-fixes
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md` — kept **every** section from both sides, newest on top
+    (message-conversation-fixes → login-experiments follow-ups →
+    enable-https → prior sections), `---` separated.
+  - `.opencode/project-notes.md` — kept **every** section from both sides,
+    newest on top (Messages debounce/new-route → Login lab → enable-https →
+    promotion entry → base), `---` separated.
+- Real code (ConversationPage new-route fix, MessagesPage/ListPage/ExplorePage
+  debounce, useDebounce SEARCH_DEBOUNCE_MS, AdminPage/BookmarksPage) merged
+  cleanly. Migration duplicate check clean. No DB migrations (web only).
+
 ## 2026-08-19 — agent/login-experiments
 
 - Status: **conflicted**

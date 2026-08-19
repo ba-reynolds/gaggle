@@ -1,3 +1,120 @@
+# SUMMARY — message-conversation-fixes
+
+Three direct-messaging issues reported against the live app:
+1. Sending lots of messages made the page grow instead of staying fixed-height
+   with an internal scrollbar.
+2. `/messages/new?user=henry` (or picking a user from the messages search)
+   rendered **"Conversation not found."** — you could not start a conversation
+   with anyone.
+3. Searching users to message fired a backend request on every keystroke (no
+   debounce).
+
+## What was changed and why
+
+- **#2 New-conversation route was broken (real code bug, fixed)**
+  (`web/src/pages/ConversationPage.tsx`): the page decided "is this a brand-new
+  conversation?" with `conversationIdStr === 'new'`. But `/messages/new` is
+  registered as a **static** route (`App.tsx:66`) with no `:conversationId`
+  param, so `useParams()` returns `{}` there and `conversationIdStr` is
+  `undefined` — never `'new'`. `isNew` was therefore always false on
+  `/messages/new`: the component computed `conversationId = Number(undefined)`
+  = `NaN`, its `dm-conversation` query was disabled (no data, no error), and
+  the fallback rendered "Conversation not found." Fix:
+  `const isNew = !conversationIdStr || conversationIdStr === 'new'`
+  (line 21). With it, `/messages/new` renders the empty-chat UI against the
+  target user and first-send creates the conversation.
+- **#3 Message-user search had no debounce (real gap, fixed)**
+  (`web/src/pages/MessagesPage.tsx`): `NewMessageComposer` passed `query`
+  straight into `useSearchUsers`, so every keystroke hit
+  `GET /search?type=users`. The app already ships a `useDebounce` hook
+  (`web/src/hooks/useDebounce.ts`; AdminPage uses it at 300 ms, FeedPost at
+  150 ms). Wired it in with 300 ms (matching AdminPage) and gated the results
+  dropdown on the debounced value so the list doesn't flicker while typing.
+  Verified: typing `henr` in a burst fired **4** requests before, **1** after.
+- **#1 Page growth (already satisfied by current code — verified, no code
+  change)**: the message thread is already a fixed-height, internal-scroll
+  container (`flex-1 min-h-0 overflow-y-auto` under an `h-screen flex flex-col`
+  main column, added by improve-message-flow). Playwright against the live app:
+  on `/messages/1` the thread scroller is bounded (client 670 px vs 1986 px
+  content) and the **document height did not change** while sending 12 more
+  messages (898 px constant across 38 → 50 messages) at both 800 px and 500 px
+  viewport heights. The residual ~98 px of page-level scroll on message pages
+  is the shared sidebar column exceeding the viewport (present on every page,
+  message-count-independent) — deliberately left untouched as out of scope.
+
+### Follow-up: debounce sweep across the app (same branch)
+
+After fixing the messages search, audited **every** input-driven query in
+`web/src` and found two more keystroke-fired searches plus a cleanup:
+
+- **ListPage "Add a user" search** (`web/src/pages/ListPage.tsx`,
+  `MemberSearch`): `useSearchUsers(query)` fired `GET /search?type=users` on
+  every keystroke (3 requests for a 3-char burst) — identical pattern to the
+  MessagesPage bug. Now debounced; 1 request per burst.
+- **ExplorePage live post search** (`web/src/pages/ExplorePage.tsx`): the
+  search box feed `useSearchPosts(query)` live, so each keystroke hit
+  `GET /search?type=posts` (6 requests for a 6-char burst) while ALSO rendering
+  an inline results preview. Now debounced (live preview kept per product call);
+  the submit → `/search?q=` navigation is unchanged and still uses the raw query.
+- **Debounce delay centralized** (`web/src/hooks/useDebounce.ts`): added
+  `export const SEARCH_DEBOUNCE_MS = 300` as the single source of truth for
+  search debounce (per request "don't hardcode, we may tune later"). Migrated
+  the existing hardcoded `300` literals in MessagesPage, AdminPage, and
+  BookmarksPage to it. `FeedPost` intentionally stays at 150 ms (its search is a
+  client-side, in-memory category filter — no API).
+
+## Files touched
+
+- `web/src/pages/ConversationPage.tsx` — `isNew` detection
+- `web/src/hooks/useDebounce.ts` — added `SEARCH_DEBOUNCE_MS = 300`
+- `web/src/pages/MessagesPage.tsx` — debounced user search
+- `web/src/pages/ListPage.tsx` — debounced member search
+- `web/src/pages/ExplorePage.tsx` — debounced live post search
+- `web/src/pages/AdminPage.tsx`, `web/src/pages/BookmarksPage.tsx` — use the
+  shared `SEARCH_DEBOUNCE_MS` (no behavior change)
+
+## Verification
+
+- Playwright (headless chrome via project-notes "Browser verify recipe") against
+  a local `vite dev` serving the worktree code at :5174 (proxied to the live
+  api — no shared-container rebuild):
+  - `/messages/new?user=henry` and `/messages/new?user=grace`: empty-chat UI
+    renders ("You haven't talked to @X yet"), composer enabled; search → pick →
+    `/messages/new?user=X` works; sending the first message creates the
+    conversation server-side, navigates to `/messages/90`, the message appears
+    in the thread, and the conversation shows up in the messages list.
+  - Search burst `henr` → exactly 1 request (was 4).
+  - Debounce sweep bursts: ListPage member search `hen` → 1 request (was 3);
+    ExplorePage live search `sunset` → 1 request (was 6); MessagesPage `henr` →
+    1 request (regression check). Results still render after the debounce
+    (`@henry` row visible in the ListPage dropdown) and ExplorePage's submit
+    still navigates to `/search?q=sunset`.
+  - Regression: existing conversation thread still bounded with internal
+    scroll; page height unchanged.
+  - Before the fix, `/messages/new?user=henry` on the deployed app showed
+    "Conversation not found." (bug live-reproduced).
+- `npm run lint` (web-tools container): 0 errors — the same 14 pre-existing
+  react-refresh warnings as the base branch, none in the changed files.
+- `npm run build` (tsc -b + vite): passes; the >500 kB chunk warning is
+  pre-existing.
+
+## Reviewer double-checks
+
+- The `/messages/new` fix makes "new" detection independent of the
+  `:conversationId` route fallback; confirm all entry points that link to
+  `/messages/new?user=...` (profile "Message" button, messages search results)
+  land on the empty-chat composer.
+- Debounce delay is centralized at `SEARCH_DEBOUNCE_MS = 300` in
+  `useDebounce.ts` — tune it in one place if search feels sluggish or too
+  eager. `FeedPost`'s 150 ms is deliberate (client-side filter, no API).
+- The ExplorePage live-results preview is kept (debounced, per product call);
+  if it's ever unwanted, only the `useSearchPosts` line + the posts block need
+  removing — the submit-to-`/search` navigation is independent.
+- No backend, migration, or test-infra changes (the repo's `web` has no test
+  runner — verification is browser-based, consistent with prior branches).
+- The ~98 px app-wide sidebar overflow was intentionally not touched (affects
+  all pages, not messages; separate concern).
+---
 # SUMMARY — login-experiments (follow-up: promote step flow to /login)
 
 The chosen keeper design (simple step flow) is now the real login page.

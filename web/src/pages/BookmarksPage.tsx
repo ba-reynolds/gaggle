@@ -3,7 +3,7 @@ import { Loader2, Search } from "lucide-react";
 import FeedPost from "@/components/FeedPost";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect, useRef } from "react";
-import { useDebounce } from "@/hooks/useDebounce";
+import { SEARCH_DEBOUNCE_MS, useDebounce } from "@/hooks/useDebounce";
 import { useInView } from "react-intersection-observer";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 const BookmarksPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  const debouncedSearchQuery = useDebounce(searchQuery, SEARCH_DEBOUNCE_MS);
   const { ref, inView } = useInView();
 
   const { data: categoriesData } = useGetBookmarkCategories();

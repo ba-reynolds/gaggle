@@ -1,3 +1,9 @@
+## Messages: /messages/new + search debounce (agent/message-conversation-fixes)
+- **Static routes have NO route params**: `useParams()` on route `/messages/new` returns `{}` — `conversationId` is `undefined`, not `"new"`. ConversationPage tested `conversationIdStr === "new"`, so `/messages/new` fell through to the existing-conversation branch, computed `Number(undefined)` = NaN, disabled the dm-conversation query, and rendered "Conversation not found." Fix pattern: `const isNew = !conversationIdStr || conversationIdStr === "new"` (ConversationPage.tsx:21).
+- `NewMessageComposer` (MessagesPage.tsx) passed the live query to `useSearchUsers` → one `GET /search?type=users` per keystroke. Now debounces via `useDebounce` and the shared `SEARCH_DEBOUNCE_MS = 300` (exported from `web/src/hooks/useDebounce.ts`). Other keystroke-fired searches were the same way and got fixed too: ListPage `MemberSearch` (add-user), ExplorePage live `useSearchPosts`. The constant is the single source of truth — tune debounce there, don't inline `300` at new call sites. (FeedPost's 150 ms is a client-side category filter, not an API call; stays as-is.)
+- Message threads are ALREADY fixed-height + internal-scroll (flex-1 min-h-0 overflow-y-auto under the h-screen column). The remaining ~98px page scroll on message pages is the app-wide sidebar (taller than 100vh on typical viewports), present on every page and unrelated to messages.
+- Frontend has no test runner (no vitest) — browser verification via playwright-core + host google-chrome + a local `nix shell nixpkgs#nodejs_22` vite dev on a non-standard port works without touching the shared compose stack.
+---
 ## Login lab + useLoginFlow (agent/login-experiments)
 - **Do NOT render a decorative heading via `FormLabel`.** The step-flow
   password step put "Welcome back" in a `FormLabel`, which carries
@@ -59,7 +65,7 @@
 - `LoginPage.tsx` uses `h-screen overflow-y-auto` (mirrors the lab pane);
   `getByRole('button', {name:'Sign in'})` is ambiguous with "Test sign in"
   — playwright needs `exact: true`.
-
+---
 ## Goose branding assets (agent/gaggle-goose-branding)
 - `web/` had NO `public/` dir and `index.html` referenced a nonexistent
   `/vite.svg` → the favicon 404'd. This branch now ships
