@@ -155,7 +155,7 @@ function ExistingConversationPage({ conversationId }: { conversationId: number }
               const isGroupStart = position === 'start' || position === 'standalone';
               const isGroupEnd = position === 'end' || position === 'standalone';
               return (
-                <div key={m.id} className={isGroupEnd ? 'mb-2' : ''}>
+                <div key={m.id} className={isGroupEnd ? 'mb-3.5' : 'mb-0.5'}>
                   {isNewDay && (
                     <div className="my-3 flex items-center gap-3">
                       <div className="h-px flex-1 bg-border" />

@@ -26,6 +26,10 @@ fully-rounded instead of flattening the inner corners like the reference demo.
   `group-${position}`. Verified radii per position (TL/TR/BR/BL):
   `group-start`→16/16/16/4 … `group-mid`→16/4/4/16 … `group-end`→16/4/16/16 for
   outgoing (mirrored for incoming).
+- **2px group gap.** Follow-up: the reference demo puts a small gap between
+  grouped bubbles (`.bubble-row { margin-bottom: 2px }`); the first pass stacked
+  them flush. Message rows now use `mb-0.5` (2px) within a group and `mb-3.5`
+  (14px, the demo's `.msg-group` size) after a group-end/standalone.
 
 ## Files touched
 - `web/src/pages/ConversationPage.tsx` — page-root height const + `group-` prefixed

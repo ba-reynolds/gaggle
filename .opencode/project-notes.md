@@ -15,6 +15,10 @@
   `group-${position}`.
 - SSR-proving E2E lix: getComputedStyle per bubble maps to TL/TR/BR/BL. Verified
   radii (mine): group-start=16/16/16/4, group-mid=16/4/4/16, group-end=16/4/16/16.
+- Grouped bubbles need the demo's 2px inter-row gap (`.bubble-row { margin-bottom:
+  2px }`): message wrapper = `mb-0.5` within a group, `mb-3.5` (14px, demo
+  `.msg-group` size) at group-end/standalone. Flush (0px) stacking reads as
+  "glued/stuck" instead of iMessage-style tight-but-separated.
 - `make proj-dev` (proj-up.sh) only allocates API/WEB ports; the preview DB
   (default 6969) and Redis (6379) collide with a RUNNING shared `make dev`
   stack. Pass `DB_PORT=6970 REDIS_PORT=6380` through the environment to proj-up.
