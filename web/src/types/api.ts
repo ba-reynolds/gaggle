@@ -114,6 +114,8 @@ export interface Message {
   body: string;
   read_at?: string;
   created_at: string;
+  // True for locally-inserted messages shown before the server confirms them.
+  pending?: boolean;
 }
 
 export interface ConversationOtherParticipant {

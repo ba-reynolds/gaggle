@@ -66,14 +66,24 @@ function ExistingConversationPage({ conversationId }: { conversationId: number }
 
   const sendMessage = () => {
     if (!participant || !body.trim()) return;
+    const text = body.trim();
+    setBody('');
     send.mutate(
-      { username: participant.other_participant.username, body: body.trim() },
       {
-        onSuccess: () => {
-          setBody('');
-          setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight }), 50);
+        username: participant.other_participant.username,
+        body: text,
+        conversationId,
+        sender: {
+          username: user.username,
+          display_name: user.displayName,
+          profile_picture_uuid: user.profilePictureUUID || undefined,
         },
-        onError: () => toast.error('Could not send message'),
+      },
+      {
+        onError: () => {
+          setBody(text);
+          toast.error('Could not send message');
+        },
       }
     );
   };
@@ -122,9 +132,9 @@ function ExistingConversationPage({ conversationId }: { conversationId: number }
                       {!mine && (
                         <p className="mb-0.5 text-xs text-muted-foreground">@{m.sender.username}</p>
                       )}
-                      <p className="whitespace-pre-wrap break-words">{m.body}</p>
+                      <p className={`whitespace-pre-wrap break-words ${m.pending ? 'opacity-70' : ''}`}>{m.body}</p>
                       <p className={`mt-1 text-right text-[10px] ${mine ? 'text-white/70' : 'text-muted-foreground'}`}>
-                        {formatMessageHour(m.created_at)}
+                        {m.pending ? 'Sending…' : formatMessageHour(m.created_at)}
                       </p>
                     </div>
                   </div>
@@ -157,6 +167,7 @@ function ExistingConversationPage({ conversationId }: { conversationId: number }
 // first send, at which point we switch to the real conversation route.
 function NewConversationPage({ username }: { username: string }) {
   const navigate = useNavigate();
+  const { user } = useUser();
   const send = useSendMessage();
   const [body, setBody] = useState('');
 
@@ -174,13 +185,26 @@ function NewConversationPage({ username }: { username: string }) {
 
   const sendMessage = () => {
     if (!profile || !body.trim()) return;
+    const text = body.trim();
+    setBody('');
     send.mutate(
-      { username: profile.username, body: body.trim() },
+      {
+        username: profile.username,
+        body: text,
+        sender: {
+          username: user.username,
+          display_name: user.displayName,
+          profile_picture_uuid: user.profilePictureUUID || undefined,
+        },
+      },
       {
         onSuccess: (response) => {
           navigate(`/messages/${response.data.conversation_id}`, { replace: true });
         },
-        onError: () => toast.error('Could not send message'),
+        onError: () => {
+          setBody(text);
+          toast.error('Could not send message');
+        },
       }
     );
   };

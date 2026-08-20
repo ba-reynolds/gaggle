@@ -34,6 +34,10 @@ const queryClient = new QueryClient({
     queries: {
       retry: false,
       refetchOnWindowFocus: false,
+      // Keep fetched pages fresh for a minute so navigating back to a page
+      // within that window is served from cache instead of refetching on every
+      // mount. Pages that need fresher data override this per-query.
+      staleTime: 60_000,
     },
     mutations: {
       retry: false,
