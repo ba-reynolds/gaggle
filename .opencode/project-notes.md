@@ -69,6 +69,34 @@
   files — only import it when types actually reference `React` (e.g.
   `React.ComponentProps`).
 ---
+## Session-expiry + static-403 (agent/fix-session-and-static-images)
+- **Refresh-cookie Secure must follow the scheme, not COOKIE_SECURE:** the AWS
+  box sets `COOKIE_SECURE=true` but is legitimately browsed over plain HTTP
+  (http://<ip>); browsers reject Secure Set-Cookie on http → the refresh cookie
+  NEVER persists → every session dies at the next refresh. `auth_handler.go`
+  now derives Secure from nginx's `X-Forwarded-Proto` (http→off, https→on) with
+  the env value as fallback only for direct container access. Alive on the box
+  too: an HTTP register returns `Set-Cookie: …; Secure` and curl's jar stays
+  empty (verified 2026-08-20).
+- **Rotation "theft" detector false-positives on same-device stale replays →
+  whole session family revoked → SESSION_EXPIRED → random logout.** Root cases:
+  two tabs sharing a cookie jar, or a lost refresh response. Server now treats a
+  rotated-token replay with the SAME user-agent as benign: rotates the family's
+  CURRENT active token forward (`GetCurrentActiveToken` + `FOR UPDATE` in a tx)
+  and returns new tokens for all clients. Cross-UA replay still revokes. The
+  same-device signal is UA-only (IPs unreliable behind nginx + mobile); a
+  same-UA stolen replay slips through — accepted trade-off.
+- **Deploy can ship stale fixed-name assets:** `favicon.ico`/`gaggle-goose.png`
+  keep FIXED filenames while `/assets/*` are content-hashed, so a stale/corrupt
+  cached web layer 403s only the public files (the live box did exactly this).
+  deploy/apply.sh now builds `--no-cache` and health-checks those two files so
+  a broken web image fails the deploy gate. Manual remediation:
+  `docker compose ... up -d --force-recreate web`.
+- **Test harness UA gotcha:** httptest requests default to `User-Agent: ""`, and
+  the benign same-device branch requires a non-empty UA match — integration
+  tests exercising it must set `Request.UA` explicitly (`testutil.Request` now
+  supports `Headers` + `UA`).
+
 ## Snappy UX: optimistic DMs, staleTime, prefetch (agent/snappy-ux)
 - **`onMutate` is NOT a valid `mutate()` option** — `MutateOptions` only supports
   onSuccess/onError/onSettled. To do optimistic UI on a mutation, either put it

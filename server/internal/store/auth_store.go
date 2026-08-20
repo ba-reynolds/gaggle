@@ -113,6 +113,43 @@ func (store *authStore) RotateRefreshToken(ctx context.Context, tx *sql.Tx, toke
 	return nil
 }
 
+// GetCurrentActiveToken returns the family's most recently issued token that
+// is still active (not revoked). Used to resolve a benign stale replay: when a
+// rotated token is replayed from the same device, the family's CURRENT token
+// is rotated forward so the session survives instead of being treated as theft.
+// Runs on the caller's transaction with FOR UPDATE so two concurrent stale
+// replays serialize: the second waits, sees the first's fresh token, and
+// rotates THAT forward instead of double-revoking the same row.
+func (store *authStore) GetCurrentActiveToken(ctx context.Context, tx *sql.Tx, sessionID uuid.UUID) (*models.RefreshToken, error) {
+	query := `
+		SELECT refresh_token_id, session_id, user_id, token_hash, issued_at, expires_at, revoked, revoked_at, revoked_reason, user_agent, ip_address
+		FROM refresh_tokens
+		WHERE session_id = $1 AND revoked = false
+		ORDER BY issued_at DESC, refresh_token_id DESC
+		LIMIT 1
+		FOR UPDATE
+	`
+	row := store.db.QueryRowContext
+	if tx != nil {
+		row = tx.QueryRowContext
+	}
+	var refreshToken models.RefreshToken
+	err := row(ctx, query, sessionID).Scan(&refreshToken.RefreshTokenID, &refreshToken.SessionID, &refreshToken.UserID, &refreshToken.TokenHash, &refreshToken.IssuedAt, &refreshToken.ExpiresAt, &refreshToken.Revoked, &refreshToken.RevokedAt, &refreshToken.RevokedReason, &refreshToken.UserAgent, &refreshToken.IPAddress)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, apperrors.NotFoundError("no active refresh token in session", err)
+		}
+		store.logger.Error("database query failed",
+			"operation", "get_current_active_token",
+			"sessionID", sessionID,
+			"query", query,
+			"error", err,
+		)
+		return nil, apperrors.InternalServerError(err)
+	}
+	return &refreshToken, nil
+}
+
 // RevokeSession revokes every token in a session family. Used for logout and
 // for killing an entire chain when an already-rotated token is replayed.
 func (store *authStore) RevokeSession(ctx context.Context, tx *sql.Tx, sessionID uuid.UUID, reason string) error {

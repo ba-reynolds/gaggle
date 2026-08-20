@@ -6,8 +6,11 @@
 #   - web publishes host ports 80 (HTTP) and 443 (HTTPS)
 #   - APP_ENV=production enables the config fail-fast so a leaked dev
 #     JWT_SECRET / DB_PASSWORD prevents the api from booting.
-#   - COOKIE_SECURE=true because production serving is over TLS (443). Do NOT
-#     flip this unless HTTPS is actually in front of the api.
+#   - COOKIE_SECURE=true. The API now sets the cookie's Secure attribute from
+#     the ACTUAL client scheme (nginx sends X-Forwarded-Proto), so this value is
+#     only the fallback for direct container access: plain-http browsers still
+#     get a non-Secure cookie (otherwise their sessions would never persist)
+#     while https clients keep Secure cookies.
 #   - certbot service provisions real Let's Encrypt certs once HTTPS_DOMAIN
 #     is set (see deploy/README.md)
 name: gaggle

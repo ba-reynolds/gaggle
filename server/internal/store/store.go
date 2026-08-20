@@ -21,6 +21,7 @@ type Store struct {
 	Auth interface {
 		CreateRefreshToken(ctx context.Context, tx *sql.Tx, refreshToken *models.RefreshToken) error
 		GetRefreshToken(ctx context.Context, tokenHash string) (*models.RefreshToken, error)
+		GetCurrentActiveToken(ctx context.Context, tx *sql.Tx, sessionID uuid.UUID) (*models.RefreshToken, error)
 		RotateRefreshToken(ctx context.Context, tx *sql.Tx, tokenHash string) error
 		RevokeSession(ctx context.Context, tx *sql.Tx, sessionID uuid.UUID, reason string) error
 		SessionHasActiveToken(ctx context.Context, sessionID uuid.UUID) (bool, error)

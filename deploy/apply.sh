@@ -62,7 +62,12 @@ EOF
 
 deploy() {
   cd "$DEPLOY_DIR"
-  docker compose -f compose.yaml -f compose.prod.yaml build
+  # --no-cache: web/public assets (favicon.ico, gaggle-goose.png) keep FIXED
+  # filenames, so a stale cached dist layer can leave them corrupt/unreadable
+  # while the content-hashed /assets/* still refresh — nginx then 403s the
+  # favicon + sidebar logo with no code change. Rebuilding uncached guarantees
+  # the baked artifacts match this checkout every deploy (costs ~1-2 extra min).
+  docker compose -f compose.yaml -f compose.prod.yaml build --no-cache
   # --wait blocks until every service reports healthy (or the 5min timeout
   # hits), so the health check below never races a just-booted container.
   # Both api and web carry healthchecks; services without one (certbot) are
@@ -78,6 +83,15 @@ health_check() {
   # TLS is self-signed until a real cert is issued, so curl skips
   # verification for the HTTPS health check.
   curl -kfsS https://localhost/swagger/doc.json > /dev/null
+  # Fixed-name public assets must actually be served (not 403 from a stale
+  # layer). The SPA fallback would return 200 for a MISSING file, so assert the
+  # real HTTP status via -f (fails on >= 400).
+  for p in /favicon.ico /gaggle-goose.png; do
+    if ! curl -kfsS -o /dev/null "https://localhost$p"; then
+      echo ">> static asset $p is not being served (nginx 403/404?)" >&2
+      exit 1
+    fi
+  done
 }
 
 main() {

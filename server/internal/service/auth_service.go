@@ -111,11 +111,32 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenString strin
 	}
 
 	if storedRefreshToken.Revoked {
-		// A token that was already rotated away is being replayed: that is the
-		// signature of a stolen credential. Revoke the entire session family,
-		// including its current token, and park the session.
+		// A rotated token being replayed is usually the signature of a stolen
+		// credential. BUT two tabs sharing one cookie jar (or a lost refresh
+		// response) replay it routinely: tab A rotates the token, tab B — still
+		// holding the pre-rotation cookie — presents the now-revoked value.
+		// Distinguish by user-agent: a replay from the SAME device is benign and
+		// resolves by rotating the family's CURRENT token forward (everyone
+		// stays logged in). A replay from a DIFFERENT device is theft.
 		if storedRefreshToken.RevokedReason != nil && *storedRefreshToken.RevokedReason == models.RevokedReasonRotated {
-			s.logger.Warn("rotated refresh token reused; revoking session family",
+			if storedRefreshToken.UserAgent != "" && storedRefreshToken.UserAgent == userAgent {
+				s.logger.Info("rotated refresh token replayed from same device; rotating current token instead of revoking session",
+					"sessionID", storedRefreshToken.SessionID.String(),
+					"userID", storedRefreshToken.UserID,
+					"operation", "refresh_token",
+				)
+				accessToken, newRefreshToken, err := s.rotateCurrentActiveToken(ctx, storedRefreshToken.SessionID, storedRefreshToken.UserID, ipAddress, userAgent)
+				if err != nil {
+					if apperrors.Is(err, apperrors.NotFound) {
+						// No live token left in the family: the session really is over.
+						return nil, nil, apperrors.SessionExpiredError("session expired", nil)
+					}
+					return nil, nil, err
+				}
+				return accessToken, newRefreshToken, nil
+			}
+
+			s.logger.Warn("rotated refresh token reused from different device; revoking session family",
 				"sessionID", storedRefreshToken.SessionID.String(),
 				"userID", storedRefreshToken.UserID,
 				"operation", "refresh_token",
@@ -178,6 +199,47 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenString strin
 		"userID", userID,
 	)
 
+	return accessToken, newRefreshToken, nil
+}
+
+// rotateCurrentActiveToken issues a fresh refresh token for a session family,
+// atomically retiring the family's currently-active token. Used to keep a
+// session alive when a stale (already-rotated) token is replayed from the same
+// device: instead of nuking the whole family, the live token simply moves one
+// step forward so every open client can keep refreshing.
+func (s *AuthService) rotateCurrentActiveToken(ctx context.Context, sessionID uuid.UUID, userID int, ipAddress string, userAgent string) (*models.Token, *models.Token, error) {
+	tx, err := s.store.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, nil, apperrors.InternalServerError(err)
+	}
+	defer tx.Rollback()
+
+	active, err := s.store.Auth.GetCurrentActiveToken(ctx, tx, sessionID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	newRefreshToken, err := s.issueRefreshToken(ctx, tx, userID, sessionID, ipAddress, userAgent)
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := s.store.Auth.RotateRefreshToken(ctx, tx, active.TokenHash); err != nil {
+		return nil, nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, nil, apperrors.InternalServerError(err)
+	}
+
+	// Generate new access token
+	accessToken, err := s.authenticator.GenerateAccessToken(userID)
+	if err != nil {
+		s.logger.Error("failed to generate new access token during refresh",
+			"operation", "refresh_token",
+			"userID", userID,
+			"error", err,
+		)
+		return nil, nil, apperrors.InternalServerError(err)
+	}
 	return accessToken, newRefreshToken, nil
 }
 

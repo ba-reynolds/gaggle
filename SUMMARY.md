@@ -201,6 +201,93 @@ name is missing.
   white-on-color letter.
 - `ComposeContent` passes only `username` (no display name in UserContext) —
   the initial comes from the username, which is the intended behavior.
+# SUMMARY — fix-session-and-static-images
+
+Fixes two live issues reported on the AWS box (`http://100.31.118.41`):
+spurious logout with `SESSION_EXPIRED` from `/auth/refresh-token`, and nginx
+403s on the fixed-name public assets (`/favicon.ico`, `/gaggle-goose.png`).
+
+## Root causes
+
+**1. Random logout (`SESSION_EXPIRED`)** — two compounding server behaviors:
+
+- The box runs `COOKIE_SECURE=true`, but the site is browsed over **plain
+  HTTP**. Browsers refuse to STORE a `Secure` cookie over http, so the browser
+  never persists the refresh cookie over `http://<ip>`. Verified live: an HTTP
+  register returns `Set-Cookie: refresh_token=…; Secure; SameSite=Lax` and
+  curl leaves the cookie jar empty. Sessions could not survive a refresh.
+- The refresh-token **rotation theft detector fired on benign stale replays**:
+  a replay of an already-rotated token (second tab holding the pre-rotation
+  cookie, or a lost refresh response) revokes the **whole session family** →
+  `SESSION_EXPIRED` → user logged out. Verified live over HTTPS: refresh T →
+  200 + rotate; replay the same T → **exactly**
+  `{"data":null,"error":{"code":"SESSION_EXPIRED","message":"session expired"}}`.
+
+**2. 403 on `favicon.ico` / `gaggle-goose.png`** — these files keep FIXED
+filenames (unlike content-hashed `/assets/*`), so a stale/corrupt cached `web`
+image layer can serve them 403 while the hashed assets refresh fine. Source is
+clean (real 0644 PNG/ICO; a fresh local build + running container serve both
+200; the live box serves the same hashed bundle yet 403s only the two fixed
+names). Not reproducible from current source — box runtime/side artifact;
+hardened the deploy so it can't recur and gave a remediation command.
+
+## What was changed
+
+- **`server/internal/handlers/auth_handler.go`** — the refresh-token cookie's
+  `Secure` attribute now tracks the actual client scheme via nginx's
+  `X-Forwarded-Proto` (http → Secure off, https → Secure on), falling back to
+  the configured `COOKIE_SECURE` only when the proxy header is absent (direct
+  API access). Plain-HTTP sessions now persist even though prod sets
+  `COOKIE_SECURE=true`; HTTPS clients keep Secure cookies.
+- **`server/internal/service/auth_service.go`** — replaying an already-rotated
+  refresh token from the **same device (user-agent)** is treated as the benign
+  concurrent-tab/stale-cookie case: the family's **current** active token is
+  rotated forward (`rotateCurrentActiveToken`) and a fresh access token is
+  returned — nobody gets logged out. Replay from a different user-agent is
+  still theft (family revoked + `SESSION_EXPIRED`), preserving the stolen-token
+  detection.
+- **`server/internal/store/auth_store.go` + `store.go`** — new
+  `GetCurrentActiveToken(ctx, tx, sessionID)` running inside the caller's
+  transaction with `FOR UPDATE` so concurrent stale replays serialize (the
+  second waits, finds the first's fresh token, and rotates that forward).
+- **`server/internal/store`/model note** — `models.RefreshToken.UserAgent`
+  (already stored at issuance) is the same-device signal.
+- **`deploy/apply.sh`** — `docker compose build --no-cache` (stale dist layers
+  can no longer ship wrong fixed-name assets), and the deploy health check now
+  asserts `/favicon.ico` + `/gaggle-goose.png` actually return 2xx over HTTPS
+  (fails the deploy otherwise).
+- **`compose.prod.yaml` / `README.md`** — corrected the `COOKIE_SECURE`
+  comment (value is now only the direct-access fallback) and documented the
+  behavior + the `--force-recreate web` remediation for a stuck 403 container.
+- **`server/internal/testutil/testutil.go`** — `Request` supports `Headers` +
+  `UA`; added `NewAppWithCookieSecure`.
+
+## Tests (TDD, red→green)
+
+- `TestRefreshTokenRotation` — same-UA replay of a rotated token now returns
+  200 and keeps the session alive (previously 401 + family nuke).
+- `TestRefreshTokenReplayFromDifferentDeviceIsTheft` — cross-UA replay still
+  401 `SESSION_EXPIRED` and revokes the whole family.
+- `TestRefreshConcurrentStaleReplayKeepsSession` — two goroutines refresh the
+  same stale token simultaneously; both succeed and the session survives
+  (multi-tab regression).
+- `TestRefreshCookieSecureFollowsScheme` — cookie Secure follows
+  `X-Forwarded-Proto` under every combo of the configured fallback.
+- `go vet ./... && go test ./...` all green.
+
+## Reviewer notes
+
+- The same-device signal is the **user-agent string** (IPs are unreliable
+  behind the nginx proxy / mobile networks). A stolen cookie replayed with the
+  SAME UA slips through as "benign" — accepted trade-off to stop false
+  logouts; document if the app ever needs stronger device fingerprints.
+- Test harness requests default to UA `""`, which NEVER matches the benign
+  branch — tests that exercise it must set a UA explicitly.
+- Live-box probes during debugging registered two throwaway users
+  (`dbg_1787195238`, `dbg2_1787195271`) — no delete endpoint exists; remove
+  manually if wanted.
+- 403 fix is deploy-hardening + remediation, not a code change to the assets
+  (they're the grok-logo art and already fine in source).
 
 ---
 
