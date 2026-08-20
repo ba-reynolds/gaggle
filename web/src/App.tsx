@@ -34,6 +34,17 @@ const LoginLabPage = lazy(() =>
   import('./pages/login-lab/LoginLabPage').then((m) => ({ default: m.LoginLabPage })),
 );
 
+function RouteFallback() {
+  return (
+    <div className="flex min-h-[50vh] items-center justify-center p-8">
+      <span
+        className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"
+        aria-hidden="true"
+      />
+    </div>
+  );
+}
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -61,31 +72,29 @@ function App() {
               <I18nProvider>
                 <AppearanceSync />
                 <Router>
-                  <Suspense fallback={<AppSplash />}>
-                    <Routes>
-                      <Route path="/" element={<SocialMediaLayout><FeedPage /></SocialMediaLayout>} />
-                      <Route path="/login" element={<LoginPage />} />
-                      <Route path="/login-lab" element={<LoginLabPage />} />
-                      <Route path="/signup" element={<SignupPage />} />
-                      <Route path="/profile/:username" element={<SocialMediaLayout><ProfilePage /></SocialMediaLayout>} />
-                      <Route path="/profile/:username/followers" element={<SocialMediaLayout><FollowListPage listType="followers" /></SocialMediaLayout>} />
-                      <Route path="/profile/:username/following" element={<SocialMediaLayout><FollowListPage listType="following" /></SocialMediaLayout>} />
-                      <Route path="/bookmarks" element={<SocialMediaLayout><BookmarksPage /></SocialMediaLayout>} />
-                      <Route path="/lists" element={<SocialMediaLayout><ListsPage /></SocialMediaLayout>} />
-                      <Route path="/lists/:id" element={<SocialMediaLayout><ListPage /></SocialMediaLayout>} />
-                      <Route path="/explore" element={<SocialMediaLayout><ExplorePage /></SocialMediaLayout>} />
-                      <Route path="/settings" element={<SocialMediaLayout><SettingsPage /></SocialMediaLayout>} />
-                      <Route path="/post/:id" element={<SocialMediaLayout><PostPage /></SocialMediaLayout>} />
-                      <Route path="/notifications" element={<SocialMediaLayout><NotificationsPage /></SocialMediaLayout>} />
-                      <Route path="/mentions" element={<SocialMediaLayout><MentionsPage /></SocialMediaLayout>} />
-                      <Route path="/messages" element={<SocialMediaLayout><MessagesPage /></SocialMediaLayout>} />
-                      <Route path="/messages/new" element={<SocialMediaLayout><ConversationPage /></SocialMediaLayout>} />
-                      <Route path="/messages/:conversationId" element={<SocialMediaLayout><ConversationPage /></SocialMediaLayout>} />
-                      <Route path="/search" element={<SocialMediaLayout><SearchPage /></SocialMediaLayout>} />
-                      <Route path="/hashtags/:tag" element={<SocialMediaLayout><HashtagPage /></SocialMediaLayout>} />
-                      <Route path="/admin" element={<SocialMediaLayout><AdminPage /></SocialMediaLayout>} />
-                    </Routes>
-                  </Suspense>
+                  <Routes>
+                    <Route path="/" element={<SocialMediaLayout><Suspense fallback={<RouteFallback />}><FeedPage /></Suspense></SocialMediaLayout>} />
+                    <Route path="/login" element={<Suspense fallback={<AppSplash />}><LoginPage /></Suspense>} />
+                    <Route path="/login-lab" element={<Suspense fallback={<AppSplash />}><LoginLabPage /></Suspense>} />
+                    <Route path="/signup" element={<Suspense fallback={<AppSplash />}><SignupPage /></Suspense>} />
+                    <Route path="/profile/:username" element={<SocialMediaLayout><Suspense fallback={<RouteFallback />}><ProfilePage /></Suspense></SocialMediaLayout>} />
+                    <Route path="/profile/:username/followers" element={<SocialMediaLayout><Suspense fallback={<RouteFallback />}><FollowListPage listType="followers" /></Suspense></SocialMediaLayout>} />
+                    <Route path="/profile/:username/following" element={<SocialMediaLayout><Suspense fallback={<RouteFallback />}><FollowListPage listType="following" /></Suspense></SocialMediaLayout>} />
+                    <Route path="/bookmarks" element={<SocialMediaLayout><Suspense fallback={<RouteFallback />}><BookmarksPage /></Suspense></SocialMediaLayout>} />
+                    <Route path="/lists" element={<SocialMediaLayout><Suspense fallback={<RouteFallback />}><ListsPage /></Suspense></SocialMediaLayout>} />
+                    <Route path="/lists/:id" element={<SocialMediaLayout><Suspense fallback={<RouteFallback />}><ListPage /></Suspense></SocialMediaLayout>} />
+                    <Route path="/explore" element={<SocialMediaLayout><Suspense fallback={<RouteFallback />}><ExplorePage /></Suspense></SocialMediaLayout>} />
+                    <Route path="/settings" element={<SocialMediaLayout><Suspense fallback={<RouteFallback />}><SettingsPage /></Suspense></SocialMediaLayout>} />
+                    <Route path="/post/:id" element={<SocialMediaLayout><Suspense fallback={<RouteFallback />}><PostPage /></Suspense></SocialMediaLayout>} />
+                    <Route path="/notifications" element={<SocialMediaLayout><Suspense fallback={<RouteFallback />}><NotificationsPage /></Suspense></SocialMediaLayout>} />
+                    <Route path="/mentions" element={<SocialMediaLayout><Suspense fallback={<RouteFallback />}><MentionsPage /></Suspense></SocialMediaLayout>} />
+                    <Route path="/messages" element={<SocialMediaLayout><Suspense fallback={<RouteFallback />}><MessagesPage /></Suspense></SocialMediaLayout>} />
+                    <Route path="/messages/new" element={<SocialMediaLayout><Suspense fallback={<RouteFallback />}><ConversationPage /></Suspense></SocialMediaLayout>} />
+                    <Route path="/messages/:conversationId" element={<SocialMediaLayout><Suspense fallback={<RouteFallback />}><ConversationPage /></Suspense></SocialMediaLayout>} />
+                    <Route path="/search" element={<SocialMediaLayout><Suspense fallback={<RouteFallback />}><SearchPage /></Suspense></SocialMediaLayout>} />
+                    <Route path="/hashtags/:tag" element={<SocialMediaLayout><Suspense fallback={<RouteFallback />}><HashtagPage /></Suspense></SocialMediaLayout>} />
+                    <Route path="/admin" element={<SocialMediaLayout><Suspense fallback={<RouteFallback />}><AdminPage /></Suspense></SocialMediaLayout>} />
+                  </Routes>
                 </Router>
               </I18nProvider>
             </NotificationsProvider>

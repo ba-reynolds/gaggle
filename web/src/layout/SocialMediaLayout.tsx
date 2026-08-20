@@ -23,6 +23,7 @@ import { useUser } from "@/contexts/UserContext";
 import { useDmUnreadCount } from "@/hooks/useDms";
 import { notificationsInfiniteOptions } from "@/hooks/useNotifications";
 import { getConversations } from "@/api/dms";
+import { getTrends } from "@/api/search";
 import { useLogoutMutation } from "@/hooks/useAuth";
 import { getMediaUrl } from "@/util/media";
 import { Dialog, DialogTitle } from "@radix-ui/react-dialog";
@@ -74,7 +75,29 @@ export default function SocialMediaLayout({
     if (typeof token !== 'string') return;
     void queryClient.prefetchInfiniteQuery(notificationsInfiniteOptions);
     void queryClient.prefetchQuery({ queryKey: ['dm-conversations'], queryFn: getConversations });
+    // Trends + suggested users power the Explore page and the right rail — warm
+    // them here so hover prefetch for those tabs is a cache hit.
+    void queryClient.prefetchQuery({ queryKey: ['trends'], queryFn: async () => (await getTrends()).data });
   }, [token, queryClient]);
+
+  // Idle warm: after auth, prefetch the most-clicked tab chunks so the first
+  // click never pays the lazy-chunk download cost. Limit to a few to avoid
+  // bandwidth spike; hover covers the rest.
+  useEffect(() => {
+    if (typeof token !== 'string') return;
+    const warm = () => {
+      void import('@/pages/ExplorePage');
+      void import('@/pages/BookmarksPage');
+      void import('@/pages/SearchPage');
+    };
+    const win = window as unknown as { requestIdleCallback?: (cb: () => void) => number; cancelIdleCallback?: (id: number) => void };
+    if (win.requestIdleCallback) {
+      const id = win.requestIdleCallback(warm);
+      return () => win.cancelIdleCallback?.(id);
+    }
+    const t = setTimeout(warm, 2000);
+    return () => clearTimeout(t);
+  }, [token]);
 
   const handleNewPost = () => {
     setIsComposing(false);
@@ -89,19 +112,24 @@ export default function SocialMediaLayout({
   };
 
 
-  const NavItem = ({ icon: Icon, label, to, badge }: { icon: React.ElementType, label: string, to: string, badge?: number }) => (
-    <NavLink
-      to={to}
-      className={({ isActive }) => `
+  const NavItem = ({ icon: Icon, label, to, badge, preload }: { icon: React.ElementType, label: string, to: string, badge?: number, preload?: () => void }) => {
+    const handlePrefetch = () => preload?.();
+    return (
+      <NavLink
+        to={to}
+        onMouseEnter={handlePrefetch}
+        onFocus={handlePrefetch}
+        className={({ isActive }) => `
         flex items-center justify-center lg:justify-start gap-x-4 w-full p-2 rounded-md
         ${isActive ? "bg-foreground/10 hover:bg-foreground/15" : "hover:bg-foreground/5"}
         text-gray-800 dark:text-gray-100
       `}
-    >
-      <span className="relative"><Icon className="h-5 w-5" />{badge ? <span className="absolute -right-2 -top-2 rounded-full bg-destructive px-1.5 text-[10px] leading-4 text-destructive-foreground">{badge > 99 ? '99+' : badge}</span> : null}</span>
-      <span className="hidden lg:inline">{label}</span>
-    </NavLink>
-  );
+      >
+        <span className="relative"><Icon className="h-5 w-5" />{badge ? <span className="absolute -right-2 -top-2 rounded-full bg-destructive px-1.5 text-[10px] leading-4 text-destructive-foreground">{badge > 99 ? '99+' : badge}</span> : null}</span>
+        <span className="hidden lg:inline">{label}</span>
+      </NavLink>
+    );
+  };
 
 
 
@@ -145,16 +173,16 @@ export default function SocialMediaLayout({
 
               {/* Navigation */}
               <nav className="space-y-1">
-                <NavItem icon={Home} label={t("nav.home")} to="/" />
-                <NavItem icon={Compass} label={t("nav.explore")} to="/explore" />
-                <NavItem icon={Bookmark} label={t("nav.bookmarks")} to="/bookmarks" />
-                <NavItem icon={ListIcon} label={t("nav.lists")} to="/lists" />
-                <NavItem icon={MessageSquare} label={t("nav.messages")} to="/messages" badge={dmUnread.data?.data?.unread_count ?? 0} />
-                <NavItem icon={Bell} label={t("nav.notifications")} to="/notifications" badge={unreadCount} />
-                <NavItem icon={AtSign} label={t("nav.mentions")} to="/mentions" />
-                <NavItem icon={User} label={t("nav.profile")} to={`/profile/${user.username}`} />
-                <NavItem icon={Settings} label={t("nav.settings")} to="/settings" />
-                {user.isAdmin && <NavItem icon={Shield} label={t("nav.admin")} to="/admin" />}
+                <NavItem icon={Home} label={t("nav.home")} to="/" preload={() => void import('@/pages/FeedPage')} />
+                <NavItem icon={Compass} label={t("nav.explore")} to="/explore" preload={() => { void import('@/pages/ExplorePage'); void queryClient.prefetchQuery({ queryKey: ['trends'], queryFn: async () => (await getTrends()).data }); }} />
+                <NavItem icon={Bookmark} label={t("nav.bookmarks")} to="/bookmarks" preload={() => void import('@/pages/BookmarksPage')} />
+                <NavItem icon={ListIcon} label={t("nav.lists")} to="/lists" preload={() => void import('@/pages/ListsPage')} />
+                <NavItem icon={MessageSquare} label={t("nav.messages")} to="/messages" badge={dmUnread.data?.data?.unread_count ?? 0} preload={() => { void import('@/pages/MessagesPage'); void queryClient.prefetchQuery({ queryKey: ['dm-conversations'], queryFn: getConversations }); }} />
+                <NavItem icon={Bell} label={t("nav.notifications")} to="/notifications" badge={unreadCount} preload={() => { void import('@/pages/NotificationsPage'); void queryClient.prefetchInfiniteQuery(notificationsInfiniteOptions); }} />
+                <NavItem icon={AtSign} label={t("nav.mentions")} to="/mentions" preload={() => void import('@/pages/MentionsPage')} />
+                <NavItem icon={User} label={t("nav.profile")} to={`/profile/${user.username}`} preload={() => void import('@/pages/ProfilePage')} />
+                <NavItem icon={Settings} label={t("nav.settings")} to="/settings" preload={() => void import('@/pages/SettingsPage')} />
+                {user.isAdmin && <NavItem icon={Shield} label={t("nav.admin")} to="/admin" preload={() => void import('@/pages/AdminPage')} />}
 
 
                 <Button

@@ -510,3 +510,11 @@ Running log of agent-branch merges into main. Newest on top.
     identical, kept the agent branch's ordering.
 - Verified after merge: `go test ./...`, `npm run build`, and `npm run lint`
   all pass (lint: 0 errors).
+
+## 2026-08-20 — agent/instant-tabs
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md` — branch had 22-line standalone section, auto-merge dropped the 3723-line running log. Restored by prepending branch section above main's log (`---` separated), keeping every section newest on top. Amended merge commit `cc9d363`.
+  - `web/src/App.tsx` (per-route Suspense + RouteFallback), `web/src/layout/SocialMediaLayout.tsx` (NavItem preload, idle warm, trends warm) auto-merged cleanly.
+- Migration duplicate check clean (no migrations). Verified `npm run build` + `tsc --noEmit` + `npm run lint` (0 errors, 17 warnings pre-existing) post-merge.
