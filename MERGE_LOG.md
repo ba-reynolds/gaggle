@@ -518,3 +518,13 @@ Running log of agent-branch merges into main. Newest on top.
   - `SUMMARY.md` — branch had 22-line standalone section, auto-merge dropped the 3723-line running log. Restored by prepending branch section above main's log (`---` separated), keeping every section newest on top. Amended merge commit `cc9d363`.
   - `web/src/App.tsx` (per-route Suspense + RouteFallback), `web/src/layout/SocialMediaLayout.tsx` (NavItem preload, idle warm, trends warm) auto-merged cleanly.
 - Migration duplicate check clean (no migrations). Verified `npm run build` + `tsc --noEmit` + `npm run lint` (0 errors, 17 warnings pre-existing) post-merge.
+
+## 2026-08-20 — agent/link-click-middle-open
+
+- Status: **conflicted** (SUMMARY.md clobber; resolved to keep both)
+- Files conflicting, and how resolved:
+  - `SUMMARY.md` — auto-merge kept only the incoming 25-line file (clobber of instant-tabs 3747-line file). Fixed by concatenating: new `link-click-middle-open` section on top (`---` separated) then existing `instant-tabs` + prior sections. Produced 3775-line combined file.
+  - `.opencode/project-notes.md` — identical on both sides; no merge needed.
+- Real code (`web/src/components/ContentLinks.tsx` URL linkify + splitUrlToken + auxClick, `web/src/components/FeedPost.tsx` middle-click onAuxClick) merged cleanly. Seed/bookmark 4× work (000024 trigger drop + Uncategorized filter) on main was orthogonal — no code conflicts.
+- Migration duplicate check clean (`git ls-tree` — no `DUP`). Code `000024` is ours; link branch had no migrations.
+- .superpowers/sdd workspace + plan doc not merged (gitignored/untracked plan).
