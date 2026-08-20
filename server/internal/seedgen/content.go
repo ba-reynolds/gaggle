@@ -146,8 +146,7 @@ func (g *generator) genUsers() {
 			Website:     "https://" + g.f.DomainName(),
 			BirthDate:   g.f.DateRange(g.now.AddDate(-60, 0, 0), g.now.AddDate(-18, 0, 0)),
 		}
-		// Two faker users also private (plus eve above) = 3 total.
-		if i == 7 || i == 19 {
+		if i == 7 || i == 35 || i == 90 {
 			user.IsPrivate = true
 		}
 		g.ds.Users = append(g.ds.Users, user)
@@ -159,6 +158,23 @@ func (g *generator) genUsers() {
 		if i < 4 {
 			g.ds.Users[i].BannerUUID = g.mediaUUID(fmt.Sprintf("banner-%d", i))
 		}
+	}
+}
+
+func (g *generator) genBookmarkCategories() {
+	g.ds.BookmarkCategoryNames = make([][]string, len(g.ds.Users))
+	for u := range g.ds.Users {
+		pool := append([]struct {
+			Name  string
+			Color string
+		}(nil), bookmarkCategoryPool...)
+		g.f.ShuffleAnySlice(pool)
+		n := g.f.Number(5, len(pool))
+		names := make([]string, n)
+		for i := 0; i < n; i++ {
+			names[i] = pool[i].Name
+		}
+		g.ds.BookmarkCategoryNames[u] = names
 	}
 }
 
@@ -349,7 +365,11 @@ func (g *generator) genRelationships() {
 // rows and dataset counts match post-Apply row counts exactly.
 func (g *generator) genEngagement() {
 	seen := make(map[[3]int]bool)
-	addEngagement := func(kind string, postIdx, userIdx int) {
+	used := make(map[int]map[string]bool)
+	for i := range g.ds.Users {
+		used[i] = make(map[string]bool)
+	}
+	addEngagement := func(kind string, postIdx, userIdx int, cat *string) {
 		key := [3]int{kindIdx(kind), postIdx, userIdx}
 		if seen[key] {
 			return
@@ -361,7 +381,10 @@ func (g *generator) genEngagement() {
 		case "repost":
 			g.ds.Reposts = append(g.ds.Reposts, GenEngagement{PostIdx: postIdx, UserIdx: userIdx})
 		case "bookmark":
-			g.ds.Bookmarks = append(g.ds.Bookmarks, GenEngagement{PostIdx: postIdx, UserIdx: userIdx})
+			g.ds.Bookmarks = append(g.ds.Bookmarks, GenEngagement{PostIdx: postIdx, UserIdx: userIdx, CategoryName: cat})
+			if cat != nil {
+				used[userIdx][*cat] = true
+			}
 		}
 	}
 
@@ -372,7 +395,7 @@ func (g *generator) genEngagement() {
 			if u == p.AuthorIdx {
 				continue
 			}
-			addEngagement("like", i, u)
+			addEngagement("like", i, u, nil)
 		}
 		// Reposts on top-level posts only (mirrors the app).
 		if p.ParentIdx == -1 {
@@ -381,7 +404,7 @@ func (g *generator) genEngagement() {
 				if u == p.AuthorIdx {
 					continue
 				}
-				addEngagement("repost", i, u)
+				addEngagement("repost", i, u, nil)
 			}
 		}
 		for b := 0; b < g.f.Number(BookmarkMin, BookmarkMax); b++ {
@@ -389,7 +412,80 @@ func (g *generator) genEngagement() {
 			if u == p.AuthorIdx {
 				continue
 			}
-			addEngagement("bookmark", i, u)
+			if g.f.Number(1, 100) <= 10 {
+				addEngagement("bookmark", i, u, nil)
+				continue
+			}
+			names := g.ds.BookmarkCategoryNames[u]
+			if len(names) == 0 {
+				addEngagement("bookmark", i, u, nil)
+				continue
+			}
+			name := names[g.f.Number(0, len(names)-1)]
+			n := name
+			addEngagement("bookmark", i, u, &n)
+		}
+	}
+	for u, m := range used {
+		var kept []string
+		for _, n := range g.ds.BookmarkCategoryNames[u] {
+			if m[n] {
+				kept = append(kept, n)
+			}
+		}
+		if len(kept) == 0 && len(used[u]) == 0 {
+			// no bookmarks for this user — leave empty.
+		}
+		g.ds.BookmarkCategoryNames[u] = kept
+	}
+	if len(g.ds.BookmarkCategoryNames[0]) > 0 {
+		countByCat := map[string]int{}
+		for _, bm := range g.ds.Bookmarks {
+			if bm.UserIdx == 0 && bm.CategoryName != nil {
+				countByCat[*bm.CategoryName]++
+			}
+		}
+		bookmarkedByAlice := make(map[int]bool)
+		for _, bm := range g.ds.Bookmarks {
+			if bm.UserIdx == 0 {
+				bookmarkedByAlice[bm.PostIdx] = true
+			}
+		}
+		for _, name := range g.ds.BookmarkCategoryNames[0] {
+			for countByCat[name] < 2 {
+				found := -1
+				for attempt := 0; attempt < len(g.ds.Posts)*2; attempt++ {
+					cand := g.f.Number(0, len(g.ds.Posts)-1)
+					if g.ds.Posts[cand].AuthorIdx == 0 {
+						continue
+					}
+					if bookmarkedByAlice[cand] {
+						continue
+					}
+					// Ensure (bookmark, cand, 0) not already in seen (should be covered by map but check set)
+					if seen[[3]int{kindIdx("bookmark"), cand, 0}] {
+						continue
+					}
+					found = cand
+					break
+				}
+				if found == -1 {
+					for idx, p := range g.ds.Posts {
+						if p.AuthorIdx == 0 || bookmarkedByAlice[idx] || seen[[3]int{kindIdx("bookmark"), idx, 0}] {
+							continue
+						}
+						found = idx
+						break
+					}
+				}
+				if found == -1 {
+					break
+				}
+				n := name
+				addEngagement("bookmark", found, 0, &n)
+				bookmarkedByAlice[found] = true
+				countByCat[name]++
+			}
 		}
 	}
 }

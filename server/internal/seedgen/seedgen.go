@@ -202,6 +202,7 @@ func Generate(f *gofakeit.Faker, now time.Time) *Dataset {
 		usedEmails:    make(map[string]bool),
 	}
 	g.genUsers()
+	g.genBookmarkCategories()
 	g.genMedia()
 	g.genPosts()
 	g.genRelationships()
