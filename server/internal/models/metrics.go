@@ -1,6 +1,10 @@
 package models
 
-import "github.com/ba-reynolds/gaggle/internal/metrics"
+import (
+	"time"
+
+	"github.com/ba-reynolds/gaggle/internal/metrics"
+)
 
 // AdminMetrics is the full snapshot served by GET /admin/metrics.
 type AdminMetrics struct {
@@ -37,4 +41,39 @@ type ViewStats struct {
 type DayViewCount struct {
 	Day   string `json:"day"`
 	Views int    `json:"views"`
+}
+
+// HistoryRange selects how far back /admin/metrics/history looks.
+type HistoryRange string
+
+const (
+	History24h HistoryRange = "24h"
+	History7d  HistoryRange = "7d"
+	History30d HistoryRange = "30d"
+)
+
+// Valid reports whether the range is one the API supports.
+func (r HistoryRange) Valid() bool {
+	switch r {
+	case History24h, History7d, History30d:
+		return true
+	}
+	return false
+}
+
+// HostSamplePoint is one (possibly downsampled) row of host history.
+type HostSamplePoint struct {
+	Timestamp   time.Time `json:"ts"`
+	CPUPercent  float64   `json:"cpu_percent"`
+	MemPercent  float64   `json:"mem_percent"`
+	DiskPercent float64   `json:"disk_percent"`
+	Load1       float64   `json:"load1"`
+}
+
+// MetricsHistory is the payload of GET /admin/metrics/history.
+type MetricsHistory struct {
+	Range HistoryRange      `json:"range"`
+	Days  int               `json:"days"`
+	Host  []HostSamplePoint `json:"host"`
+	Views []DayViewCount    `json:"views"`
 }

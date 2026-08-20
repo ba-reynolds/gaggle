@@ -10,6 +10,25 @@
 - New admin store pattern: `Store.Metrics`/`Service.Metrics` (metrics_store.go)
   follows the sub-store wiring (store.go interface + NewStore + service.go
   interface + NewService). If adding another aggregate query, mirror `AppStats`.
+- **Host history sampler**: migration 000023 `host_metrics_samples` is written by
+  `internal/metrics/sampler.go` (started in cmd/api/main.go, first sample
+  immediately then every 60s, hourly prune). Sampling is process-lifetime, NOT
+  request-driven — history accrues 24/7. Retention (both page_views and host
+  samples) = `METRICS_RETENTION_DAYS`, default 90.
+- `GET /admin/metrics/history?range=24h|7d|30d&days=1-90`: host series is
+  downsampled server-side with `date_bin()` in metrics_store.go into fixed
+  buckets (24h → 1-min, 7d → 5-min, 30d → 15-min; AVG per bucket) so long
+  ranges don't ship thousands of points to the browser. `days` is independent of
+  `range` and controls the views series. Frontend: dashboard has a separate
+  14/30/90-day toggle for the views bar chart; views come from *history*, not the
+  live snapshot's `by_day`.
+- shadcn `ui/chart.tsx` (`ChartContainer`, `ChartTooltipContent`, `ChartLegend`)
+  was previously unused across src; recharts ^2.15 + React 19. To theme lines:
+  put `color: "var(--chart-N)"` (note: hyphens, NOT `--color-chart-N`) in the
+  chart `config`, then `stroke="var(--color-<key>)"` on the `<Line/>`/`<Bar/>` —
+  ChartStyle emits `--color-<key>` scoped to the chart wrapper. Use
+  `className="h-64 aspect-auto"` on ChartContainer to override its default
+  `aspect-video`.
 
 ---
 # Snappy UX: optimistic DMs, staleTime, prefetch (agent/snappy-ux)

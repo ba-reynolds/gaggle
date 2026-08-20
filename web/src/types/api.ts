@@ -95,6 +95,24 @@ export interface ViewStats {
   by_day: DayViewCount[];
 }
 
+export type HistoryRange = '24h' | '7d' | '30d';
+export type ViewRange = '14d' | '30d' | '90d';
+
+export interface HostSamplePoint {
+  ts: string;
+  cpu_percent: number;
+  mem_percent: number;
+  disk_percent: number;
+  load1: number;
+}
+
+export interface MetricsHistory {
+  range: HistoryRange;
+  days: number;
+  host: HostSamplePoint[];
+  views: DayViewCount[];
+}
+
 export interface AdminMetrics {
   host: HostMetrics;
   app: AppStats;

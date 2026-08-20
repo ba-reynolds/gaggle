@@ -268,3 +268,58 @@ func (h *AdminHandler) Metrics(w http.ResponseWriter, r *http.Request) {
 	}
 	util.RespondWithJson(w, http.StatusOK, snapshot)
 }
+
+// History godoc
+//
+// @Summary      Admin metrics history
+// @Description  Host-stats and view-traffic time series over a range. Admin only.
+// @Tags         admin
+// @Produce      json
+// @Param        range query string false "Host-history range: 24h, 7d, or 30d" Enums(24h, 7d, 30d) default(24h)
+// @Param        days  query int    false "View-traffic window in days (1-90); defaults to the range width" default(30)
+// @Success      200 {object} models.Envelope{data=models.MetricsHistory}
+// @Failure      400 {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Failure      403 {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Failure      500 {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Security     ApiKeyAuth
+// @Router       /admin/metrics/history [get]
+func (h *AdminHandler) History(w http.ResponseWriter, r *http.Request) {
+	rangeParam := r.URL.Query().Get("range")
+	if rangeParam == "" {
+		rangeParam = string(models.History24h)
+	}
+	hr := models.HistoryRange(rangeParam)
+	if !hr.Valid() {
+		h.respondError(w, apperrors.BadRequestError(`invalid range (use "24h", "7d", or "30d")`, nil))
+		return
+	}
+
+	days := 30
+	if hr == models.History24h {
+		days = 1
+	} else if hr == models.History7d {
+		days = 7
+	}
+	if rawDays := r.URL.Query().Get("days"); rawDays != "" {
+		parsed, err := strconv.Atoi(rawDays)
+		if err != nil || parsed < 1 || parsed > 90 {
+			h.respondError(w, apperrors.BadRequestError("invalid days (use 1-90)", nil))
+			return
+		}
+		days = parsed
+	}
+
+	hostSeries, err := h.service.Metrics.HostSeries(r.Context(), hr)
+	if err != nil {
+		h.respondError(w, err)
+		return
+	}
+
+	views, err := h.service.Metrics.ViewsByDay(r.Context(), days)
+	if err != nil {
+		h.respondError(w, err)
+		return
+	}
+
+	util.RespondWithJson(w, http.StatusOK, models.MetricsHistory{Range: hr, Days: days, Host: hostSeries, Views: views})
+}

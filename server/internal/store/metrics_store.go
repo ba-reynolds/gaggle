@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ba-reynolds/gaggle/internal/apperrors"
+	"github.com/ba-reynolds/gaggle/internal/metrics"
 	"github.com/ba-reynolds/gaggle/internal/models"
 )
 
@@ -113,4 +114,84 @@ func (s *metricsStore) DistinctUsersActiveSince(ctx context.Context, since time.
 		return 0, apperrors.InternalServerError(err)
 	}
 	return count, nil
+}
+
+// InsertHostSample persists one background host-stats sample. Written by the
+// metrics Sampler, not by request handlers.
+func (s *metricsStore) InsertHostSample(ctx context.Context, h *metrics.HostStats) error {
+	_, err := s.db.ExecContext(ctx, `INSERT INTO host_metrics_samples
+		(cpu_percent, mem_total, mem_used, mem_percent, load1, load5, load15, uptime_seconds, disk_total, disk_used, disk_percent)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+		h.CPUPercent, h.MemTotalBytes, h.MemUsedBytes, h.MemPercent,
+		h.Load1, h.Load5, h.Load15, h.UptimeSeconds,
+		h.DiskTotalBytes, h.DiskUsedBytes, h.DiskPercent)
+	if err != nil {
+		return apperrors.InternalServerError(err)
+	}
+	return nil
+}
+
+// historyBucket returns the downsampling bucket and look-back window for a
+// range. Short ranges keep minute resolution; longer ones aggregate so the
+// response stays small.
+func historyBucket(r models.HistoryRange) (bucket, window string, ok bool) {
+	switch r {
+	case models.History24h:
+		return "1 minute", "24 hours", true
+	case models.History7d:
+		return "5 minutes", "7 days", true
+	case models.History30d:
+		return "15 minutes", "30 days", true
+	}
+	return "", "", false
+}
+
+// HostSeries returns host-metric points over the given range, aggregated into
+// fixed time buckets (AVG per bucket). Buckets that had no samples are simply
+// absent from the result.
+func (s *metricsStore) HostSeries(ctx context.Context, r models.HistoryRange) ([]models.HostSamplePoint, error) {
+	bucket, window, ok := historyBucket(r)
+	if !ok {
+		return nil, apperrors.BadRequestError("invalid history range", nil)
+	}
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT date_bin($1::interval, created_at, now()),
+		       AVG(cpu_percent), AVG(mem_percent), AVG(disk_percent), AVG(load1)
+		FROM host_metrics_samples
+		WHERE created_at >= now() - $2::interval
+		GROUP BY 1
+		ORDER BY 1`, bucket, window)
+	if err != nil {
+		return nil, apperrors.InternalServerError(err)
+	}
+	defer rows.Close()
+	result := []models.HostSamplePoint{}
+	for rows.Next() {
+		var p models.HostSamplePoint
+		if err := rows.Scan(&p.Timestamp, &p.CPUPercent, &p.MemPercent, &p.DiskPercent, &p.Load1); err != nil {
+			return nil, apperrors.InternalServerError(err)
+		}
+		result = append(result, p)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, apperrors.InternalServerError(err)
+	}
+	return result, nil
+}
+
+// PrunePageViews deletes view rows older than `cutoff`. Called by the sampler
+// on an hourly loop so the analytics table can't grow unbounded.
+func (s *metricsStore) PrunePageViews(ctx context.Context, cutoff time.Time) error {
+	if _, err := s.db.ExecContext(ctx, `DELETE FROM page_views WHERE created_at < $1`, cutoff); err != nil {
+		return apperrors.InternalServerError(err)
+	}
+	return nil
+}
+
+// PruneHostSamples deletes host sample rows older than `cutoff`.
+func (s *metricsStore) PruneHostSamples(ctx context.Context, cutoff time.Time) error {
+	if _, err := s.db.ExecContext(ctx, `DELETE FROM host_metrics_samples WHERE created_at < $1`, cutoff); err != nil {
+		return apperrors.InternalServerError(err)
+	}
+	return nil
 }

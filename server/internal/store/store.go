@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ba-reynolds/gaggle/internal/models"
+	"github.com/ba-reynolds/gaggle/internal/metrics"
 	"github.com/ba-reynolds/gaggle/pkg/config"
 	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -164,6 +165,10 @@ type Store struct {
 		ViewsByDay(ctx context.Context, days int) ([]models.DayViewCount, error)
 		RequestsLastMinute(ctx context.Context) (int, error)
 		DistinctUsersActiveSince(ctx context.Context, since time.Time) (int, error)
+		InsertHostSample(ctx context.Context, h *metrics.HostStats) error
+		HostSeries(ctx context.Context, r models.HistoryRange) ([]models.HostSamplePoint, error)
+		PrunePageViews(ctx context.Context, cutoff time.Time) error
+		PruneHostSamples(ctx context.Context, cutoff time.Time) error
 	}
 }
 

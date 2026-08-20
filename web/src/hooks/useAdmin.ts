@@ -1,12 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createBadge, deleteBadge, getAdminMetrics, grantBadge, listBadgeCatalog, revokeBadge, updateBadge } from '@/api/admin';
-import type { Badge, CreateBadgePayload } from '@/types/api';
+import { createBadge, deleteBadge, getAdminMetrics, getAdminMetricsHistory, grantBadge, listBadgeCatalog, revokeBadge, updateBadge } from '@/api/admin';
+import type { Badge, CreateBadgePayload, HistoryRange, ViewRange } from '@/types/api';
 
 export const useAdminMetrics = () =>
   useQuery({
     queryKey: ['admin-metrics'],
     queryFn: getAdminMetrics,
     refetchInterval: 5000,
+  });
+
+export const useAdminMetricsHistory = (range: HistoryRange, days: ViewRange) =>
+  useQuery({
+    queryKey: ['admin-metrics-history', range, days],
+    queryFn: () => getAdminMetricsHistory(range, days),
+    refetchInterval: 60_000,
   });
 
 export const useBadgeCatalog = () =>

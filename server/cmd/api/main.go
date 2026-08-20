@@ -5,11 +5,13 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	_ "github.com/ba-reynolds/gaggle/docs" // Imports Swagger docs
 	"github.com/ba-reynolds/gaggle/internal/api"
 	"github.com/ba-reynolds/gaggle/internal/auth"
 	"github.com/ba-reynolds/gaggle/internal/cache"
+	"github.com/ba-reynolds/gaggle/internal/metrics"
 	"github.com/ba-reynolds/gaggle/internal/service"
 	"github.com/ba-reynolds/gaggle/internal/store"
 	"github.com/ba-reynolds/gaggle/pkg/config"
@@ -63,6 +65,14 @@ func main() {
 	authenticator := auth.NewJWTAuthenticator(cfg.AuthConfig)
 	store := store.NewStore(db, log, cfg.AppConfig.MediaDir)
 	svc := service.NewService(store, log, authenticator, cfg.AppConfig)
+
+	// Background metrics sampling: host stats recorded 24/7 so the admin
+	// dashboard has history (not just live values), plus hourly pruning of old
+	// page_views/host_metrics_samples rows. It stops with the process.
+	samplerCtx, stopSampler := context.WithCancel(context.Background())
+	defer stopSampler()
+	sampler := metrics.NewSampler(svc.Metrics, log, cfg.MetricsConfig.HostSampleInterval, time.Duration(cfg.MetricsConfig.RetentionDays)*24*time.Hour)
+	go sampler.Run(samplerCtx)
 
 	router := api.NewRouter(svc, log, rdb, cfg.RedisConfig.RateLimitMaxRequests, cfg.RedisConfig.RateLimitWindow, cfg.AuthConfig.CookieSecure)
 

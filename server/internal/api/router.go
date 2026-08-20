@@ -193,6 +193,7 @@ func NewRouter(
 
 			protected.Route("/admin", func(r chi.Router) {
 				r.Use(mid.AdminOnlyMiddleware)
+				r.Get("/metrics/history", adminHandler.History)
 				r.Get("/metrics", adminHandler.Metrics)
 				r.Get("/badges", adminHandler.ListBadges)
 				r.Post("/badges", adminHandler.CreateBadge)

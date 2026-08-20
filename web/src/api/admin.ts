@@ -1,8 +1,17 @@
 import api from "@/lib/api";
-import type { AdminMetrics, Badge, CreateBadgePayload, Envelope } from "@/types/api";
+import type { AdminMetrics, Badge, CreateBadgePayload, Envelope, HistoryRange, MetricsHistory, ViewRange } from "@/types/api";
 
 export const getAdminMetrics = async (): Promise<Envelope<AdminMetrics>> => {
   const response = await api.get<Envelope<AdminMetrics>>('/admin/metrics');
+  return response.data;
+};
+
+export const VIEW_DAYS: Record<ViewRange, number> = { "14d": 14, "30d": 30, "90d": 90 };
+
+export const getAdminMetricsHistory = async (range: HistoryRange, days: ViewRange): Promise<Envelope<MetricsHistory>> => {
+  const response = await api.get<Envelope<MetricsHistory>>('/admin/metrics/history', {
+    params: { range, days: VIEW_DAYS[days] },
+  });
   return response.data;
 };
 

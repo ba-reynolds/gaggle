@@ -58,6 +58,56 @@ active users, and visit traffic at a glance.
 - `web/src/pages/AdminPage.tsx` (tabs), `web/src/hooks/useAdmin.ts`,
   `web/src/api/admin.ts`, `web/src/types/api.ts`
 
+## Follow-up — history charts (host + views)
+
+Adds time-series history to the metrics dashboard so an admin can see how CPU /
+memory / disk and visit traffic evolved over the last hours or weeks, not just
+the current snapshot.
+
+- **Backend — sampler** (`server/internal/metrics/sampler.go`, new). A
+  process-lifetime goroutine started in `cmd/api/main.go` that records
+  `ReadHostStats()` immediately, then every 60s (`METRICS_HOST_SAMPLE_SECONDS`),
+  and prunes old rows hourly. Sampling runs whether or not anyone is on the
+  dashboard, so history accrues 24/7 from deploy. Retention for BOTH
+  `page_views` and host samples is `METRICS_RETENTION_DAYS` (default 90).
+- **Backend — storage** (migration `000023_create-host-metrics-samples`).
+  New `host_metrics_samples` table mirroring `HostStats` + `created_at`.
+  `metrics_store.go` gained `InsertHostSample`, `PruneHostSamples` (and
+  `PrunePageViews`, which replaced the old hourly cron), plus `HostSeries`:
+  server-side downsampling via `date_bin()` into fixed buckets (24h → 1-min,
+  7d → 5-min, 30d → 15-min; AVG per bucket) so long ranges never ship
+  thousands of points to the browser.
+- **Backend — endpoint** `GET /admin/metrics/history` (admin-only, swagger).
+  Query params are independent: `range=24h|7d|30d` picks the host series width,
+  `days=1-90` (default = range width) the views window. Returns
+  `{range, days, host:[{ts,cpu_percent,mem_percent,disk_percent,load1}], views}`.
+- **Frontend.** `MetricsDashboard` got two recharts charts, both served by the
+  new history endpoint and refetched every 60s (`useAdminMetricsHistory`):
+  a host-usage multi-line chart (CPU/mem/disk %, 24h/7d/30d toggle) and a
+  views-per-day bar chart (14/30/90-day toggle). This is the first real use of
+  `ui/chart.tsx` (`ChartContainer` + shadcn theming); the old pure-CSS
+  "Views — last 14 days" bars were removed. Live "now" cards still poll every
+  5s and are unchanged.
+- **Tests.** `TestAdminMetricsHistory`: 403 for non-admins, 400 for bad
+  `range`/`days`, 200 with a downsampled host point; verifies the `days`
+  override is honored; ages rows past retention and asserts
+  `PruneHostSamples`/`PrunePageViews` delete them. Full `go test ./...` +
+  `go vet ./...` + `npm run build` + `npm run lint` pass.
+
+## Files touched (follow-up)
+
+- `server/cmd/migrate/migrations/000023_create-host-metrics-samples.{up,down}.sql` (new)
+- `server/internal/metrics/sampler.go` (new)
+- `server/internal/store/metrics_store.go` (history + prune queries)
+- `server/internal/models/metrics.go` (`MetricsHistory`, `HostSamplePoint`, ranges)
+- `server/internal/handlers/admin_handler.go` (History endpoint + swagger)
+- `server/internal/api/router.go` (route), `server/internal/service/service.go` (wiring)
+- `server/cmd/api/main.go` (start sampler), `server/pkg/config/config.go` (envs)
+- `server/internal/handlers/integration_test.go` (TestAdminMetricsHistory)
+- `server/docs/*` (regenerated swagger)
+- `web/src/components/MetricsDashboard.tsx`, `web/src/hooks/useAdmin.ts`,
+  `web/src/api/admin.ts`, `web/src/types/api.ts`
+
 ## Reviewer checkpoints
 
 - **"Visits" semantic**: since the app is an SPA, page views are proxied by

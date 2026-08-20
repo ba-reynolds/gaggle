@@ -1,9 +1,41 @@
-import { useAdminMetrics } from "@/hooks/useAdmin";
+import { useState } from "react";
+import { useAdminMetrics, useAdminMetricsHistory } from "@/hooks/useAdmin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import {
+  ChartContainer,
+  ChartLegend,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
 import { Progress } from "@/components/ui/progress";
 import { Loader2, Cpu, HardDrive, Activity, Users, Eye, FileText, Heart, MessageSquare, UserPlus, Gauge } from "lucide-react";
 import type { ElementType } from "react";
-import type { DayViewCount, HostMetrics } from "@/types/api";
+import type { DayViewCount, HistoryRange, HostMetrics, HostSamplePoint, ViewRange } from "@/types/api";
+
+const HOST_RANGES: { value: HistoryRange; label: string }[] = [
+  { value: "24h", label: "24h" },
+  { value: "7d", label: "7d" },
+  { value: "30d", label: "30d" },
+];
+
+const VIEW_RANGES: { value: ViewRange; label: string }[] = [
+  { value: "14d", label: "14 days" },
+  { value: "30d", label: "30 days" },
+  { value: "90d", label: "90 days" },
+];
+
+const usageChartConfig = {
+  cpu_percent: { label: "CPU %", color: "var(--chart-1)" },
+  mem_percent: { label: "Memory %", color: "var(--chart-2)" },
+  disk_percent: { label: "Disk %", color: "var(--chart-3)" },
+} satisfies ChartConfig;
+
+const viewsChartConfig = {
+  views: { label: "Views", color: "var(--chart-5)" },
+} satisfies ChartConfig;
 
 function formatBytes(bytes: number): string {
   if (!bytes) return "0 B";
@@ -59,25 +91,66 @@ function Meter({ label, percent, used, total, icon: Icon }: { label: string; per
   );
 }
 
-function ViewsChart({ byDay }: { byDay: DayViewCount[] }) {
-  const max = byDay.reduce((m, d) => Math.max(m, d.views), 0) || 1;
+function RangeTabs<T extends string>({ options, value, onChange }: { options: { value: T; label: string }[]; value: T; onChange: (v: T) => void }) {
   return (
-    <div className="flex h-32 items-end gap-1.5">
-      {byDay.map((d) => (
-        <div key={d.day} className="group flex flex-1 flex-col items-center gap-1" title={`${d.day}: ${d.views} views`}>
-          <div
-            className="w-full rounded-t bg-primary/25 transition-colors group-hover:bg-primary/50"
-            style={{ height: `${Math.max((d.views / max) * 100, d.views > 0 ? 4 : 1)}%` }}
-          />
-          <span className="text-[10px] text-muted-foreground">{d.day.slice(5)}</span>
-        </div>
-      ))}
-    </div>
+    <Tabs value={value} onValueChange={(v) => onChange(v as T)}>
+      <TabsList>
+        {options.map((o) => (
+          <TabsTrigger key={o.value} value={o.value}>
+            {o.label}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+    </Tabs>
+  );
+}
+
+function UsageChart({ data, range }: { data: HostSamplePoint[]; range: HistoryRange }) {
+  if (data.length === 0) {
+    return <p className="py-10 text-center text-sm text-muted-foreground">No host samples recorded yet.</p>;
+  }
+  const tick = (ts: string) =>
+    range === "24h"
+      ? new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      : new Date(ts).toLocaleDateString([], { month: "short", day: "numeric" });
+  return (
+    <ChartContainer config={usageChartConfig} className="h-64 aspect-auto">
+      <LineChart data={data} margin={{ left: 12, right: 12 }}>
+        <CartesianGrid vertical={false} />
+        <XAxis dataKey="ts" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={tick} />
+        <YAxis domain={[0, 100]} tickLine={false} axisLine={false} tickMargin={8} width={36} />
+        <ChartTooltip content={<ChartTooltipContent />} />
+        <ChartLegend />
+        <Line dataKey="cpu_percent" type="monotone" stroke="var(--color-cpu_percent)" strokeWidth={2} dot={false} />
+        <Line dataKey="mem_percent" type="monotone" stroke="var(--color-mem_percent)" strokeWidth={2} dot={false} />
+        <Line dataKey="disk_percent" type="monotone" stroke="var(--color-disk_percent)" strokeWidth={2} dot={false} />
+      </LineChart>
+    </ChartContainer>
+  );
+}
+
+function ViewsChart({ byDay }: { byDay: DayViewCount[] }) {
+  if (byDay.length === 0) {
+    return <p className="py-10 text-center text-sm text-muted-foreground">No traffic recorded yet.</p>;
+  }
+  return (
+    <ChartContainer config={viewsChartConfig} className="h-64 aspect-auto">
+      <BarChart data={byDay} margin={{ left: 12, right: 12 }}>
+        <CartesianGrid vertical={false} />
+        <XAxis dataKey="day" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(d: string) => d.slice(5)} />
+        <YAxis allowDecimals={false} tickLine={false} axisLine={false} tickMargin={8} width={40} />
+        <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+        <Bar dataKey="views" fill="var(--color-views)" radius={[4, 4, 0, 0]} />
+      </BarChart>
+    </ChartContainer>
   );
 }
 
 export default function MetricsDashboard() {
+  const [hostRange, setHostRange] = useState<HistoryRange>("24h");
+  const [viewRange, setViewRange] = useState<ViewRange>("14d");
   const { data, isLoading, isError } = useAdminMetrics();
+  const history = useAdminMetricsHistory(hostRange, viewRange);
 
   if (isLoading) {
     return <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin" /></div>;
@@ -90,6 +163,7 @@ export default function MetricsDashboard() {
 
   const host: HostMetrics = metrics.host;
   const { app, active, views } = metrics;
+  const historyData = history.data?.data;
 
   return (
     <div className="space-y-6">
@@ -122,6 +196,26 @@ export default function MetricsDashboard() {
       </section>
 
       <section>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-primary">
+            <Gauge className="h-5 w-5" /> Host usage over time
+          </h2>
+          <RangeTabs options={HOST_RANGES} value={hostRange} onChange={setHostRange} />
+        </div>
+        <Card>
+          <CardContent className="pt-4">
+            {history.isError ? (
+              <p className="py-10 text-center text-sm text-muted-foreground">Failed to load host history.</p>
+            ) : history.isLoading ? (
+              <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin" /></div>
+            ) : (
+              <UsageChart data={historyData?.host ?? []} range={hostRange} />
+            )}
+          </CardContent>
+        </Card>
+      </section>
+
+      <section>
         <h2 className="mb-3 text-lg font-semibold text-primary">Platform</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard icon={Users} label="Users" value={app.users.toLocaleString()} sub={`+${app.signups_24h} in 24h`} />
@@ -135,14 +229,17 @@ export default function MetricsDashboard() {
       </section>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base text-primary">Views — last 14 days</CardTitle>
+        <CardHeader className="flex flex-wrap items-center justify-between gap-2">
+          <CardTitle className="text-base text-primary">Views</CardTitle>
+          <RangeTabs options={VIEW_RANGES} value={viewRange} onChange={setViewRange} />
         </CardHeader>
-        <CardContent>
-          {views.by_day.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No traffic recorded yet.</p>
+        <CardContent className="pt-0">
+          {history.isError ? (
+            <p className="py-10 text-center text-sm text-muted-foreground">Failed to load view history.</p>
+          ) : history.isLoading ? (
+            <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin" /></div>
           ) : (
-            <ViewsChart byDay={views.by_day} />
+            <ViewsChart byDay={historyData?.views ?? []} />
           )}
         </CardContent>
       </Card>
