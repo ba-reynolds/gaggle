@@ -1,4 +1,4 @@
-.PHONY: dev dev-stop dev-logs seed migrate-up reset-db test test-backend test-coverage test-frontend lint-frontend swag build build-backend build-frontend help
+.PHONY: dev dev-stop dev-logs seed migrate-up reset-db test test-backend test-coverage test-frontend lint-frontend swag build build-backend build-frontend proj-dev proj-stop proj-logs proj-ps proj-seed help
 
 # ---- One-shot stack ----
 
@@ -15,6 +15,29 @@ dev:
 # Stop (and remove) containers; keeps named volumes.
 dev-stop:
 	docker compose down
+
+# ---- Isolated per-worktree preview stack ----
+# Run from INSIDE an agent-branch/<slug> worktree. The slug is derived from
+# the directory name, so each worktree gets its own project (gaggle-<slug>)
+# with private containers, volumes, and ports — see scripts/proj-up.sh.
+# Do NOT use these from the repo root (that would preview the master stack).
+
+PROJ := gaggle-$(notdir $(CURDIR))
+
+proj-dev:
+	@scripts/proj-up.sh $(PROJ)
+
+proj-stop:
+	docker compose -p $(PROJ) down
+
+proj-logs:
+	docker compose -p $(PROJ) logs -f
+
+proj-ps:
+	docker compose -p $(PROJ) ps
+
+proj-seed:
+	docker compose -p $(PROJ) run --rm --no-deps --entrypoint /app/seed api
 
 # Stream logs from all services.
 dev-logs:

@@ -1,3 +1,23 @@
+## Per-worktree isolated preview stacks (proj-dev)
+- Every agent worktree can now run its OWN full stack on private ports + volumes:
+  `make proj-dev` inside `agent-branch/<slug>/` → project `gaggle-<slug>`
+  (`docker compose -p`), fresh DB (its own `postgres_data` volume + its own
+  migration run — defuses the parallel-branch migration collision at dev time),
+  and prints `Frontend: http://localhost:<port>`. Agents report that port back
+  (see `.opencode/commands/new-task.md`).
+- `compose.yaml` no longer sets `container_name` on services; api host port is
+  `${API_PORT:-2021}`; `go_mod_cache`/`npm_cache` volumes have explicit `name:`
+  so builds share caches across projects while DB/redis/media data is isolated.
+- Ports are hash-derived and PERSISTED in `~/.local/state/gaggle-proj/<project>.env`
+  (by `scripts/proj-up.sh`), so re-running `make proj-dev` keeps the SAME ports —
+  a reported `http://localhost:<port>` stays valid. Ports come from `ss` probing;
+  most conflicts bump +1.
+- ALWAYS use `make proj-dev` in a worktree, never `make dev` (that still targets
+  the shared `gaggle` project and clobbers everyone). Tear down merged previews
+  with `docker compose -p gaggle-<slug> down` (see `.opencode/commands/merge-all.md`).
+  The main `make dev` stack and `gaggle-*` container names are unchanged for the
+  shared default.
+
 ## Snappy UX: optimistic DMs, staleTime, prefetch (agent/snappy-ux)
 - **`onMutate` is NOT a valid `mutate()` option** — `MutateOptions` only supports
   onSuccess/onError/onSettled. To do optimistic UI on a mutation, either put it

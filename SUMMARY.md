@@ -1,3 +1,34 @@
+# SUMMARY — per-worktree isolated preview stacks
+
+Lets each agent worktree run its OWN copy of the whole stack (db + redis + api
++ web) on private ports and its own volumes, so you can connect to one agent's
+build without clobbering the shared dev stack or other agents' previews.
+
+## What was changed and why
+
+- Agents used to be forced through ONE shared compose stack: `make dev` from
+  any worktree replaced the same `gaggle-*` containers and shared Postgres
+  data, so you couldn't tell which build you were looking at.
+- **Per-worktree preview (the fix).** `compose.yaml` stopped hard-coding
+  `container_name` on every service and the API's `2021:2021` port (now
+  `${API_PORT:-2021}`) so docker compose `-p <project>` can namespace a whole
+  stack per branch. Caches (`go_mod_cache`, `npm_cache`) got explicit names so
+  branches share build caches while DB/redis/media data stays isolated.
+- `scripts/proj-up.sh` + `make proj-dev` (run INSIDE `agent-branch/<slug>/`)
+  derive a project `gaggle-<slug>`, allocate hash-based ports persisted in
+  `~/.local/state/gaggle-proj/<project>.env` (stable across re-runs), and start
+  the stack with `docker compose -p ... up --build -d --wait`, printing
+  `Frontend: http://localhost:<port>`. `proj-stop/proj-logs/proj-ps/proj-seed`
+  manage it.
+- **Agent loop:** the project's `.opencode/commands/new-task.md` (a
+  project-scoped override of the global one) tells agents to stand up their own
+  preview and report the frontend port back; `.opencode/commands/status.md`
+  lists preview URLs; `.opencode/commands/merge-all.md` tears previews down on
+  merge.
+- Verification: `docker compose -p` dry-ran on a copy, Makefile targets
+  reached, `proj-up.sh` logic exercised.
+
+---
 # SUMMARY — snappy-ux
 
 Makes the web app feel immediate: sent messages appear instantly
