@@ -402,11 +402,13 @@ func (h *PostEngagementHandler) ListBookmarkCategories(w http.ResponseWriter, r 
 	// Frontend reads both envelope.uncategorized_count and data.uncategorized_count.
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(map[string]any{
-		"data":                 categories,
-		"uncategorized_count":  uncategorizedCount,
-		"error":                nil,
-	})
+	if err := json.NewEncoder(w).Encode(map[string]any{
+		"data":                categories,
+		"uncategorized_count": uncategorizedCount,
+		"error":               nil,
+	}); err != nil {
+		h.logger.Error("failed to encode bookmark categories", "error", err)
+	}
 }
 
 // DeleteBookmarkCategory godoc

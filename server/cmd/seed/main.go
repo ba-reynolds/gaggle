@@ -55,19 +55,26 @@ func main() {
 	} else {
 		fmt.Println("🔄 Force re-seed: truncating existing data...")
 		if _, err := st.DB.ExecContext(ctx, `TRUNCATE users CASCADE`); err != nil {
-			fmt.Printf("warn: truncate users: %v\n", err)
+			log.Warn("truncate users failed", "error", err)
 		}
 		if _, err := st.DB.ExecContext(ctx, `TRUNCATE badges CASCADE`); err != nil {
-			// badges has no FK to users; ensure leftover assigned badges are cleared
+			log.Warn("truncate badges failed", "error", err)
 		}
 		if _, err := st.DB.ExecContext(ctx, `TRUNCATE media CASCADE`); err != nil {
+			log.Warn("truncate media failed", "error", err)
 		}
 		if _, err := st.DB.ExecContext(ctx, `TRUNCATE lists CASCADE`); err != nil {
+			log.Warn("truncate lists failed", "error", err)
 		}
 		if _, err := st.DB.ExecContext(ctx, `TRUNCATE conversations CASCADE`); err != nil {
+			log.Warn("truncate conversations failed", "error", err)
 		}
-		if err := os.RemoveAll(cfg.AppConfig.MediaDir); err != nil {
-			fmt.Printf("warn: remove media dir: %v\n", err)
+		if cfg.AppConfig.MediaDir == "" || cfg.AppConfig.MediaDir == "/" {
+			log.Warn("skipping media dir removal: unsafe MediaDir", "mediaDir", cfg.AppConfig.MediaDir)
+		} else {
+			if err := os.RemoveAll(cfg.AppConfig.MediaDir); err != nil {
+				log.Warn("remove media dir failed", "error", err)
+			}
 		}
 		if err := os.MkdirAll(cfg.AppConfig.MediaDir, 0o755); err != nil {
 			panic(fmt.Sprintf("failed to recreate media dir: %v", err))

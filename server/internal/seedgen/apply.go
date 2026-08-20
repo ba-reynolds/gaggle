@@ -287,7 +287,6 @@ func applyPolls(ctx context.Context, st *store.Store, log *slog.Logger, ds *Data
 // genEngagement/Task 2). Returns userIdx -> categoryName -> categoryID, handling
 // AlreadyExists on DBs that still had the trigger's "General" row.
 func applyBookmarkCategories(ctx context.Context, st *store.Store, log *slog.Logger, ds *Dataset) (map[int]map[string]int, error) {
-	_ = log
 	colorByName := map[string]string{}
 	for _, c := range bookmarkCategoryPool {
 		colorByName[c.Name] = c.Color
