@@ -62,12 +62,15 @@ EOF
 
 # Verifies the freshly built web image carries readable fixed-name assets
 # BEFORE anything is put live, so a broken image can never serve the box.
-# compose resolves the image name via `config --images` rather than assuming
-# the default <project>-web tag.
+# The image tag is pinned explicitly in compose.yaml (`gaggle-web`); this
+# resolves it via `config --images` rather than assuming the default
+# <project>-web tag. The tag may be printed bare (`gaggle-web`) or prefixed
+# with the service name (`web=gaggle-web`) depending on the compose version,
+# so accept both.
 verify_web_image() {
   cd "$DEPLOY_DIR"
   local img
-  img=$(docker compose -f compose.yaml -f compose.prod.yaml config --images | sed -n 's/^web=//p' | head -1)
+  img=$(docker compose -f compose.yaml -f compose.prod.yaml config --images | grep -E 'gaggle-web(:latest)?$' | sed -E 's/^.*=//' | head -1)
   if [[ -z "$img" ]]; then
     echo ">> could not resolve the web image name (compose config --images)" >&2
     return 1

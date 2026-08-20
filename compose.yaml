@@ -39,6 +39,7 @@ services:
       retries: 10
 
   api:
+    image: gaggle-api
     build:
       context: ./server
     restart: unless-stopped
@@ -93,6 +94,7 @@ services:
       start_period: 10s
 
   web:
+    image: gaggle-web
     build:
       context: ./web
       args:
