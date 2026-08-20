@@ -28,6 +28,11 @@ RUN apk add --no-cache openssl && rm -f /etc/nginx/conf.d/default.conf
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 COPY --from=build /app/dist /usr/share/nginx/html
+# Normalize permissions: the deploy box can check out files with restrictive
+# modes (see deploy/apply.sh checkout), and vite copies public/* verbatim, so
+# a 600 root asset would make nginx's worker 403 it. Guarantee every file is
+# world-readable + every dir traversable regardless of the build context.
+RUN chmod -R a+rX /usr/share/nginx/html
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 EXPOSE 80 443

@@ -38,6 +38,13 @@ install_git_access() {
 }
 
 checkout() {
+  # The script runs under umask 077 (so the SSH key only when written stays
+  # private), but that would leak into the checkout: git creates files with
+  # `0666 & ~umask`, turning every web/public asset into a 600 file. Vite
+  # copies public/ into dist/ verbatim and the image bakes those modes in →
+  # nginx's worker can't read them and 403s the fixed-name assets. The key
+  # already gets an explicit chmod 600, so reset to a sane umask here.
+  umask 022
   if [[ ! -d "$DEPLOY_DIR/.git" ]]; then
     mkdir -p "$DEPLOY_DIR"
     git clone "$GIT_URL" "$DEPLOY_DIR"
@@ -76,11 +83,14 @@ verify_web_image() {
     return 1
   fi
   echo ">> pre-flight: asserting fixed-name assets in $img"
-  docker run --rm --entrypoint /bin/sh "$img" -c '
+  # Run as the nginx worker, NOT root: [ -r ] as root silently passes for 600
+  # root-owned files, which is exactly how a broken image kept sailing to the
+  # live box. Checking as uid 101 sees what nginx actually sees.
+  docker run --rm --user nginx --entrypoint /bin/sh "$img" -c '
     for f in /usr/share/nginx/html/favicon.ico /usr/share/nginx/html/gaggle-goose.png; do
       [ -f "$f" ] || { echo "MISSING $f"; exit 1; }
       [ -s "$f" ] || { echo "EMPTY $f"; exit 1; }
-      [ -r "$f" ] || { echo "UNREADABLE $f"; exit 1; }
+      [ -r "$f" ] || { echo "UNREADABLE (worker uid) $f"; exit 1; }
     done
     ls -l /usr/share/nginx/html/favicon.ico /usr/share/nginx/html/gaggle-goose.png
   ' || {
