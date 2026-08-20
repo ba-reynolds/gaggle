@@ -1,3 +1,24 @@
+## Seeding audit (agent/research-db-seeding)
+- **`alice` is NOT actually an admin on a freshly migrated+seeded DB.** Migration
+  `000013_add_user_badges.up.sql:37` does `UPDATE users SET is_admin = TRUE WHERE
+  username = 'alice'`, but migrations run at api boot BEFORE any seed ever runs,
+  so the UPDATE matches 0 rows. `cmd/seed` (the only thing that creates alice)
+  never sets `IsAdmin`. alice only became admin on DBs that were seeded BEFORE
+  migration 000013 landed. This contradicts the README's "alice is the seeded
+  admin". Fix belongs in the seed (set `alice.IsAdmin = true`), not a migration.
+- **Seed follow/block pairs are hardcoded as integer user IDs**
+  (`cmd/seed/main.go:366-434`, `{1,2},{1,3},…`, block 1→5). SAFE only when the
+  seed is the first writer on a fresh DB (alice=user_id 1, eve=5). Any
+  pre-existing signups shift the SERIAL ids and the relationships silently attach
+  to the wrong users.
+- `cmd/seed` writes **4 orphan media rows** (UUID rows, no file on disk, attached
+  to no post/profile) — `GET /media/{uuid}` for them fails at the fs read.
+- The much richer seed (seedgen/gofakeit/SEED_ON_START backdating) is still only
+  a design doc: `docs/superpowers/specs/2026-08-19-seed-strategy-design.md`.
+  `post_store.go` Create/CreateQuotedPost still omit `created_at` — the chosen
+  COALESCE backdate fix from that spec was NOT implemented.
+
+---
 ## Snappy UX: optimistic DMs, staleTime, prefetch (agent/snappy-ux)
 - **`onMutate` is NOT a valid `mutate()` option** — `MutateOptions` only supports
   onSuccess/onError/onSettled. To do optimistic UI on a mutation, either put it

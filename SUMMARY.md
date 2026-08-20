@@ -1,3 +1,75 @@
+# SUMMARY — research-db-seeding
+
+Audit of how DB seeding / dummy-data creation works today. **Research only — no
+code changed.** Full report was delivered to the coordinator in the session
+reply; this section is the permanent record.
+
+## How seeding works right now
+
+- **One seed binary**: `server/cmd/seed/main.go`, built into the api image as
+  `/app/seed` (`server/Dockerfile:15`) and run **manually** via `make seed`
+  (`docker compose run --rm --no-deps --entrypoint /app/seed api`,
+  `Makefile:26-27`). Nothing auto-runs it — `docker-entrypoint.sh` only
+  migrates then `exec /app/api`; `deploy/apply.sh` (prod) never seeds either,
+  which is why a fresh prod EC2 comes up with an empty DB.
+- **Idempotency**: guard is `alice@example.com` existing
+  (`cmd/seed/main.go:51-54`) — every run after the first exits fast.
+- **What the current seed actually creates** (8 users alice…henry, all
+  `password123`; honestly small):
+  - 8 users via `store.Users.Create` (default profile: display_name=username).
+  - Rich profiles (display names/bios/locations/websites/random birthdates)
+    via `UpdateUserProfile`.
+  - Posts: loop over 16 templates **breaks at `len(users)` = 8**, so only ~8
+    top-level posts + 8 replies (`ParentID` set), all `public`, hashtags synced
+    by hand (store-level call, no service). No created_at backdating.
+  - Follows: 16 **hardcoded integer user-ID pairs** `{1,2}…` + one block
+    (1→5). Fragile — see Reviewer double-checks.
+  - Media: **4 orphan rows** (random UUID, no file written, attached to
+    nothing; `GET /media/{uuid}` will 404 at the fs read).
+  - **NOT seeded at all**: likes/reposts/bookmarks/engagement counters, polls
+    + votes, DMs/conversations, lists + memberships, badge grants, quotes,
+    mention resolution, notifications. (Count columns like followers/likes/
+    reposts/bookmarks/replies are maintained by DB triggers — `maintain_likes_count`
+    etc. — so raw engagement writes would keep counters consistent.)
+- **Admin**: README claims "alice is the seeded admin", but nothing in the
+  seed sets it. `000013_add_user_badges.up.sql:37` does
+  `UPDATE users SET is_admin=TRUE WHERE username='alice'` **at migration time
+  (before alice exists) → 0 rows**. alice is admin only on DBs seeded before
+  that migration shipped.
+- **The real plan exists but is unimplemented**:
+  `docs/superpowers/specs/2026-08-19-seed-strategy-design.md` + summary
+  section `# SUMMARY — seed-data-strategy` (spec-only branch). Chosen: a
+  `server/internal/seedgen` package (deterministic faker dataset — 30 users,
+  ~400 posts spread over 28d, engagement, DMs, lists, badges, generated-PNG
+  media) + auto-seed via `SEED_ON_START` in `docker-entrypoint.sh` +
+  `compose.yaml`, and a future `cmd/simulate` cron seam. That branch was
+  merged; **the code was never written** (no `seedgen` dir, no `SEED_ON_START`
+  anywhere, no `gofakeit` dep). The designed `post_store.go` COALESCE
+  `created_at` fix is likewise absent (`Create`/`CreateQuotedPost` still omit
+  the column).
+
+## Files touched (this branch)
+
+- `.opencode/project-notes.md` — prepended "Seeding audit" notes.
+- `SUMMARY.md` — prepended this section. All existing sections kept intact.
+
+## Verification
+
+- Research-only: `go build ./...` and `go vet ./cmd/...` (tools container)
+  both clean — seed binary compiles as-is.
+
+## Reviewer double-checks
+
+- **alice-admin gap**: confirm the migration-ordering analysis, and decide
+  where the fix lives (seed `IsAdmin=true` is the clean spot — migrations
+  can't see users that don't exist at migration time).
+- **Hardcoded IDs**: `followPairs`/block `{1,5}` are only correct on a virgin
+  DB. Something to fix when the seed gets rewritten.
+- Whether the untouched "seed-data-strategy" design is the spec we implement
+  next — its backdating needs the `post_store.Create` COALESCE change first.
+
+---
+
 # SUMMARY — snappy-ux
 
 Makes the web app feel immediate: sent messages appear instantly
