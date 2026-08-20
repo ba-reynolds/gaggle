@@ -5,6 +5,9 @@
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gaggle</title>
+    <style>
+      @keyframes gaggle-spin { to { transform: rotate(360deg); } }
+    </style>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -13,7 +16,22 @@
     />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div
+        style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;background:#ffffff;color:#18181b;font-family:inherit"
+      >
+        <img
+          src="/gaggle-goose.png"
+          alt="Gaggle"
+          style="width:4rem;height:4rem;border-radius:9999px"
+        />
+        <span style="font-size:1.5rem;font-weight:700">Gaggle</span>
+        <span
+          style="width:2rem;height:2rem;border:2px solid #18181b;border-top-color:transparent;border-radius:9999px;animation:gaggle-spin 1s linear infinite"
+          aria-hidden="true"
+        ></span>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
