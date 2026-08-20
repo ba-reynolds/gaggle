@@ -60,6 +60,32 @@ HTTPS_DOMAIN=${GAGGLE_HTTPS_DOMAIN:-}
 EOF
 }
 
+# Verifies the freshly built web image carries readable fixed-name assets
+# BEFORE anything is put live, so a broken image can never serve the box.
+# compose resolves the image name via `config --images` rather than assuming
+# the default <project>-web tag.
+verify_web_image() {
+  cd "$DEPLOY_DIR"
+  local img
+  img=$(docker compose -f compose.yaml -f compose.prod.yaml config --images | sed -n 's/^web=//p' | head -1)
+  if [[ -z "$img" ]]; then
+    echo ">> could not resolve the web image name (compose config --images)" >&2
+    return 1
+  fi
+  echo ">> pre-flight: asserting fixed-name assets in $img"
+  docker run --rm --entrypoint /bin/sh "$img" -c '
+    for f in /usr/share/nginx/html/favicon.ico /usr/share/nginx/html/gaggle-goose.png; do
+      [ -f "$f" ] || { echo "MISSING $f"; exit 1; }
+      [ -s "$f" ] || { echo "EMPTY $f"; exit 1; }
+      [ -r "$f" ] || { echo "UNREADABLE $f"; exit 1; }
+    done
+    ls -l /usr/share/nginx/html/favicon.ico /usr/share/nginx/html/gaggle-goose.png
+  ' || {
+    echo ">> web image static-asset pre-flight FAILED (see above) — aborting before publish" >&2
+    return 1
+  }
+}
+
 deploy() {
   cd "$DEPLOY_DIR"
   # --no-cache: web/public assets (favicon.ico, gaggle-goose.png) keep FIXED
@@ -68,29 +94,47 @@ deploy() {
   # favicon + sidebar logo with no code change. Rebuilding uncached guarantees
   # the baked artifacts match this checkout every deploy (costs ~1-2 extra min).
   docker compose -f compose.yaml -f compose.prod.yaml build --no-cache
-  # --wait blocks until every service reports healthy (or the 5min timeout
+
+  # A rebuilt image only helps if the container that serves it is actually
+  # REPLACED: `compose up -d` does NOT recreate a container whose config hash
+  # is unchanged (proven on this stack: rebuilding web to a new digest left
+  # the running container serving the old image), so a --no-cache rebuild of
+  # the same tag can leave the old (busted) web/api container in charge —
+  # exactly how the live box kept 403ing favicon.ico/gaggle-goose.png across
+  # redeploys. --force-recreate makes the freshly built image what goes live
+  # every time. db/redis are recreated too (they're dependencies), but their
+  # images never change and data lives in named volumes, so it's just a
+  # gated restart.
+  verify_web_image || return 1
+
+  # --wait blocks until every service reports healthy (or the --wait-timeout
   # hits), so the health check below never races a just-booted container.
-  # Both api and web carry healthchecks; services without one (certbot) are
-  # considered ready once running.
-  docker compose -f compose.yaml -f compose.prod.yaml up -d --wait --wait-timeout 300
+  # The web healthcheck now also probes the static assets, so a broken dist is
+  # caught here (container stays unhealthy → up --wait fails) rather than at
+  # the gate after the new container is already live.
+  docker compose -f compose.yaml -f compose.prod.yaml up -d --wait --wait-timeout 300 --force-recreate api web
 }
 
 health_check() {
-  docker compose -f compose.yaml -f compose.prod.yaml ps --status running api web > /dev/null
+  docker compose -f compose.yaml -f compose.prod.yaml ps --status running api web > /dev/null || return 1
   # Final gate over the real production path: web is already healthy (up
-  # --wait above), so this HTTPS probe must succeed — a failure here means a
-  # genuinely broken TLS/SPA/proxy, not a container that just hadn't booted.
+  # --wait above), so these probes must succeed — a failure here means a
+  # genuinely broken proxy/SPA, not a container that just hadn't booted.
   # TLS is self-signed until a real cert is issued, so curl skips
-  # verification for the HTTPS health check.
-  curl -kfsS https://localhost/swagger/doc.json > /dev/null
-  # Fixed-name public assets must actually be served (not 403 from a stale
-  # layer). The SPA fallback would return 200 for a MISSING file, so assert the
-  # real HTTP status via -f (fails on >= 400).
-  for p in /favicon.ico /gaggle-goose.png; do
-    if ! curl -kfsS -o /dev/null "https://localhost$p"; then
-      echo ">> static asset $p is not being served (nginx 403/404?)" >&2
-      exit 1
-    fi
+  # verification for the HTTPS probes.
+  curl -kfsS https://localhost/swagger/doc.json > /dev/null || return 1
+  # Fixed-name public assets must actually be served on BOTH listeners: users
+  # browse plain http://<ip> (and the deploy gateway curls https). The SPA
+  # fallback would return 200 for a MISSING file, so assert the real HTTP
+  # status via -f (fails on >= 400 — catches the nginx 403 this box keeps
+  # serving).
+  for proto in http https; do
+    for p in /favicon.ico /gaggle-goose.png; do
+      if ! curl -kfsS -o /dev/null "$proto://localhost$p"; then
+        echo ">> static asset $p is not being served over $proto (nginx 403/404?)" >&2
+        return 1
+      fi
+    done
   done
 }
 
@@ -101,7 +145,12 @@ main() {
   deploy
   if ! health_check; then
     echo ">> health check FAILED" >&2
-    docker compose -f compose.yaml -f compose.prod.yaml logs --tail=100 api || true
+    echo ">> container list:" >&2
+    docker compose -f compose.yaml -f compose.prod.yaml ps >&2 || true
+    echo ">> web container /usr/share/nginx/html listing:" >&2
+    docker compose -f compose.yaml -f compose.prod.yaml exec -T web sh -c 'ls -la /usr/share/nginx/html/ | head -40' >&2 || true
+    echo ">> api + web logs (tail 100):" >&2
+    docker compose -f compose.yaml -f compose.prod.yaml logs --tail=100 api web >&2 || true
     exit 1
   fi
   echo ">> deployed $TARGET_SHA OK"

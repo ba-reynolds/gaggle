@@ -1,3 +1,74 @@
+# SUMMARY — fix-goose-403-deploy
+
+Fixes the live box (http://100.31.118.41/) serving **403** for the
+fixed-name public assets (`/gaggle-goose.png`, `/favicon.ico`) and the
+GitHub Actions deploy failing at the very end while "changes still got
+published".
+
+## What was changed and why
+
+- **The GHA "error at the end" was the deploy health-check gate, and it was
+  correct to fire.** The 2026-08-20T04:35Z run (111845e) shows: containers all
+  *Healthy* after `up --wait`, then `>> static asset /favicon.ico is not being
+  served (nginx 403/404?)` → exit 1. Because the gate runs AFTER `up`, the new
+  containers are already live when it fails → deploy red but changes published.
+  Root cause of the failing probe: the box's web container genuinely 403s both
+  fixed-name files (confirmed by probing the live box: `/gaggle-goose.png` and
+  `/favicon.ico` → 403; missing files → 200 via the SPA fallback; `/assets/*`
+  → 200). A 403 with the fallback present means the file **exists but is
+  unreadable by nginx** (EACCES) — a stale/broken container-layer state.
+- **The same tree builds fine locally** — a fresh build of 111845e serves both
+  files 200. So the repo was never at fault; the deployed container was.
+- **Why redeploys never cured it:** empirically proven on the preview stack —
+  `docker compose up -d` does NOT recreate a service container when its image
+  is rebuilt to a new digest under the same tag (config hash unchanged). The
+  running (broken) web container thus survives every `--no-cache` rebuild. The
+  previous session's manual cure (`up -d --force-recreate web`, saw
+  project-notes) was never automated into the deploy path.
+
+## The fix (all in the deploy path, verified on the isolated preview stack)
+
+1. **`deploy/apply.sh` `up` now `--force-recreate api web`** — the freshly
+   built image is guaranteed to be what actually serves, every deploy.
+   `db`/`redis` get recreated too (compose propagates to dependencies) but
+   their images never change and data lives in named volumes, so it's a
+   wait-gated restart.
+2. **New `verify_web_image()` pre-flight** after `docker compose build`: runs
+   the built web image and asserts `favicon.ico` + `gaggle-goose.png` exist,
+   are non-empty, and are readable. A broken image now **aborts the deploy
+   BEFORE `up`**, so it can never publish a broken web and the previous good
+   stack keeps serving.
+3. **`health_check()` probes both files on BOTH `http://` and `https://`** —
+   users browse plain `http://<ip>`; the old gate only probed `https`.
+4. **On health-check failure it dumps diagnostics into the GHA log**: `compose
+   ps`, `ls -la /usr/share/nginx/html/` inside the web container, and
+   `api`/`web` logs — so the box's real file state finally becomes visible
+   (the previous run had no channel to see it).
+5. **`compose.yaml` web healthcheck now also fetches `/favicon.ico` and
+   `/gaggle-goose.png`** (busybox wget exits non-zero on 403/404). A
+   static-asset-broken image now fails `up --wait` (container unhealthy)
+   instead of only tripping the external gate.
+
+## Files touched
+
+- `deploy/apply.sh` (force-recreate + pre-flight verify + two-protocol gate +
+  failure diagnostics)
+- `compose.yaml` (web healthcheck adds the two fixed-name assets)
+
+## Reviewer double-check
+
+- After merge + next deploy: the deploy run should be GREEN, and
+  `http://100.31.118.41/gaggle-goose.png` + `/favicon.ico` return 200. The
+  pre-flight prints the two files' `ls -l`.
+- If it still fails, the new diagnostics block will show the box's real file
+  modes in the GHA log — that's the intended next step, not a code change.
+- Backend (`go vet`/`go test`) and frontend (`npm run lint`/`npm run build`)
+  all pass; the isolated preview stack (`gaggle-fix-goose-403-deploy`)
+  reported all containers Healthy including the web container under the new
+  healthcheck.
+
+---
+
 # SUMMARY — per-worktree isolated preview stacks
 
 Lets each agent worktree run its OWN copy of the whole stack (db + redis + api
