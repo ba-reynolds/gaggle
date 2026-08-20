@@ -25,15 +25,24 @@ func NewAuthHandler(service *service.Service, logger *slog.Logger, cookieSecure 
 	}
 }
 
-// setRefreshTokenCookie writes the refresh-token cookie. Secure is only enabled
-// behind TLS (browsers reject Secure cookies over http://localhost).
-func (h *AuthHandler) setRefreshTokenCookie(w http.ResponseWriter, token string) {
+// setRefreshTokenCookie writes the refresh-token cookie. The Secure attribute
+// follows the scheme the client actually used (via nginx's X-Forwarded-Proto),
+// NOT just the configured COOKIE_SECURE: browsers reject Secure cookies over
+// plain http, so a box serving http://<ip> (as the pilot does) would never be
+// able to persist a refresh cookie and every session would die on the next
+// bootstrap/refresh. When the proxy header is absent (direct API access) the
+// configured COOKIE_SECURE is the fallback.
+func (h *AuthHandler) setRefreshTokenCookie(w http.ResponseWriter, r *http.Request, token string) {
+	secure := h.cookieSecure
+	if proto := r.Header.Get("X-Forwarded-Proto"); proto != "" {
+		secure = proto == "https"
+	}
 	http.SetCookie(w, &http.Cookie{
 		Name:     "refresh_token",
 		Value:    token,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   h.cookieSecure,
+		Secure:   secure,
 		SameSite: http.SameSiteLaxMode,
 	})
 }
@@ -81,7 +90,7 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 
 	// Refresh tokens rotate on every use: hand the successor back via the same
 	// httpOnly cookie so the client never replays a revoked token.
-	h.setRefreshTokenCookie(w, refreshToken.TokenString)
+	h.setRefreshTokenCookie(w, r, refreshToken.TokenString)
 
 	// Create access token response
 	tokenResponse := models.RefreshTokenResponse{
@@ -149,7 +158,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// set refresh token cookie
-	h.setRefreshTokenCookie(w, refreshToken.TokenString)
+	h.setRefreshTokenCookie(w, r, refreshToken.TokenString)
 
 	response := models.LoginResponse{
 		AccessToken: accessToken.TokenString,
@@ -216,7 +225,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// set refresh token cookie
-	h.setRefreshTokenCookie(w, refreshToken.TokenString)
+	h.setRefreshTokenCookie(w, r, refreshToken.TokenString)
 
 	response := models.RegisterResponse{
 		User:        user,

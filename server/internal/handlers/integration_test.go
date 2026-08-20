@@ -3,11 +3,13 @@ package handlers_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -29,22 +31,33 @@ func refreshCookieFrom(rec *httptest.ResponseRecorder) string {
 
 func doRefresh(t *testing.T, app *testutil.App, cookieValue string) *httptest.ResponseRecorder {
 	t.Helper()
+	return doRefreshUA(t, app, cookieValue, "")
+}
+
+func doRefreshUA(t *testing.T, app *testutil.App, cookieValue, ua string) *httptest.ResponseRecorder {
+	t.Helper()
 	return app.Do(t, testutil.Request{
 		Method:  http.MethodPost,
 		Path:    "/api/v1/auth/refresh-token",
 		Cookies: []*http.Cookie{{Name: "refresh_token", Value: cookieValue}},
+		UA:      ua,
 	})
 }
 
 // TestRefreshTokenRotation exercises rotation: each refresh issues a new
-// refresh token and revokes the previous one. Reusing an already-rotated token
-// is treated as theft and kills the whole session family.
+// refresh token and revokes the previous one. Replaying an already-rotated
+// token from the SAME device/user-agent is the benign signature of concurrent
+// tabs (they both held the same cookie while one rotation already landed), so
+// the session survives and the family's current token is rotated forward.
 func TestRefreshTokenRotation(t *testing.T) {
 	app := testutil.NewApp(t, testutil.Database(t))
+
+	const ua = "gaggle-browser/1.0"
 
 	reg := app.Do(t, testutil.Request{
 		Method: http.MethodPost,
 		Path:   "/api/v1/auth/register",
+		UA:     ua,
 		Body:   map[string]string{"username": "rotator", "email": "rotator@example.com", "password": "password123"},
 	})
 	if reg.Code != http.StatusCreated {
@@ -57,7 +70,7 @@ func TestRefreshTokenRotation(t *testing.T) {
 
 	// A refresh rotates the token: the response must hand back a NEW refresh
 	// cookie (this is the wiring the old code never did).
-	rec := doRefresh(t, app, r1)
+	rec := doRefreshUA(t, app, r1, ua)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("refresh: status %d body %s", rec.Code, rec.Body.String())
 	}
@@ -67,7 +80,7 @@ func TestRefreshTokenRotation(t *testing.T) {
 	}
 
 	// The rotated token should also still work (chain keeps extending).
-	rec = doRefresh(t, app, r2)
+	rec = doRefreshUA(t, app, r2, ua)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("refresh with r2: status %d body %s", rec.Code, rec.Body.String())
 	}
@@ -76,23 +89,191 @@ func TestRefreshTokenRotation(t *testing.T) {
 		t.Fatal("second refresh did not rotate")
 	}
 
-	// Reusing the already-rotated r1 is a theft signal: 401 + SESSION_EXPIRED.
-	rec = doRefresh(t, app, r1)
-	if rec.Code != http.StatusUnauthorized {
-		t.Fatalf("reused rotated token: expected 401 got %d body %s", rec.Code, rec.Body.String())
+	// Replaying the already-rotated r1 from the same device/tab context is a
+	// benign stale replay (both tabs held the same cookie; one rotation already
+	// landed). The session must survive: the family's current token rotates
+	// forward instead of the whole family being revoked.
+	rec = doRefreshUA(t, app, r1, ua)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("same-UA replay of rotated token: expected 200 got %d body %s", rec.Code, rec.Body.String())
 	}
-	data, errObj := testutil.Decode[map[string]any](t, rec)
-	_ = data
-	if errObj == nil || (*errObj)["code"] != "SESSION_EXPIRED" {
-		t.Fatalf("reused rotated token: expected SESSION_EXPIRED got %v", errObj)
+	current := refreshCookieFrom(rec)
+	if current == "" || current == r3 {
+		t.Fatal("benign replay did not rotate the current token forward")
 	}
 
-	// The whole family is dead, including the newest token r3.
-	for name, tok := range map[string]string{"r1": r1, "r2": r2, "r3": r3} {
-		rec := doRefresh(t, app, tok)
+	// Even after the benign replay the newest token keeps working, so the user
+	// is NOT logged out just because two tabs used the same refresh cookie.
+	rec = doRefreshUA(t, app, current, ua)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("current token after benign replay: expected 200 got %d body %s", rec.Code, rec.Body.String())
+	}
+}
+
+// TestRefreshTokenReplayFromDifferentDeviceIsTheft keeps the theft signal:
+// replaying an already-rotated token from a DIFFERENT user-agent means a
+// stolen credential was reused, the whole session family is revoked, and the
+// client gets SESSION_EXPIRED.
+func TestRefreshTokenReplayFromDifferentDeviceIsTheft(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+
+	const goodUA = "gaggle-browser/1.0"
+	const thiefUA = "stolen-device/9.0"
+
+	reg := app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/auth/register",
+		UA:     goodUA,
+		Body:   map[string]string{"username": "victim", "email": "victim@example.com", "password": "password123"},
+	})
+	if reg.Code != http.StatusCreated {
+		t.Fatalf("register: status %d body %s", reg.Code, reg.Body.String())
+	}
+	r1 := refreshCookieFrom(reg)
+	if r1 == "" {
+		t.Fatal("register response missing refresh_token cookie")
+	}
+
+	// Get the session to a rotated state: the current token is r2.
+	rec := doRefreshUA(t, app, r1, goodUA)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("refresh: status %d body %s", rec.Code, rec.Body.String())
+	}
+	r2 := refreshCookieFrom(rec)
+	if r2 == "" || r2 == r1 {
+		t.Fatal("refresh did not rotate")
+	}
+
+	// A different device reuses the now-rotated r1: theft. 401 + SESSION_EXPIRED.
+	rec = doRefreshUA(t, app, r1, thiefUA)
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("cross-device replay: expected 401 got %d body %s", rec.Code, rec.Body.String())
+	}
+	_, errObj := testutil.Decode[map[string]any](t, rec)
+	if errObj == nil || (*errObj)["code"] != "SESSION_EXPIRED" {
+		t.Fatalf("cross-device replay: expected SESSION_EXPIRED got %v", errObj)
+	}
+
+	// The whole family is dead, including the newest token r2.
+	for name, tok := range map[string]string{"r1": r1, "r2": r2} {
+		rec := doRefreshUA(t, app, tok, goodUA)
 		if rec.Code == http.StatusOK {
 			t.Fatalf("token %s should be dead after theft-revocation, got 200", name)
 		}
+	}
+}
+
+// TestRefreshConcurrentStaleReplayKeepsSession is the multi-tab regression:
+// two tabs both hold the pre-rotation cookie and refresh with the SAME
+// (already-rotated) token at the same time. Neither may be logged out — the
+// benign replay path serializes via FOR UPDATE and the session survives.
+func TestRefreshConcurrentStaleReplayKeepsSession(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+	const ua = "gaggle-browser/1.0"
+
+	reg := app.Do(t, testutil.Request{
+		Method: http.MethodPost,
+		Path:   "/api/v1/auth/register",
+		UA:     ua,
+		Body:   map[string]string{"username": "tabs", "email": "tabs@example.com", "password": "password123"},
+	})
+	if reg.Code != http.StatusCreated {
+		t.Fatalf("register: status %d body %s", reg.Code, reg.Body.String())
+	}
+	r1 := refreshCookieFrom(reg)
+	if r1 == "" {
+		t.Fatal("register response missing refresh_token cookie")
+	}
+
+	// Move the session forward so r1 is stale (already rotated).
+	if rec := doRefreshUA(t, app, r1, ua); rec.Code != http.StatusOK {
+		t.Fatalf("initial refresh: status %d body %s", rec.Code, rec.Body.String())
+	}
+
+	// Both tabs replay the now-rotated r1 simultaneously.
+	statuses := make([]int, 2)
+	errs := make([]error, 2)
+	var wg sync.WaitGroup
+	for i := 0; i < 2; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			rec := app.Do(t, testutil.Request{
+				Method:  http.MethodPost,
+				Path:    "/api/v1/auth/refresh-token",
+				Cookies: []*http.Cookie{{Name: "refresh_token", Value: r1}},
+				UA:      ua,
+			})
+			statuses[i] = rec.Code
+			if rec.Code != http.StatusOK {
+				errs[i] = fmt.Errorf("replay %d: status %d body %s", i, rec.Code, rec.Body.String())
+			}
+		}(i)
+	}
+	wg.Wait()
+	for _, err := range errs {
+		if err != nil {
+			t.Fatalf("%v", err)
+		}
+	}
+
+	// The session is still alive for a subsequent replay too.
+	if rec := doRefreshUA(t, app, r1, ua); rec.Code != http.StatusOK {
+		t.Fatalf("post-concurrency replay: expected 200 got %d body %s", rec.Code, rec.Body.String())
+	}
+}
+
+// TestRefreshCookieSecureFollowsScheme checks the refresh-token cookie's Secure
+// attribute tracks the request's actual scheme (via X-Forwarded-Proto from the
+// nginx proxy) instead of blindly following the configured COOKIE_SECURE env.
+// This is what lets the production box keep plain-HTTP sessions alive while
+// HTTPS clients still get a Secure cookie.
+func TestRefreshCookieSecureFollowsScheme(t *testing.T) {
+	db := testutil.Database(t)
+
+	seq := 0
+	cookieByProto := func(t *testing.T, app *testutil.App, proto string) bool {
+		t.Helper()
+		seq++
+		username := "secure_" + itoa(seq)
+		rec := app.Do(t, testutil.Request{
+			Method: http.MethodPost,
+			Path:   "/api/v1/auth/register",
+			Headers: map[string]string{
+				"X-Forwarded-Proto": proto,
+			},
+			Body: map[string]string{"username": username, "email": username + "@example.com", "password": "password123"},
+		})
+		if rec.Code != http.StatusCreated {
+			t.Fatalf("register: status %d body %s", rec.Code, rec.Body.String())
+		}
+		for _, c := range rec.Result().Cookies() {
+			if c.Name == "refresh_token" {
+				return c.Secure
+			}
+		}
+		t.Fatal("register response missing refresh_token cookie")
+		return false
+	}
+
+	// Production box (COOKIE_SECURE=true) behind plain HTTP: the browser must
+	// be able to persist the cookie, so Secure must be FALSE over http.
+	prod := testutil.NewAppWithCookieSecure(t, db, true)
+	if cookieByProto(t, prod, "http") {
+		t.Error("COOKIE_SECURE=true + X-Forwarded-Proto http: cookie must NOT be Secure (plain-HTTP sessions would never persist)")
+	}
+	// ... and TRUE behind https.
+	if !cookieByProto(t, prod, "https") {
+		t.Error("COOKIE_SECURE=true + X-Forwarded-Proto https: cookie must be Secure")
+	}
+
+	// Without the proxy header the configured default is the fallback.
+	dev := testutil.NewApp(t, db)
+	if cookieByProto(t, dev, "") {
+		t.Error("cookieSecure=false + no scheme header: cookie must not be Secure")
+	}
+	if !cookieByProto(t, prod, "") {
+		t.Error("cookieSecure=true + no scheme header: cookie must default to Secure")
 	}
 }
 

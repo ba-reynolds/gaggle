@@ -195,7 +195,19 @@ missing (check the run's log for `DEPLOY_HOST secret not set`).
 | `GAGGLE_HTTPS_DOMAIN` (optional) | Domain pointing at the box's public IP; enables the certbot service to provision a real Let's Encrypt cert on 443. Omit/empty to keep the self-signed fallback. |
 
 **First deploy + smoke test:** trigger `workflow_dispatch` on the Deploy
-workflow, then verify: `ssh deploy@<ip> docker compose -f /srv/gaggle/compose.yaml -f /srv/gaggle/compose.prod.yaml ps` shows db/redis/api/web up; browse `http://<ip>`; sign up a test user; post with media; `docker compose restart` and confirm posts + media persist (EBS-backed). HTTPS on 443 is live (self-signed cert) from the start.
+workflow, then verify: `ssh deploy@<ip> docker compose -f /srv/gaggle/compose.yaml -f /srv/gaggle/compose.prod.yaml ps` shows db/redis/api/web up; browse `http://<ip>`; sign up a test user; post with media; `docker compose restart` and confirm posts + media persist (EBS-backed). HTTPS on 443 is live (self-signed cert) from the start. The deploy itself now rebuilds the images uncached and health-checks the fixed-name public assets (`/favicon.ico`, `/gaggle-goose.png`) so a stale/corrupt `web` layer can't silently 403 the favicon + sidebar logo again.
+
+Sessions: the refresh-token cookie's `Secure` flag follows the scheme the
+browser actually used (via nginx `X-Forwarded-Proto`), so `http://<ip>` keeps a
+persistent session even though `COOKIE_SECURE=true` is set for direct-API
+fallback; HTTPS clients still get a Secure cookie. Refresh-token rotation
+treats an already-rotated token replayed from the *same device* (user-agent) as
+the benign multi-tab/stale-cookie case and keeps the session alive; replay from
+a different device is still treated as theft and revokes the session family.
+
+If the favicon/logo still 403 after a deploy (stale filesystem inside the
+running container), recreate the web container explicitly:
+`ssh deploy@<ip> 'cd /srv/gaggle && docker compose -f compose.yaml -f compose.prod.yaml up -d --force-recreate web'`.
 
 **Current state:** the app is served over TLS. The box serves **HTTPS on
 port 443** (already open in the security group + host firewall) using a

@@ -127,6 +127,12 @@ type App struct {
 
 // NewApp builds the application stack without Redis (tests don't depend on it).
 func NewApp(t *testing.T, db *sql.DB) *App {
+	return NewAppWithCookieSecure(t, db, false)
+}
+
+// NewAppWithCookieSecure is like NewApp but lets the test choose the refresh
+// cookie's configured Secure fallback (what compose COOKIE_SECURE would set).
+func NewAppWithCookieSecure(t *testing.T, db *sql.DB, cookieSecure bool) *App {
 	t.Helper()
 	log := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))
 	cfg := config.AllConfigs{
@@ -145,7 +151,7 @@ func NewApp(t *testing.T, db *sql.DB) *App {
 	authenticator := auth.NewJWTAuthenticator(cfg.AuthConfig)
 	store := store.NewStore(db, log, cfg.AppConfig.MediaDir)
 	svc := service.NewService(store, log, authenticator, cfg.AppConfig)
-	router := api.NewRouter(svc, log, nil, 0, 0, false)
+	router := api.NewRouter(svc, log, nil, 0, 0, cookieSecure)
 	return &App{DB: db, Router: router, Service: svc}
 }
 
@@ -156,6 +162,8 @@ type Request struct {
 	Token   string
 	Body    any
 	Cookies []*http.Cookie
+	Headers map[string]string
+	UA      string
 }
 
 // Do performs the request and returns the recorder.
@@ -178,6 +186,12 @@ func (a *App) Do(t *testing.T, req Request) *httptest.ResponseRecorder {
 	}
 	if req.Token != "" {
 		httpReq.Header.Set("Authorization", "Bearer "+req.Token)
+	}
+	for k, v := range req.Headers {
+		httpReq.Header.Set(k, v)
+	}
+	if req.UA != "" {
+		httpReq.Header.Set("User-Agent", req.UA)
 	}
 	for _, c := range req.Cookies {
 		httpReq.AddCookie(c)
