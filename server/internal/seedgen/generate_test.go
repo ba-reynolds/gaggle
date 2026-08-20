@@ -29,25 +29,11 @@ func TestGenerateDeterminism(t *testing.T) {
 
 func TestGenerateScale(t *testing.T) {
 	ds := gDataset()
-	if len(ds.Users) != TotalUsers {
-		t.Errorf("users = %d, want %d", len(ds.Users), TotalUsers)
-	}
-	if got := len(ds.Posts); got < TopLevelPosts+ReplyPosts {
-		t.Errorf("posts = %d, want >= %d", got, TopLevelPosts+ReplyPosts)
-	}
-	if len(ds.Likes) == 0 || len(ds.Reposts) == 0 || len(ds.Bookmarks) == 0 {
-		t.Errorf("expected engagement rows, got likes=%d reposts=%d bookmarks=%d",
-			len(ds.Likes), len(ds.Reposts), len(ds.Bookmarks))
-	}
-	if len(ds.Relationships) == 0 {
-		t.Error("expected relationships")
-	}
-}
-
-func TestGenerateScale_4x(t *testing.T) {
-	ds := gDataset()
 	if len(ds.Users) != 150 {
-		t.Fatalf("users = %d, want 150", len(ds.Users))
+		t.Errorf("users = %d, want 150", len(ds.Users))
+	}
+	if len(ds.Users) != TotalUsers {
+		t.Errorf("users = %d, want TotalUsers=%d", len(ds.Users), TotalUsers)
 	}
 	var top int
 	for _, p := range ds.Posts {
@@ -56,10 +42,30 @@ func TestGenerateScale_4x(t *testing.T) {
 		}
 	}
 	if top != 1600 {
-		t.Fatalf("top-level = %d, want 1600", top)
+		t.Errorf("top-level = %d, want 1600", top)
 	}
 	if len(ds.Posts) != 2200 {
-		t.Fatalf("posts = %d, want 2200", len(ds.Posts))
+		t.Errorf("posts = %d, want 2200 (1600+600)", len(ds.Posts))
+	}
+	if len(ds.Posts) != TopLevelPosts+ReplyPosts {
+		t.Errorf("posts = %d, want TopLevelPosts+ReplyPosts=%d", len(ds.Posts), TopLevelPosts+ReplyPosts)
+	}
+	if len(ds.Likes) == 0 || len(ds.Reposts) == 0 || len(ds.Bookmarks) == 0 {
+		t.Errorf("expected engagement rows, got likes=%d reposts=%d bookmarks=%d",
+			len(ds.Likes), len(ds.Reposts), len(ds.Bookmarks))
+	}
+	if len(ds.Relationships) == 0 {
+		t.Error("expected relationships")
+	}
+	// Lists/DMs/Media also at 4x scale
+	if len(ds.DMConversations) != DMConversations {
+		t.Errorf("dm conversations = %d, want %d", len(ds.DMConversations), DMConversations)
+	}
+	if len(ds.Lists) != Lists {
+		t.Errorf("lists = %d, want %d", len(ds.Lists), Lists)
+	}
+	if len(ds.Media) != MediaPosts {
+		t.Errorf("media = %d, want %d", len(ds.Media), MediaPosts)
 	}
 }
 
@@ -206,8 +212,11 @@ func TestGenerateMediaAndBadges(t *testing.T) {
 
 func TestGenerateDMAndLists(t *testing.T) {
 	ds := gDataset()
-	if len(ds.DMConversations) < DMConversations {
-		t.Errorf("dm conversations = %d, want >= %d", len(ds.DMConversations), DMConversations)
+	if len(ds.DMConversations) != DMConversations {
+		t.Errorf("dm conversations = %d, want %d", len(ds.DMConversations), DMConversations)
+	}
+	if len(ds.DMConversations) < 40 {
+		t.Errorf("dm conversations = %d, want >= 40", len(ds.DMConversations))
 	}
 	for i, c := range ds.DMConversations {
 		if c.UserAIdx == c.UserBIdx {
@@ -225,8 +234,11 @@ func TestGenerateDMAndLists(t *testing.T) {
 			}
 		}
 	}
-	if len(ds.Lists) < Lists {
-		t.Errorf("lists = %d, want >= %d", len(ds.Lists), Lists)
+	if len(ds.Lists) != Lists {
+		t.Errorf("lists = %d, want %d", len(ds.Lists), Lists)
+	}
+	if len(ds.Lists) < 24 {
+		t.Errorf("lists = %d, want >= 24", len(ds.Lists))
 	}
 	for i, l := range ds.Lists {
 		for _, m := range l.MemberIdxs {
@@ -237,5 +249,69 @@ func TestGenerateDMAndLists(t *testing.T) {
 				t.Errorf("list %d invalid member idx %d", i, m)
 			}
 		}
+	}
+	if len(ds.Media) != MediaPosts {
+		t.Errorf("media = %d, want %d", len(ds.Media), MediaPosts)
+	}
+	if len(ds.Media) < 60 {
+		t.Errorf("media = %d, want >= 60", len(ds.Media))
+	}
+}
+
+func TestGenerateBookmarkCategoriesUsedOnly(t *testing.T) {
+	ds := gDataset()
+	// Every retained category name must appear in bookmarks for that user.
+	for uIdx, names := range ds.BookmarkCategoryNames {
+		if len(names) == 0 {
+			continue
+		}
+		countByName := make(map[string]int)
+		for _, bm := range ds.Bookmarks {
+			if bm.UserIdx == uIdx && bm.CategoryName != nil {
+				countByName[*bm.CategoryName]++
+			}
+		}
+		for _, name := range names {
+			if countByName[name] == 0 {
+				t.Errorf("user %d category %q retained but has 0 bookmarks (only-if-used violated)", uIdx, name)
+			}
+		}
+		// No bookmark should reference a category name not in the retained list.
+		allowed := make(map[string]bool, len(names))
+		for _, n := range names {
+			allowed[n] = true
+		}
+		for _, bm := range ds.Bookmarks {
+			if bm.UserIdx == uIdx && bm.CategoryName != nil && !allowed[*bm.CategoryName] {
+				t.Errorf("user %d bookmark references pruned category %q", uIdx, *bm.CategoryName)
+			}
+		}
+	}
+	// Users with no bookmarks must have no categories.
+	for uIdx := range ds.Users {
+		hasBM := false
+		for _, bm := range ds.Bookmarks {
+			if bm.UserIdx == uIdx {
+				hasBM = true
+				break
+			}
+		}
+		if !hasBM && len(ds.BookmarkCategoryNames[uIdx]) != 0 {
+			t.Errorf("user %d has no bookmarks but retained %d categories", uIdx, len(ds.BookmarkCategoryNames[uIdx]))
+		}
+	}
+	// Uncategorized ratio ~10% (allow 5-15%).
+	if len(ds.Bookmarks) == 0 {
+		t.Fatal("no bookmarks generated")
+	}
+	var uncategorized int
+	for _, bm := range ds.Bookmarks {
+		if bm.CategoryName == nil {
+			uncategorized++
+		}
+	}
+	ratio := float64(uncategorized) / float64(len(ds.Bookmarks))
+	if ratio < 0.05 || ratio > 0.15 {
+		t.Errorf("uncategorized ratio %.2f outside 5-15%% (uncategorized=%d total=%d)", ratio, uncategorized, len(ds.Bookmarks))
 	}
 }

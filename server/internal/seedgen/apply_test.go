@@ -34,8 +34,11 @@ func TestApplyUsersAndProfiles(t *testing.T) {
 	st, ds, _ := seedEngine(t)
 	ctx := context.Background()
 
+	if len(ds.UserIDs) != 150 {
+		t.Fatalf("ds.UserIDs = %d, want 150", len(ds.UserIDs))
+	}
 	if len(ds.UserIDs) != TotalUsers {
-		t.Fatalf("ds.UserIDs = %d, want %d", len(ds.UserIDs), TotalUsers)
+		t.Fatalf("ds.UserIDs = %d, want TotalUsers=%d", len(ds.UserIDs), TotalUsers)
 	}
 
 	for i, u := range ds.Users {
@@ -62,15 +65,18 @@ func TestApplyUsersAndProfiles(t *testing.T) {
 		`SELECT COUNT(*) FROM user_profiles`).Scan(&profiles); err != nil {
 		t.Fatalf("count profiles: %v", err)
 	}
+	if profiles != 150 {
+		t.Errorf("profiles = %d, want 150", profiles)
+	}
 	if profiles != TotalUsers {
-		t.Errorf("profiles = %d, want %d", profiles, TotalUsers)
+		t.Errorf("profiles = %d, want TotalUsers=%d", profiles, TotalUsers)
 	}
 	if err := st.DB.QueryRowContext(ctx,
 		`SELECT COUNT(*) FROM users WHERE is_private = TRUE`).Scan(&privates); err != nil {
 		t.Fatalf("count private: %v", err)
 	}
-	if privates != 3 {
-		t.Errorf("private users = %d, want 3", privates)
+	if privates != 4 {
+		t.Errorf("private users = %d, want 4", privates)
 	}
 	if err := st.DB.QueryRowContext(ctx,
 		`SELECT COUNT(*) FROM users WHERE is_admin = TRUE`).Scan(&admins); err != nil {
@@ -112,22 +118,28 @@ func TestApplyPostsBackdatedAndSynced(t *testing.T) {
 		t.Errorf("post history spans %v, want <= %d days", diff, DaysOfHistory)
 	}
 
-	// Top-level count matches.
+	// Top-level count matches 4x scale.
 	var topLevel int
 	var zeroParent int
 	if err := st.DB.QueryRowContext(ctx,
 		`SELECT COUNT(*) FROM posts WHERE parent_id IS NULL`).Scan(&topLevel); err != nil {
 		t.Fatalf("count top-level: %v", err)
 	}
+	if topLevel != 1600 {
+		t.Errorf("top-level posts = %d, want 1600", topLevel)
+	}
 	if topLevel != TopLevelPosts {
-		t.Errorf("top-level posts = %d, want %d", topLevel, TopLevelPosts)
+		t.Errorf("top-level posts = %d, want TopLevelPosts=%d", topLevel, TopLevelPosts)
 	}
 	if err := st.DB.QueryRowContext(ctx,
 		`SELECT COUNT(*) FROM posts WHERE parent_id IS NOT NULL`).Scan(&zeroParent); err != nil {
 		t.Fatalf("count replies: %v", err)
 	}
+	if zeroParent != 600 {
+		t.Errorf("replies = %d, want 600", zeroParent)
+	}
 	if zeroParent != ReplyPosts {
-		t.Errorf("replies = %d, want %d", zeroParent, ReplyPosts)
+		t.Errorf("replies = %d, want ReplyPosts=%d", zeroParent, ReplyPosts)
 	}
 
 	// Hashtags + mentions synced into the join tables.
@@ -325,5 +337,114 @@ func TestApplyMedia(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(mediaDir, ds.Users[0].ProfilePictureUUID.String())); err != nil {
 		t.Errorf("avatar file missing: %v", err)
+	}
+}
+
+func TestApplyBookmarkCategoriesUsedOnly(t *testing.T) {
+	st, _, _ := seedEngine(t)
+	ctx := context.Background()
+
+	var zeroCount int
+	if err := st.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM bookmark_categories c WHERE NOT EXISTS (SELECT 1 FROM post_bookmarks b WHERE b.user_id=c.user_id AND b.category_id=c.category_id)`).Scan(&zeroCount); err != nil {
+		t.Fatalf("count empty categories: %v", err)
+	}
+	if zeroCount != 0 {
+		t.Errorf("found %d empty bookmark categories; only-if-used violated", zeroCount)
+	}
+	var uncategorized, total int
+	if err := st.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM post_bookmarks WHERE category_id IS NULL`).Scan(&uncategorized); err != nil {
+		t.Fatalf("count uncategorized: %v", err)
+	}
+	if err := st.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM post_bookmarks`).Scan(&total); err != nil {
+		t.Fatalf("count total bookmarks: %v", err)
+	}
+	if total == 0 {
+		t.Fatal("no bookmarks after Apply")
+	}
+	ratio := float64(uncategorized) / float64(total)
+	if ratio < 0.05 || ratio > 0.15 {
+		t.Errorf("uncategorized ratio %.2f outside 5-15%% (uncategorized=%d total=%d)", ratio, uncategorized, total)
+	}
+}
+
+func TestApplyBookmarkedFeedUncategorized(t *testing.T) {
+	st, ds, _ := seedEngine(t)
+	ctx := context.Background()
+
+	aliceID := ds.UserIDs[0]
+
+	// Uncategorized-only feed.
+	uncatFeed, err := st.Posts.GetBookmarkedPostsFeed(ctx, aliceID, nil, true, 100, "")
+	if err != nil {
+		t.Fatalf("GetBookmarkedPostsFeed uncategorized: %v", err)
+	}
+	if len(uncatFeed.Items) == 0 {
+		t.Fatal("expected at least one uncategorized bookmark for alice")
+	}
+	// Every returned post must map to a bookmark with category_id IS NULL.
+	for _, item := range uncatFeed.Items {
+		var catID *int
+		if err := st.DB.QueryRowContext(ctx, `SELECT category_id FROM post_bookmarks WHERE user_id=$1 AND post_id=$2`, aliceID, item.Post.ID).Scan(&catID); err != nil {
+			t.Fatalf("lookup bookmark for post %d: %v", item.Post.ID, err)
+		}
+		if catID != nil {
+			t.Errorf("uncategorized feed returned post %d with category_id %d", item.Post.ID, *catID)
+		}
+	}
+	// Count from feed should match DB uncategorized count for alice.
+	var dbUncat int
+	if err := st.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM post_bookmarks WHERE user_id=$1 AND category_id IS NULL`, aliceID).Scan(&dbUncat); err != nil {
+		t.Fatalf("count db uncategorized: %v", err)
+	}
+	// Feed is paginated; just sanity-check it does not return categorized rows.
+	// Union: one alice category plus uncategorized.
+	var catID int
+	var catName string
+	if err := st.DB.QueryRowContext(ctx, `SELECT category_id, category_name FROM bookmark_categories WHERE user_id=$1 LIMIT 1`, aliceID).Scan(&catID, &catName); err != nil {
+		t.Fatalf("lookup alice category: %v", err)
+	}
+	unionFeed, err := st.Posts.GetBookmarkedPostsFeed(ctx, aliceID, []int{catID}, true, 200, "")
+	if err != nil {
+		t.Fatalf("GetBookmarkedPostsFeed union: %v", err)
+	}
+	if len(unionFeed.Items) == 0 {
+		t.Fatal("union feed returned 0 items")
+	}
+	// Union must contain at least one uncategorized and at least one categorized.
+	var hasUncat, hasCat bool
+	for _, item := range unionFeed.Items {
+		var cid *int
+		if err := st.DB.QueryRowContext(ctx, `SELECT category_id FROM post_bookmarks WHERE user_id=$1 AND post_id=$2`, aliceID, item.Post.ID).Scan(&cid); err != nil {
+			t.Fatalf("lookup bookmark for union post %d: %v", item.Post.ID, err)
+		}
+		if cid == nil {
+			hasUncat = true
+		} else if *cid == catID {
+			hasCat = true
+		} else {
+			t.Errorf("union feed returned post %d with unexpected category_id %d (want %d or NULL)", item.Post.ID, *cid, catID)
+		}
+	}
+	if !hasUncat {
+		t.Errorf("union feed has no uncategorized items (category %q alone would show none)", catName)
+	}
+	if !hasCat {
+		t.Errorf("union feed has no items from category %q", catName)
+	}
+	// Category-only feed must not include uncategorized.
+	catOnly, err := st.Posts.GetBookmarkedPostsFeed(ctx, aliceID, []int{catID}, false, 200, "")
+	if err != nil {
+		t.Fatalf("GetBookmarkedPostsFeed cat-only: %v", err)
+	}
+	for _, item := range catOnly.Items {
+		var cid *int
+		if err := st.DB.QueryRowContext(ctx, `SELECT category_id FROM post_bookmarks WHERE user_id=$1 AND post_id=$2`, aliceID, item.Post.ID).Scan(&cid); err != nil {
+			t.Fatalf("lookup bookmark for cat-only post %d: %v", item.Post.ID, err)
+		}
+		if cid == nil {
+			t.Errorf("cat-only feed returned uncategorized post %d", item.Post.ID)
+		} else if *cid != catID {
+			t.Errorf("cat-only feed returned post %d with wrong category %d want %d", item.Post.ID, *cid, catID)
+		}
 	}
 }

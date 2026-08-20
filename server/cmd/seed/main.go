@@ -36,11 +36,42 @@ func main() {
 	st := store.NewStore(db, log, cfg.AppConfig.MediaDir)
 	ctx := context.Background()
 
-	// Idempotency guard: if the seed anchor user already exists, the database
-	// is already seeded. Exit quietly so `make seed` / container re-runs are safe.
-	if _, err := st.Users.GetByEmail(ctx, "alice@example.com"); err == nil {
-		fmt.Println("✅ Database already seeded (alice@example.com exists); skipping.")
-		return
+	force := false
+	for _, a := range os.Args {
+		if a == "--force" || a == "-force" {
+			force = true
+		}
+	}
+	if os.Getenv("SEED_FORCE") == "1" {
+		force = true
+	}
+	if !force {
+		// Idempotency guard: if the seed anchor user already exists, the database
+		// is already seeded. Exit quietly so `make seed` / container re-runs are safe.
+		if _, err := st.Users.GetByEmail(ctx, "alice@example.com"); err == nil {
+			fmt.Println("✅ Database already seeded (alice@example.com exists); skipping. Use --force or SEED_FORCE=1 to re-seed.")
+			return
+		}
+	} else {
+		fmt.Println("🔄 Force re-seed: truncating existing data...")
+		if _, err := st.DB.ExecContext(ctx, `TRUNCATE users CASCADE`); err != nil {
+			fmt.Printf("warn: truncate users: %v\n", err)
+		}
+		if _, err := st.DB.ExecContext(ctx, `TRUNCATE badges CASCADE`); err != nil {
+			// badges has no FK to users; ensure leftover assigned badges are cleared
+		}
+		if _, err := st.DB.ExecContext(ctx, `TRUNCATE media CASCADE`); err != nil {
+		}
+		if _, err := st.DB.ExecContext(ctx, `TRUNCATE lists CASCADE`); err != nil {
+		}
+		if _, err := st.DB.ExecContext(ctx, `TRUNCATE conversations CASCADE`); err != nil {
+		}
+		if err := os.RemoveAll(cfg.AppConfig.MediaDir); err != nil {
+			fmt.Printf("warn: remove media dir: %v\n", err)
+		}
+		if err := os.MkdirAll(cfg.AppConfig.MediaDir, 0o755); err != nil {
+			panic(fmt.Sprintf("failed to recreate media dir: %v", err))
+		}
 	}
 
 	fmt.Println("🌱 Starting database seeding...")
