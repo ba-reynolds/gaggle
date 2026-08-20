@@ -1,3 +1,16 @@
+# faster-agent-loop
+
+Faster iteration for agent worktrees: selective builds + auto DB/REDIS ports + fast frontend path.
+
+## What was changed and why
+- **`scripts/proj-up.sh`:** auto-allocate `DB_PORT`/`REDIS_PORT` (hash + persist to `~/.local/state/gaggle-proj/<proj>.env`, backfill old state files), `BUILD_MODE=auto|web-only|api-only|none|full` via `git diff --name-only HEAD` + `--cached` + `ls-files --others` (untracked), prints `>> preview ready in <N>s [build=...]`; `full` is the fallback for compose/infra/scripts changes. Fixes the `Bind 0.0.0.0:6969 failed` that forced manual `DB_PORT=6970 REDIS_PORT=6380`.
+- **`Makefile`:** `proj-dev-web-only`, `proj-dev-api-only`, `proj-dev-nobuild`, `proj-dev-fe` (HMR path) alongside `proj-dev` (full, backward-compat). Ranked offenders that motivated this: full `up --build` (30–60s warm) > rebuilding the unchanged image > `--wait` chain > `vite build` per preview > fresh volume/migrate/seed > cold `npm ci`/`go mod download` > port collision > git bookkeeping.
+- **`.opencode/commands/new-task.md`:** branch to fast path for `web/**` changes (`make proj-dev-web-only` or `make proj-dev-fe` for host Vite), only `make proj-dev` for nginx/TLS/deploy paths, document `BUILD_MODE` override.
+
+## Verification
+- `bash -n scripts/proj-up.sh` ok; `git log --oneline -4` clean on worktree; no preview rebuild needed for this change.
+
+---
 # login-goose-logo
 
 Login goose in rounded-square badge + sidebar + high-res asset.
