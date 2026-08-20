@@ -43,13 +43,17 @@ func Apply(ctx context.Context, st *store.Store, log *slog.Logger, ds *Dataset, 
 	if err := applyUsers(ctx, st, log, ds); err != nil {
 		return fmt.Errorf("seed: users: %w", err)
 	}
+	userCatIDs, err := applyBookmarkCategories(ctx, st, log, ds)
+	if err != nil {
+		return fmt.Errorf("seed: bookmark categories: %w", err)
+	}
 	if err := applyPosts(ctx, st, log, ds); err != nil {
 		return fmt.Errorf("seed: posts: %w", err)
 	}
 	if err := applyPolls(ctx, st, log, ds); err != nil {
 		return fmt.Errorf("seed: polls: %w", err)
 	}
-	if err := applyEngagement(ctx, st, log, ds); err != nil {
+	if err := applyEngagement(ctx, st, log, ds, userCatIDs); err != nil {
 		return fmt.Errorf("seed: engagement: %w", err)
 	}
 	if err := applyRelationships(ctx, st, log, ds); err != nil {
@@ -278,9 +282,54 @@ func applyPolls(ctx context.Context, st *store.Store, log *slog.Logger, ds *Data
 	return nil
 }
 
+// applyBookmarkCategories creates bookmark_categories only for categories that
+// are actually used (ds.BookmarkCategoryNames is pruned to used only by
+// genEngagement/Task 2). Returns userIdx -> categoryName -> categoryID, handling
+// AlreadyExists on DBs that still had the trigger's "General" row.
+func applyBookmarkCategories(ctx context.Context, st *store.Store, log *slog.Logger, ds *Dataset) (map[int]map[string]int, error) {
+	_ = log
+	colorByName := map[string]string{}
+	for _, c := range bookmarkCategoryPool {
+		colorByName[c.Name] = c.Color
+	}
+	out := make(map[int]map[string]int, len(ds.Users))
+	for uIdx, names := range ds.BookmarkCategoryNames {
+		if len(names) == 0 {
+			continue
+		}
+		uid := ds.UserIDs[uIdx]
+		m := make(map[string]int, len(names))
+		for _, name := range names {
+			color := colorByName[name]
+			if color == "" {
+				color = "#1DA1F2"
+			}
+			cat, err := st.PostEngagements.CreateBookmarkCategory(ctx, nil, uid, name, color)
+			if err != nil {
+				if apperrors.Is(err, apperrors.AlreadyExists) {
+					var id int
+					if qerr := st.DB.QueryRowContext(ctx,
+						`SELECT category_id FROM bookmark_categories WHERE user_id = $1 AND category_name = $2`,
+						uid, name).Scan(&id); qerr != nil {
+						return nil, fmt.Errorf("lookup bookmark category %q for user %d: %w", name, uid, qerr)
+					}
+					m[name] = id
+					continue
+				}
+				return nil, fmt.Errorf("create bookmark category %q for user %d: %w", name, uid, err)
+			}
+			m[name] = cat.CategoryID
+		}
+		out[uIdx] = m
+	}
+	return out, nil
+}
+
 // applyEngagement inserts like/repost/bookmark rows. Underlying stores are
 // NO-OP-on-duplicate, so plain inserts are safe; triggers maintain counts.
-func applyEngagement(ctx context.Context, st *store.Store, log *slog.Logger, ds *Dataset) error {
+// userCatIDs maps dataset userIdx -> categoryName -> DB category_id (from
+// applyBookmarkCategories); a bookmark's CategoryName is resolved to *int there.
+func applyEngagement(ctx context.Context, st *store.Store, log *slog.Logger, ds *Dataset, userCatIDs map[int]map[string]int) error {
 	for _, e := range ds.Likes {
 		if _, err := st.PostEngagements.Like(ctx, nil, ds.PostIDs[e.PostIdx], ds.UserIDs[e.UserIdx]); err != nil {
 			return fmt.Errorf("like post %d by user %d: %w", e.PostIdx, e.UserIdx, err)
@@ -292,7 +341,16 @@ func applyEngagement(ctx context.Context, st *store.Store, log *slog.Logger, ds 
 		}
 	}
 	for _, e := range ds.Bookmarks {
-		if err := st.PostEngagements.Bookmark(ctx, nil, ds.PostIDs[e.PostIdx], ds.UserIDs[e.UserIdx], nil); err != nil {
+		var catID *int
+		if e.CategoryName != nil {
+			if m, ok := userCatIDs[e.UserIdx]; ok {
+				if id, ok := m[*e.CategoryName]; ok {
+					v := id
+					catID = &v
+				}
+			}
+		}
+		if err := st.PostEngagements.Bookmark(ctx, nil, ds.PostIDs[e.PostIdx], ds.UserIDs[e.UserIdx], catID); err != nil {
 			return fmt.Errorf("bookmark post %d by user %d: %w", e.PostIdx, e.UserIdx, err)
 		}
 	}
