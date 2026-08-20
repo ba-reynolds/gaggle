@@ -9,6 +9,10 @@ export default function AppSplash({ caption }: AppSplashProps) {
         <img
           src="/gaggle-goose.png"
           alt="Gaggle"
+          width={160}
+          height={160}
+          fetchPriority="high"
+          decoding="async"
           className="h-16 w-16 rounded-full"
         />
         <span className="text-2xl font-bold text-primary">Gaggle</span>

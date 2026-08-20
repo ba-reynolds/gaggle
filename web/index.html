@@ -8,6 +8,7 @@
     <style>
       @keyframes gaggle-spin { to { transform: rotate(360deg); } }
     </style>
+    <link rel="preload" as="image" href="/gaggle-goose.png" fetchpriority="high" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -31,6 +32,10 @@
         <img
           src="/gaggle-goose.png"
           alt="Gaggle"
+          width="64"
+          height="64"
+          fetchpriority="high"
+          decoding="async"
           style="width:4rem;height:4rem;border-radius:9999px"
         />
         <span style="font-size:1.5rem;font-weight:700">Gaggle</span>
