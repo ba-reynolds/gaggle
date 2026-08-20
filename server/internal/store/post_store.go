@@ -1542,7 +1542,7 @@ func (store *postStore) GetUserReplies(ctx context.Context, userID int, limit in
 func (store *postStore) GetUserMediaFeed(ctx context.Context, userID int, limit int, cursor string) (*models.PostFeed, error) {
 	return store.runUserFeedQuery(ctx, userID, "media", limit, cursor)
 }
-func (store *postStore) GetBookmarkedPostsFeed(ctx context.Context, userID int, categoryIDs []int, limit int, cursor string) (*models.PostFeed, error) {
+func (store *postStore) GetBookmarkedPostsFeed(ctx context.Context, userID int, categoryIDs []int, includeUncategorized bool, limit int, cursor string) (*models.PostFeed, error) {
 	var query string
 	var args []interface{}
 	argIdx := 1
@@ -1555,7 +1555,18 @@ func (store *postStore) GetBookmarkedPostsFeed(ctx context.Context, userID int, 
 	args = append(args, userID)
 	argIdx++
 
-	if len(categoryIDs) > 0 {
+	hasCats := len(categoryIDs) > 0
+	if includeUncategorized && hasCats {
+		placeholders := make([]string, len(categoryIDs))
+		for i, id := range categoryIDs {
+			placeholders[i] = fmt.Sprintf("$%d", argIdx)
+			args = append(args, id)
+			argIdx++
+		}
+		baseQuery += fmt.Sprintf(" AND (pb.category_id IS NULL OR pb.category_id IN (%s))", strings.Join(placeholders, ","))
+	} else if includeUncategorized {
+		baseQuery += " AND pb.category_id IS NULL"
+	} else if hasCats {
 		placeholders := make([]string, len(categoryIDs))
 		for i, id := range categoryIDs {
 			placeholders[i] = fmt.Sprintf("$%d", argIdx)

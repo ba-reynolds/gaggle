@@ -69,7 +69,7 @@ type Service struct {
 		GetUserFeed(ctx context.Context, userID int, viewerID int, includeReplies bool, limit int, cursor string) (*models.PostFeed, error)
 		GetUserRepliesFeed(ctx context.Context, userID int, viewerID int, limit int, cursor string) (*models.PostFeed, error)
 		GetUserMediaFeed(ctx context.Context, userID int, viewerID int, limit int, cursor string) (*models.PostFeed, error)
-		GetBookmarkedPostsFeed(ctx context.Context, userID int, viewerID int, categoryIDs []int, limit int, cursor string) (*models.PostFeed, error)
+		GetBookmarkedPostsFeed(ctx context.Context, userID int, viewerID int, categoryIDs []int, includeUncategorized bool, limit int, cursor string) (*models.PostFeed, error)
 		GetLikedPostsFeed(ctx context.Context, userID int, viewerID int, limit int, cursor string) (*models.PostFeed, error)
 		GetQuotesFeed(ctx context.Context, postID int, viewerID int, limit int, cursor string) (*models.PostFeed, error)
 		GetPostLikers(ctx context.Context, postID int, limit int, cursor string) (*models.UserList, error)

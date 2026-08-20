@@ -512,6 +512,13 @@ func (store *postEngagementStore) ListBookmarkCategories(ctx context.Context, us
 	return categories, nil
 }
 
+// GetUncategorizedBookmarkCount returns count of bookmarks with no category
+func (store *postEngagementStore) GetUncategorizedBookmarkCount(ctx context.Context, userID int) (int, error) {
+	var n int
+	err := store.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM post_bookmarks WHERE user_id = $1 AND category_id IS NULL`, userID).Scan(&n)
+	return n, err
+}
+
 // DeleteBookmarkCategory deletes a bookmark category by category_id and user_id
 func (store *postEngagementStore) DeleteBookmarkCategory(ctx context.Context, tx *sql.Tx, userID, categoryID int) error {
 	query := `DELETE FROM bookmark_categories WHERE category_id = $1 AND user_id = $2`

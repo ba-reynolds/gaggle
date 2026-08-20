@@ -70,7 +70,7 @@ type Store struct {
 		GetUserFeed(ctx context.Context, userID int, includeReplies bool, limit int, cursor string) (*models.PostFeed, error)
 		GetUserReplies(ctx context.Context, userID int, limit int, cursor string) (*models.PostFeed, error)
 		GetUserMediaFeed(ctx context.Context, userID int, limit int, cursor string) (*models.PostFeed, error)
-		GetBookmarkedPostsFeed(ctx context.Context, userID int, categoryIDs []int, limit int, cursor string) (*models.PostFeed, error)
+		GetBookmarkedPostsFeed(ctx context.Context, userID int, categoryIDs []int, includeUncategorized bool, limit int, cursor string) (*models.PostFeed, error)
 		GetLikedPostsFeed(ctx context.Context, userID int, limit int, cursor string) (*models.PostFeed, error)
 		GetQuotesFeed(ctx context.Context, postID int, limit int, cursor string) (*models.PostFeed, error)
 		GetParentInfo(ctx context.Context, postIDs []int) (map[int]*models.PostParentInfo, error)
@@ -89,6 +89,7 @@ type Store struct {
 		AddView(ctx context.Context, postID int, userID *int, ipAddress, userAgent string) error
 		CreateBookmarkCategory(ctx context.Context, tx *sql.Tx, userID int, categoryName, color string) (*models.BookmarkCategory, error)
 		ListBookmarkCategories(ctx context.Context, userID int) ([]models.BookmarkCategory, error)
+		GetUncategorizedBookmarkCount(ctx context.Context, userID int) (int, error)
 		DeleteBookmarkCategory(ctx context.Context, tx *sql.Tx, userID, categoryID int) error
 		GetEngagementForPosts(ctx context.Context, postIDs []int, viewerID int) (map[int]*models.PostEngagement, error)
 		GetPostLikers(ctx context.Context, postID int, limit int, cursor string) (*models.UserList, error)

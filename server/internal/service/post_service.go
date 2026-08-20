@@ -979,8 +979,8 @@ func (s *PostService) userModeFeed(ctx context.Context, userID int, viewerID int
 	return feed, nil
 }
 
-func (s *PostService) GetBookmarkedPostsFeed(ctx context.Context, userID int, viewerID int, categoryIDs []int, limit int, cursor string) (*models.PostFeed, error) {
-	feed, err := s.store.Posts.GetBookmarkedPostsFeed(ctx, userID, categoryIDs, limit, cursor)
+func (s *PostService) GetBookmarkedPostsFeed(ctx context.Context, userID int, viewerID int, categoryIDs []int, includeUncategorized bool, limit int, cursor string) (*models.PostFeed, error) {
+	feed, err := s.store.Posts.GetBookmarkedPostsFeed(ctx, userID, categoryIDs, includeUncategorized, limit, cursor)
 	if err != nil {
 		s.logger.Error("failed to get bookmarked posts feed", "operation", "get_bookmarked_posts_feed", "userID", userID, "categoryIDs", categoryIDs, "error", err)
 		return nil, err
@@ -1004,7 +1004,7 @@ func (s *PostService) GetBookmarkedPostsFeed(ctx context.Context, userID int, vi
 	if err != nil {
 		return nil, err
 	}
-	s.logger.Info("bookmarked posts feed fetched", "userID", userID, "categoryIDs", categoryIDs, "count", len(feed.Items))
+	s.logger.Info("bookmarked posts feed fetched", "userID", userID, "categoryIDs", categoryIDs, "includeUncategorized", includeUncategorized, "count", len(feed.Items))
 	return feed, nil
 }
 

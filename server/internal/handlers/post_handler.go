@@ -920,7 +920,8 @@ func (h *PostHandler) BookmarkedPostsFeed(w http.ResponseWriter, r *http.Request
 	limitStr := r.URL.Query().Get("limit")
 	cursor := r.URL.Query().Get("cursor")
 	limit, _, _ := util.ParsePaginationParams(limitStr, cursor, 20, 100)
-	feed, err := h.service.Posts.GetBookmarkedPostsFeed(r.Context(), user.ID, user.ID, categoryIDs, limit, cursor)
+	includeUncategorized := r.URL.Query().Get("include_uncategorized") == "true"
+	feed, err := h.service.Posts.GetBookmarkedPostsFeed(r.Context(), user.ID, user.ID, categoryIDs, includeUncategorized, limit, cursor)
 	if err != nil {
 		if appErr, ok := err.(*apperrors.AppError); ok {
 			util.RespondWithAppError(w, appErr)
