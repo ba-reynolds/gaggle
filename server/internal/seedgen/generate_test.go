@@ -44,6 +44,25 @@ func TestGenerateScale(t *testing.T) {
 	}
 }
 
+func TestGenerateScale_4x(t *testing.T) {
+	ds := gDataset()
+	if len(ds.Users) != 150 {
+		t.Fatalf("users = %d, want 150", len(ds.Users))
+	}
+	var top int
+	for _, p := range ds.Posts {
+		if p.ParentIdx == -1 {
+			top++
+		}
+	}
+	if top != 1600 {
+		t.Fatalf("top-level = %d, want 1600", top)
+	}
+	if len(ds.Posts) != 2200 {
+		t.Fatalf("posts = %d, want 2200", len(ds.Posts))
+	}
+}
+
 func TestGenerateUserUniquenessAndConstraints(t *testing.T) {
 	ds := gDataset()
 	seen := make(map[string]bool, len(ds.Users))

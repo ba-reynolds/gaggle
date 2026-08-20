@@ -24,22 +24,22 @@ import (
 const (
 	SeedValue       = 20260819 // fixed rng seed; determinism across envs
 	AnchorUsers     = 8        // alice/bob/charlie/diana/eve/frank/grace/henry
-	FakerUsers      = 30       // generated demo users
+	FakerUsers      = 142      // generated demo users
 	TotalUsers      = AnchorUsers + FakerUsers
-	DaysOfHistory   = 28  // posts spread across the last 4 weeks
-	TopLevelPosts   = 400 // top-level posts
-	ReplyPosts      = 150 // replies (nested where sensible)
-	DMConversations = 10  // ~10 conversations, several messages each
-	Lists           = 6   // user-created lists
-	AssignedBadges  = 3   // assigned badges granted to a few users
-	MediaPosts      = 15  // posts carrying a single image each
+	DaysOfHistory   = 28   // posts spread across the last 4 weeks
+	TopLevelPosts   = 1600 // top-level posts
+	ReplyPosts      = 600  // replies (nested where sensible)
+	DMConversations = 40   // ~10 conversations, several messages each
+	Lists           = 24   // user-created lists
+	AssignedBadges  = 3    // assigned badges granted to a few users
+	MediaPosts      = 60   // posts carrying a single image each
 
 	FollowMin = 8 // per-user following count bounds
 	FollowMax = 15
 
-	LikeMin, LikeMax         = 0, 25
-	RepostMin, RepostMax     = 0, 8
-	BookmarkMin, BookmarkMax = 0, 12
+	LikeMin, LikeMax         = 0, 40
+	RepostMin, RepostMax     = 0, 10
+	BookmarkMin, BookmarkMax = 0, 16
 	PollVoteMin, PollVoteMax = 0, 12
 )
 
@@ -87,10 +87,25 @@ type GenPollVote struct {
 	OptionIdx int
 }
 
+// bookmarkCategoryPool is the shared palette for bookmark categories.
+var bookmarkCategoryPool = []struct {
+	Name  string
+	Color string
+}{
+	{"Tech", "#0ea5e9"},
+	{"Inspiration", "#a855f7"},
+	{"Reading List", "#f59e0b"},
+	{"Research", "#06b6d4"},
+	{"Work", "#6366f1"},
+	{"Ideas", "#ec4899"},
+	{"Watch Later", "#22c55e"},
+}
+
 // GenEngagement is a single like/repost/bookmark of a post by a user.
 type GenEngagement struct {
-	PostIdx int
-	UserIdx int
+	PostIdx      int
+	UserIdx      int
+	CategoryName *string // nil = uncategorized (~10% of bookmarks)
 }
 
 // GenRelationship is one user_relationships row (follow | block | mute).
@@ -148,18 +163,19 @@ type GenMedia struct {
 // Dataset is the pure in-memory model of the demo community. All cross
 // references use dataset-relative indices; Apply resolves them to DB IDs.
 type Dataset struct {
-	Users           []GenUser
-	Posts           []GenPost
-	Polls           []GenPoll
-	PollVotes       []GenPollVote
-	Likes           []GenEngagement
-	Reposts         []GenEngagement
-	Bookmarks       []GenEngagement
-	Relationships   []GenRelationship
-	DMConversations []GenDMConversation
-	Lists           []GenList
-	Badges          []GenBadgeGrant
-	Media           []GenMedia
+	Users                 []GenUser
+	Posts                 []GenPost
+	Polls                 []GenPoll
+	PollVotes             []GenPollVote
+	Likes                 []GenEngagement
+	Reposts               []GenEngagement
+	Bookmarks             []GenEngagement
+	BookmarkCategoryNames [][]string `json:"-"` // per-user pool pick (pruned to used only before Apply)
+	Relationships         []GenRelationship
+	DMConversations       []GenDMConversation
+	Lists                 []GenList
+	Badges                []GenBadgeGrant
+	Media                 []GenMedia
 
 	// UserIDs / PostIDs are populated by Apply: dataset index -> DB row ID.
 	UserIDs []int

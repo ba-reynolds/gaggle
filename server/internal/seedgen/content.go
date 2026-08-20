@@ -452,6 +452,17 @@ func (g *generator) genLists() {
 		{8, "Startup crew", "Founders and builders"},
 		{12, "Book club 2026", "This year's picks"},
 	}
+	for i := len(defs); i < Lists; i++ {
+		defs = append(defs, struct {
+			owner int
+			name  string
+			desc  string
+		}{
+			owner: g.f.Number(0, TotalUsers-1),
+			name:  g.f.Sentence(2),
+			desc:  g.f.Sentence(5),
+		})
+	}
 	for i := 0; i < min(Lists, len(defs)); i++ {
 		list := GenList{OwnerIdx: defs[i].owner, Name: defs[i].name, Description: defs[i].desc}
 		for m := 0; m < g.f.Number(4, 10); m++ {
