@@ -160,6 +160,10 @@ type Dataset struct {
 	Lists           []GenList
 	Badges          []GenBadgeGrant
 	Media           []GenMedia
+
+	// UserIDs / PostIDs are populated by Apply: dataset index -> DB row ID.
+	UserIDs []int
+	PostIDs []int
 }
 
 // generator carries the deterministic faker + dataset under construction.

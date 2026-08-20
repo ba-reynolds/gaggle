@@ -1,6 +1,7 @@
 package testutil
 
 import (
+	"crypto/sha256"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -22,7 +23,13 @@ import (
 	"github.com/ba-reynolds/gaggle/pkg/config"
 )
 
-const testDBName = "social_test"
+// testDBName returns a database name unique to the running test binary, so
+// `go test ./...` (which runs each package as a separate process, in parallel)
+// does not have packages racing to DROP/CREATE the same social_test database.
+func testDBName() string {
+	sum := sha256.Sum256([]byte(os.Args[0]))
+	return fmt.Sprintf("social_test_%x", sum[:4])
+}
 
 var (
 	dbOnce   sync.Once
@@ -35,6 +42,7 @@ var (
 // configured via DB_* env vars (defaults: localhost:6969, white/teeth).
 func Database(t *testing.T) *sql.DB {
 	t.Helper()
+	name := testDBName()
 	dbOnce.Do(func() {
 		adminAddr := envOr("TEST_DB_ADDRESS", "localhost:6969")
 		adminUser := envOr("TEST_DB_USER", "white")
@@ -49,16 +57,16 @@ func Database(t *testing.T) *sql.DB {
 		defer admin.Close()
 
 		// Drop + recreate a clean test database.
-		if _, err := admin.Exec("DROP DATABASE IF EXISTS " + testDBName); err != nil {
+		if _, err := admin.Exec("DROP DATABASE IF EXISTS " + name); err != nil {
 			dbErr = fmt.Errorf("drop test db: %w", err)
 			return
 		}
-		if _, err := admin.Exec("CREATE DATABASE " + testDBName); err != nil {
+		if _, err := admin.Exec("CREATE DATABASE " + name); err != nil {
 			dbErr = fmt.Errorf("create test db: %w", err)
 			return
 		}
 
-		testDSN := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", adminUser, adminPass, adminAddr, testDBName)
+		testDSN := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", adminUser, adminPass, adminAddr, name)
 		db, err := sql.Open("pgx", testDSN)
 		if err != nil {
 			dbErr = fmt.Errorf("open test db: %w", err)

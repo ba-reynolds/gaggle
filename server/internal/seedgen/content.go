@@ -207,6 +207,10 @@ func (g *generator) genPosts() {
 			MediaIdx:   -1,
 			PollIdx:    -1,
 		}
+		// Private accounts post followers-only content ~half the time.
+		if g.ds.Users[p.AuthorIdx].IsPrivate && g.f.Number(1, 100) <= 50 {
+			p.Visibility = "followers"
+		}
 		p.Content = g.genPostContent(i)
 
 		// ~10% of top-level posts get a poll (uses this post's index).
@@ -341,7 +345,26 @@ func (g *generator) genRelationships() {
 }
 
 // genEngagement — likes/reposts/bookmarks per post (excluding the author).
+// Each (post, user) pair is unique so the DB ON CONFLICT dedup never swallows
+// rows and dataset counts match post-Apply row counts exactly.
 func (g *generator) genEngagement() {
+	seen := make(map[[3]int]bool)
+	addEngagement := func(kind string, postIdx, userIdx int) {
+		key := [3]int{kindIdx(kind), postIdx, userIdx}
+		if seen[key] {
+			return
+		}
+		seen[key] = true
+		switch kind {
+		case "like":
+			g.ds.Likes = append(g.ds.Likes, GenEngagement{PostIdx: postIdx, UserIdx: userIdx})
+		case "repost":
+			g.ds.Reposts = append(g.ds.Reposts, GenEngagement{PostIdx: postIdx, UserIdx: userIdx})
+		case "bookmark":
+			g.ds.Bookmarks = append(g.ds.Bookmarks, GenEngagement{PostIdx: postIdx, UserIdx: userIdx})
+		}
+	}
+
 	for i := range g.ds.Posts {
 		p := &g.ds.Posts[i]
 		for l := 0; l < g.f.Number(LikeMin, LikeMax); l++ {
@@ -349,7 +372,7 @@ func (g *generator) genEngagement() {
 			if u == p.AuthorIdx {
 				continue
 			}
-			g.ds.Likes = append(g.ds.Likes, GenEngagement{PostIdx: i, UserIdx: u})
+			addEngagement("like", i, u)
 		}
 		// Reposts on top-level posts only (mirrors the app).
 		if p.ParentIdx == -1 {
@@ -358,7 +381,7 @@ func (g *generator) genEngagement() {
 				if u == p.AuthorIdx {
 					continue
 				}
-				g.ds.Reposts = append(g.ds.Reposts, GenEngagement{PostIdx: i, UserIdx: u})
+				addEngagement("repost", i, u)
 			}
 		}
 		for b := 0; b < g.f.Number(BookmarkMin, BookmarkMax); b++ {
@@ -366,9 +389,21 @@ func (g *generator) genEngagement() {
 			if u == p.AuthorIdx {
 				continue
 			}
-			g.ds.Bookmarks = append(g.ds.Bookmarks, GenEngagement{PostIdx: i, UserIdx: u})
+			addEngagement("bookmark", i, u)
 		}
 	}
+}
+
+func kindIdx(kind string) int {
+	switch kind {
+	case "like":
+		return 0
+	case "repost":
+		return 1
+	case "bookmark":
+		return 2
+	}
+	return 3
 }
 
 // genDMs — ~10 conversations with alternating messages.
