@@ -1,3 +1,80 @@
+# SUMMARY — settings-page-bg-split
+
+On the Settings page, scrolling revealed a hard horizontal "split" in the
+background at exactly `100vh` — the area above the fold showed the app's tinted
+panel color, and everything below it showed a different, raw background color.
+The split occurred on **every theme** (worst on themes with big background-
+vs-sidebar contrast, e.g. comic's halftone dots / dark themes) and also affects
+any other page whose content scrolls past one viewport (feed at short
+viewports, mentions, profile, …).
+
+## Root cause
+
+A layout regression from `improve-message-flow` (commit `33e0f97`). The main
+content column in `web/src/layout/SocialMediaLayout.tsx` paints the app's page
+background (`bg-background/25` — a 25% tint of `--background` over
+`bg-sidebar`, and on the comic theme a solid cream + halftone pattern). That
+branch changed the column from `min-h-screen` to `h-screen flex flex-col`
+(with a `flex-1 min-h-0` child), so the message pages could get fixed-height,
+internally-scrolling threads. The side effect: the column's box — and therefore
+its background — is clamped to **exactly one viewport (100vh)**, while non-
+message pages (Settings, Feed, …) have no internal scroller, so their content
+overflows past the column. Once the document scrolls more than a viewport, the
+region below the column exposes the raw `bg-sidebar` (outer container) / `body`
+`bg-background`. Verbatim from the old diff: the column went from
+`... bg-background/25 min-h-screen px-6 pb-16 md:pb-0` to
+`... h-screen flex flex-col`.
+
+## What was changed and why
+
+One line in `web/src/layout/SocialMediaLayout.tsx` line 208:
+
+- `h-screen` → `min-h-screen self-start` (keeping the `flex flex-col` + inner
+  `flex-1 min-h-0` wrapper that message pages depend on).
+
+- **`min-h-screen`** lets the column grow with its content, so the
+  `bg-background/25` tint (and the comic halftone override) extends the full
+  height of every page instead of stopping at 100vh → no split.
+- **`self-start`** (align-self: start) is the second half of the fix: without
+  it, the grid item stretches to the row height, which on short viewports is
+  driven taller by the sidebar rails (~100–200px). For the fixed-height
+  message pages that stretch would push the composer/input below the fold.
+  `self-start` keeps the column at max(content, 100vh), so message pages keep
+  their composer pinned in-view and threaded scroll exactly as before.
+
+Verified against a live browser (playwright, vite dev on :5174 → :2021):
+
+- Before: `/settings` scroll height 1627 while the tinted column covered only
+  `[0, 900]` (or `[0, 700]` at a shorter viewport) → seam exactly at 100vh.
+  Feed at a 700px viewport: column covered `[0,700]`, content ran to 898.
+- After: `/settings` column bottom = 1627 = scrollHeight (full coverage);
+  full-page pixel sampling shows the bottom-most background gap renders the
+  identical tinted color `srgb(248,245,238)` as the top gaps — one uniform
+  background. Feed column = full height whenever content is taller than a
+  viewport.
+- No message regression: `/messages` and `/messages/<id>` keep a 100vh column,
+  bounded internal thread scroller, page-level scroll unchanged (~198px at a
+  700px viewport, the pre-existing sidebar-rail overflow), and the composer is
+  visible at scrollY=0 (`inputVisible: true`).
+
+## Files touched
+
+- `web/src/layout/SocialMediaLayout.tsx` — main-content column: `h-screen` →
+  `min-h-screen self-start`.
+
+## Reviewer double-checks
+
+- The residual sub-viewport band below the *last* piece of content on very
+  short pages (message pages, sparse feeds) is the pre-existing "sidebar rails
+  taller than the viewport" overflow already documented in project-notes —
+  unchanged by this branch (the column is no longer stretched into that band).
+- `flex flex-col` + `flex-1 min-h-0` wrapper is intentionally untouched: it is
+  what gives ConversationPage/MessagesPage their fixed-height internal scroll.
+- No server/DB/migration changes → no migration-version risk.
+- Frontend verification = `npm run lint` (0 errors, 16 pre-existing warnings)
+  + `npm run build` (passes, pre-existing chunk-size warning only).
+
+---
 # SUMMARY — snappy-ux
 
 Makes the web app feel immediate: sent messages appear instantly
