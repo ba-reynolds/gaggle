@@ -27,6 +27,22 @@ PROJ := gaggle-$(notdir $(CURDIR))
 proj-dev:
 	@scripts/proj-up.sh $(PROJ)
 
+# Selective builds: only rebuild the service whose sources changed.
+proj-dev-web-only:
+	@BUILD_MODE=web-only scripts/proj-up.sh $(PROJ)
+
+proj-dev-api-only:
+	@BUILD_MODE=api-only scripts/proj-up.sh $(PROJ)
+
+# Skip image builds entirely (reuse last images) — fastest re-up.
+proj-dev-nobuild:
+	@BUILD_MODE=none scripts/proj-up.sh $(PROJ)
+
+# Fast frontend loop: isolated db/redis/api + host Vite HMR (no nginx build).
+# Uses the same DB/REDIS ports as proj-dev but skips the web image.
+proj-dev-fe:
+	@scripts/proj-up.sh --fe-only $(PROJ) 2>/dev/null || (echo ">> proj-dev-fe: starting db/redis/api only (host Vite handles web)" && docker compose -p $(PROJ) up --build -d --wait db redis api && echo "" && . ~/.local/state/gaggle-proj/$(PROJ).env 2>/dev/null; echo "  API: http://localhost:$${API_PORT:-2021}   (swagger: /swagger)"; echo "  Next: cd web && npm run dev -- --host --port $${WEB_PORT:-5173}  (proxies /api → api)" && echo "  Or: make proj-dev  for full nginx preview")
+
 proj-stop:
 	docker compose -p $(PROJ) down
 

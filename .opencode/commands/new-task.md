@@ -18,14 +18,27 @@ Task: $ARGUMENTS
 5. Run any available tests/lint inside the worktree.
 6. Stand up the isolated preview stack so the user can connect to YOUR build
    (skip only for purely-backend tasks with no visible surface):
-   a. Run: make proj-dev   (NOT make dev — that overwrites the shared stack
-      every other agent uses).
-   b. Wait for it to finish (it passes docker compose --wait, so it only
+   - For **frontend-only** changes (web/**, web/public/**), prefer the fast
+     path: `make proj-dev-web-only` (or `make proj-dev-fe` for host Vite HMR
+     against the isolated api — faster than a full nginx build). Only use
+     `make proj-dev` when you touched nginx/TLS/deploy paths.
+     `scripts/proj-up.sh` auto-detects web-only vs api-only vs both and skips
+     rebuilding the unchanged image; pass `BUILD_MODE=web-only|api-only|none|full`
+     explicitly if the auto-detect is wrong.
+   - Otherwise, run: `make proj-dev` (NOT `make dev` — that overwrites the
+     shared stack every other agent uses).
+   - In all cases, the script prints `>> preview ready in <N>s [build=...]`
+     with the real elapsed time (not the TUI's cumulative session time).
+   a. Wait for it to finish (it passes docker compose --wait, so it only
       returns once every container is healthy). The first run builds the
-      api/web images and may take a while.
-   c. Copy the "Frontend: http://localhost:<port>" line printed by the script —
-      this is YOUR branch's isolated preview, on its own ports and its own DB.
-   d. If the UI needs demo users to log in, also run: make proj-seed
+      needed image(s) and may take a while; second runs are much faster
+      because `go_mod_cache`/`npm_cache` stay warm and unchanged images
+      are not rebuilt.
+   b. Copy the "Frontend: http://localhost:<port>" line printed by the script —
+      this is YOUR branch's isolated preview, on its own ports (api/web/db/redis
+      all hashed and persisted in ~/.local/state/gaggle-proj/<proj>.env) and its
+      own DB.
+   c. If the UI needs demo users to log in, also run: make proj-seed
 7. Write ./agent-branch/<slug>/SUMMARY.md covering: what was changed, why,
    files touched, and anything a reviewer should double-check.
 8. Commit everything on that branch (git -C ./agent-branch/<slug> add -A
