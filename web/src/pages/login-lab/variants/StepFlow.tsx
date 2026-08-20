@@ -39,8 +39,8 @@ export function StepFlow({ footer }: { footer?: ReactNode } = {}) {
     <div className="flex h-full w-full items-center justify-center p-8">
       <div className="w-full max-w-sm space-y-8">
         <div className="flex items-center justify-center">
-          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-xl font-bold text-primary-foreground">
-            G
+          <span className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-primary">
+            <img src="/gaggle-goose.png" alt="Gaggle" className="h-full w-full object-cover" />
           </span>
         </div>
 
