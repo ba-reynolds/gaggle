@@ -2,6 +2,38 @@
 
 Running log of agent-branch merges into main. Newest on top.
 
+## 2026-08-20 — agent/message-page-fixes
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md`, `.opencode/project-notes.md` — kept **every** section from both
+    sides, newest on top (message-page-fixes → fix-goose-403-deploy →
+    avatar-suggestions-polish → prior sections), `---` separated.
+- Real code (`ConversationPage.tsx`, `MessagesPage.tsx`, `index.css` — bounded
+  thread height via `h-dvh`, `group-`-prefixed bubble positions, 2px group gap,
+  `.theme-scrollbar`) auto-merged cleanly. Migration duplicate check clean. No
+  DB migrations (frontend only).
+
+## 2026-08-20 — agent/fix-goose-403-deploy
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md`, `.opencode/project-notes.md` — kept **every** section from both
+    sides, newest on top (fix-goose-403-deploy → avatar-suggestions-polish →
+    prior sections), `---` separated.
+- Real code (`deploy/apply.sh` force-recreate + pre-flight verify + two-protocol
+  gate, `compose.yaml` web healthcheck assets) auto-merged cleanly. Migration
+  duplicate check clean. No DB migrations (infra only).
+
+## 2026-08-20 — agent/avatar-suggestions-polish
+
+- Status: **clean** (`--no-ff` merge)
+- `SUMMARY.md`, `.opencode/project-notes.md` auto-merged cleanly (main had no
+  nearby edits at that point). Real code (`UserAvatar.tsx` muted theme-aware
+  fallback, `min-w-0`+`truncate` who-to-follow rows in SocialMediaLayout/
+  ExplorePage/ListPage, `UserHoverCard.tsx`) auto-merged cleanly. Migration
+  duplicate check clean. No DB migrations (frontend only).
+
 ## 2026-08-20 — agent/settings-page-bg-split
 
 - Status: **conflicted**
