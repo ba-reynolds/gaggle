@@ -1,4 +1,64 @@
-# SUMMARY — news-preview
+# SUMMARY — nickname-default
+
+New accounts used to be created with an **empty display name** (`display_name`)
+— the "nickname" the app shows next to a username. They walked around "naked":
+posts, avatars, DMs, notifications, the sidebar account row, etc. rendered a
+blank name (and `name={author.display_name}` alt / `charAt(0)` fallbacks had
+nothing to show) until the user went into profile edit and typed one.
+
+## What was changed and why
+
+- **Store-level creation default** (`server/internal/store/user_store.go`,
+  `Users.Create`): the user_profiles INSERT hardcoded `display_name = ''`
+  (line 178). It now inserts `user.Username` — every new profile's nickname is
+  its username until the user changes it. `models.User` carries no display
+  name and the register request has no nickname field, so the store is the one
+  seam all creators go through (register, admin `CreateUser`, seed). The seed
+  still overrides with its fancified names afterwards, unchanged. Usernames are
+  ≤ 16 chars so the value always fits the 50-char column (which is also why
+  that column is `NOT NULL` with no default — the INSERT was bare).
+- **Backfill existing accounts** (`server/cmd/migrate/migrations/
+  000022_backfill-display-name.{up,down}.sql`): any account created before
+  this fix still has `display_name = ''`; the migration sets
+  `display_name = username` for exactly those rows. `000022` is the next free
+  version (highest is `000021`), verified unique on the branch.
+- **Regression test** (`server/internal/handlers/integration_test.go`,
+  `TestProfileLifecycle`): strengthened — a freshly registered user's
+  `GET /users/me` must return `display_name == username` (was only checked for
+  the key's existence before).
+
+## Files touched
+
+- `server/internal/store/user_store.go` — default display_name to username in
+  `Users.Create`
+- `server/cmd/migrate/migrations/000022_backfill-display-name.up.sql` (new)
+- `server/cmd/migrate/migrations/000022_backfill-display-name.down.sql` (new)
+- `server/internal/handlers/integration_test.go` — `TestProfileLifecycle`
+  assertion
+
+## Verification
+
+- `go build ./...`, `go vet ./...` — clean (tools container).
+- `go test ./...` — all packages pass (handlers 12.4s); the throwaway
+  `social_test` DB applies every `.up.sql` including the new `000022`, so the
+  migration is proven to apply cleanly. `TestProfileLifecycle` passes with the
+  new username-default assertion.
+- Migration version uniqueness check on the branch — clean (no duplicates).
+- Frontend untouched (server data is now always non-empty, which existing
+  `display_name || username` fallbacks still handle).
+
+## Reviewer double-checks
+
+- The backfill down-migration is inherently lossy: it resets rows whose
+  `display_name == username` back to `''` — that includes someone who
+  *deliberately* set their display name equal to their username. Acceptable
+  for a rollback path; if a pristine down is required, the value before cannot
+  be recovered.
+- The store write still passes every other profile column explicitly; only the
+  `$2` display_name argument changed from `""` to `user.Username`.
+- Existing prod/local accounts with a real display name are untouched by the
+  backfill (it only targets `display_name = ''`).
+---
 
 Adds the ability to attach a single news article link to a post. The post then
 renders a card with the article's headline + photo preview (OpenGraph-style),
