@@ -195,6 +195,15 @@ func (s *PostEngagementService) ListBookmarkCategories(ctx context.Context, user
 	return categories, nil
 }
 
+func (s *PostEngagementService) GetUncategorizedBookmarkCount(ctx context.Context, userID int) (int, error) {
+	count, err := s.store.PostEngagements.GetUncategorizedBookmarkCount(ctx, userID)
+	if err != nil {
+		s.logger.Error("failed to get uncategorized bookmark count", "operation", "get_uncategorized_bookmark_count", "userID", userID, "error", err)
+		return 0, err
+	}
+	return count, nil
+}
+
 func (s *PostEngagementService) DeleteBookmarkCategory(ctx context.Context, userID, categoryID int) error {
 	tx, err := s.store.DB.BeginTx(ctx, nil)
 	if err != nil {

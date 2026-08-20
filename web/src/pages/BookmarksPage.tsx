@@ -11,11 +11,20 @@ import { cn } from "@/lib/utils";
 const BookmarksPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
+  const [includeUncategorized, setIncludeUncategorized] = useState(false);
   const debouncedSearchQuery = useDebounce(searchQuery, SEARCH_DEBOUNCE_MS);
   const { ref, inView } = useInView();
 
-  const { data: categoriesData } = useGetBookmarkCategories();
-  const categories = categoriesData?.data ?? [];
+  const { data: categoriesPayload } = useGetBookmarkCategories();
+  // categories endpoint now returns envelope {data: Category[], uncategorized_count} with backward-compat shims
+  const rawData: unknown = (categoriesPayload as unknown as { data?: unknown })?.data;
+  const categories = (Array.isArray(rawData)
+    ? (rawData as import("@/types/api").BookmarkCategory[])
+    : (((categoriesPayload as unknown as { data?: { categories?: import("@/types/api").BookmarkCategory[] } })?.data?.categories) ?? [])) as import("@/types/api").BookmarkCategory[];
+  const uncategorizedCount: number =
+    ((categoriesPayload as unknown as { uncategorized_count?: number })?.uncategorized_count ??
+      (categoriesPayload as unknown as { data?: { uncategorized_count?: number } })?.data?.uncategorized_count ??
+      0);
 
   const {
     data: bookmarkedPosts,
@@ -24,7 +33,8 @@ const BookmarksPage: React.FC = () => {
     hasNextPage,
     isFetchingNextPage
   } = useGetBookmarkedPosts(
-    selectedCategories.length > 0 ? selectedCategories : undefined
+    selectedCategories.length > 0 ? selectedCategories : undefined,
+    includeUncategorized
   );
   const isFetchingRef = useRef(false);
 
@@ -72,6 +82,19 @@ const BookmarksPage: React.FC = () => {
       {/* Category Filters */}
       <div className="px-1 py-3 border-b">
         <div className="flex flex-wrap gap-1.5">
+          <Badge
+            variant={includeUncategorized ? "default" : "secondary"}
+            className={cn(
+              "cursor-pointer transition-colors flex gap-1 text-sm font-medium",
+              includeUncategorized
+                ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+            )}
+            onClick={() => setIncludeUncategorized(v => !v)}
+          >
+            <span>Uncategorized</span>
+            <span className={cn("text-xs", includeUncategorized ? "text-primary-foreground/80" : "text-muted-foreground")}>{uncategorizedCount}</span>
+          </Badge>
           {categories.map(category => (
             <Badge
               key={category.id}

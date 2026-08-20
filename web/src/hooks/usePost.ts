@@ -25,7 +25,6 @@ import {
 } from '@/api/posts';
 import type {
   BookmarkActionResponse,
-  BookmarkCategory,
   CreateBookmarkCategoryPayload,
   CreateBookmarkCategoryResponse,
   CreatePostPayload,
@@ -490,17 +489,17 @@ export function useQuotePost(postId: number) {
   });
 }
 
-export function useGetBookmarkedPosts(categoryIds?: number[], limit: number = 10) {
+export function useGetBookmarkedPosts(categoryIds?: number[], includeUncategorized?: boolean, limit: number = 10) {
   return useInfiniteQuery({
-    queryKey: ['bookmarked', categoryIds && categoryIds.length > 0 ? categoryIds.join(',') : 'all'],
-    queryFn: ({ pageParam }) => getBookmarkedPosts(categoryIds, pageParam, limit),
+    queryKey: ['bookmarked', categoryIds && categoryIds.length > 0 ? categoryIds.join(',') : 'all', includeUncategorized ? 'uncat' : ''],
+    queryFn: ({ pageParam }) => getBookmarkedPosts(categoryIds, includeUncategorized, pageParam, limit),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.data.next_cursor,
   });
 }
 
 export function useGetBookmarkCategories() {
-  return useQuery<Envelope<BookmarkCategory[]>, Error>({
+  return useQuery<Awaited<ReturnType<typeof getBookmarkCategories>>, Error>({
     queryKey: ['bookmark-categories'],
     queryFn: getBookmarkCategories,
   });

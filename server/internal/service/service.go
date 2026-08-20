@@ -86,6 +86,7 @@ type Service struct {
 		AddView(ctx context.Context, postID int, userID *int, ipAddress, userAgent string) error
 		CreateBookmarkCategory(ctx context.Context, userID int, categoryName, color string) (*models.BookmarkCategory, error)
 		ListBookmarkCategories(ctx context.Context, userID int) ([]models.BookmarkCategory, error)
+		GetUncategorizedBookmarkCount(ctx context.Context, userID int) (int, error)
 		DeleteBookmarkCategory(ctx context.Context, userID, categoryID int) error
 	}
 	UserRelationships interface {

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -365,10 +366,10 @@ func (h *PostEngagementHandler) CreateBookmarkCategory(w http.ResponseWriter, r 
 // ListBookmarkCategories godoc
 //
 // @Summary      List bookmark categories
-// @Description  Returns all bookmark categories for the authenticated user
+// @Description  Returns all bookmark categories for the authenticated user, plus uncategorized bookmark count
 // @Tags         bookmarks
 // @Produce      json
-// @Success      200 {object} []models.BookmarkCategory
+// @Success      200 {object} map[string]any
 // @Failure      500 {object} models.Envelope{data=nil,error=apperrors.AppError}
 // @Security     ApiKeyAuth
 // @Router       /bookmarks/category [get]
@@ -388,7 +389,24 @@ func (h *PostEngagementHandler) ListBookmarkCategories(w http.ResponseWriter, r 
 		util.RespondWithAppError(w, apperrors.InternalServerError(err))
 		return
 	}
-	util.RespondWithJson(w, http.StatusOK, categories)
+	uncategorizedCount, err := h.service.PostEngagements.GetUncategorizedBookmarkCount(r.Context(), user.ID)
+	if err != nil {
+		h.logger.Error("failed to get uncategorized bookmark count", "error", err, "userID", user.ID)
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+	if categories == nil {
+		categories = []models.BookmarkCategory{}
+	}
+	// Return envelope with extra top-level uncategorized_count for backward compat.
+	// Frontend reads both envelope.uncategorized_count and data.uncategorized_count.
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"data":                 categories,
+		"uncategorized_count":  uncategorizedCount,
+		"error":                nil,
+	})
 }
 
 // DeleteBookmarkCategory godoc

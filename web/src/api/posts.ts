@@ -112,18 +112,26 @@ export const unbookmarkPost = async (postId: number): Promise<Envelope<BookmarkA
   return response.data;
 };
 
-export const getBookmarkedPosts = async (categoryIds?: number[], cursor?: string, limit?: number): Promise<Envelope<PaginatedFeedResponse>> => {
-  const params: Record<string, string | number | undefined> = { limit, cursor };
-  if (categoryIds && categoryIds.length > 0) {
-    params.category_ids = categoryIds.join(',');
-  }
-  const response = await api.get<Envelope<PaginatedFeedResponse>>('/posts/bookmarks', { params });
-  return response.data;
+export const getBookmarkedPosts = async (
+  categoryIds?: number[],
+  includeUncategorized?: boolean,
+  cursor?: string,
+  limit?: number,
+): Promise<Envelope<PaginatedFeedResponse>> => {
+  const params = new URLSearchParams();
+  if (categoryIds?.length) params.set("category_ids", categoryIds.join(","));
+  if (includeUncategorized) params.set("include_uncategorized", "true");
+  if (cursor) params.set("cursor", cursor);
+  if (limit) params.set("limit", String(limit));
+  const { data } = await api.get<Envelope<PaginatedFeedResponse>>(`/posts/bookmarks?${params.toString()}`);
+  return data;
 };
 
-export const getBookmarkCategories = async (): Promise<Envelope<BookmarkCategory[]>> => {
-  const response = await api.get<Envelope<BookmarkCategory[]>>('/bookmarks/category');
-  return response.data;
+export type BookmarkCategoriesEnvelope = Envelope<BookmarkCategory[]> & { uncategorized_count?: number };
+
+export const getBookmarkCategories = async (): Promise<BookmarkCategoriesEnvelope> => {
+  const { data } = await api.get<BookmarkCategoriesEnvelope>('/bookmarks/category');
+  return data;
 };
 
 export const createBookmarkCategory = async (payload: CreateBookmarkCategoryPayload): Promise<Envelope<CreateBookmarkCategoryResponse>> => {
