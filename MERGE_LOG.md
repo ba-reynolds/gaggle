@@ -2,6 +2,68 @@
 
 Running log of agent-branch merges into main. Newest on top.
 
+## 2026-08-19 — agent/snappy-ux
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md` — kept **every** section from both sides, newest on top
+    (snappy-ux → nickname-default follow-up → nickname-default →
+    web-healthcheck → grok-logo → f5-loading-ui → news-preview → prior
+    sections), `---` separated.
+  - `.opencode/project-notes.md` — kept **every** section from both sides,
+    newest on top (snappy-ux → birth-date sentinel → nickname-default →
+    grok-logo → f5-loading-ui → base), `---` separated.
+- Real code (useSendMessage optimistic DMs, global staleTime 60s, prefetch in
+  SocialMediaLayout, `Message.pending?`, shared useNotifications hook, SSE
+  `['dm-messages']` invalidation) **auto-merged cleanly** — including
+  `SocialMediaLayout.tsx` which f5-loading-ui had also touched. Migration
+  duplicate check clean. No DB migrations added.
+
+## 2026-08-19 — agent/nickname-default
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md` — kept **every** section from both sides, newest on top
+    (nickname-default follow-up → nickname-default → web-healthcheck →
+    grok-logo → f5-loading-ui → news-preview → prior sections), `---`
+    separated.
+  - `.opencode/project-notes.md` — kept **every** section from both sides,
+    newest on top (birth-date sentinel → nickname-default → grok-logo →
+    f5-loading-ui → base), `---` separated.
+- Real code (`user_store.go` display_name default, `integration_test.go`
+  `TestProfileLifecycle`, `ProfilePage.tsx` birthday sentinel) auto-merged
+  cleanly. Migration duplicate check clean. No DB migrations added.
+
+## 2026-08-19 — agent/web-healthcheck
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md` — kept **every** section from both sides, newest on top
+    (web-healthcheck → grok-logo → f5-loading-ui → news-preview → prior
+    sections), `---` separated.
+- Real code (`compose.yaml` web healthcheck, `deploy/apply.sh` `up --wait`)
+  auto-merged cleanly. Migration duplicate check clean. No DB migrations.
+
+## 2026-08-19 — agent/grok-logo
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md` — kept **every** section from both sides, newest on top
+    (grok-logo → f5-loading-ui → news-preview → prior sections), `---`
+    separated.
+  - `.opencode/project-notes.md` — kept **every** section from both sides,
+    newest on top (grok-logo → f5-loading-ui → base), `---` separated.
+- Real code (`web/public/gaggle-goose.png` / `favicon.ico` binary swaps — no
+  code changed) merged cleanly. Migration duplicate check clean. No DB
+  migrations.
+
+## 2026-08-19 — agent/f5-loading-ui
+
+- Status: **clean**
+- Auto-merged cleanly (`AppSplash.tsx` boot splash, pre-JS splash in
+  `index.html`, AuthContext bootstrap timeout). Migration duplicate check
+  clean. No DB migrations.
+
 ## 2026-08-19 — agent/news-preview
 
 - Status: **conflicted**
