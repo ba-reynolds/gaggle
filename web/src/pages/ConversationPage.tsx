@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useConversation, useConversationMessages, useMarkConversationRead, useSentConversationForUser, useSendMessage } from '@/hooks/useDms';
 import { useUser } from '@/contexts/UserContext';
 import { useFetchProfile } from '@/hooks/useUser';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { UserAvatar } from '@/components/UserAvatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Loader2, Send } from 'lucide-react';
@@ -230,10 +230,7 @@ function NewConversationPage({ username }: { username: string }) {
 
       <div className="flex-1 min-h-0 overflow-y-auto space-y-2 p-4">
         <div className="flex h-full min-h-0 flex-col items-center justify-center gap-3 p-8 text-center text-muted-foreground">
-          <Avatar className="h-16 w-16">
-            <AvatarImage src={getMediaUrl(profile.profile_picture_uuid)} alt={profile.display_name} />
-            <AvatarFallback>{profile.display_name?.charAt(0) ?? '?'}</AvatarFallback>
-          </Avatar>
+          <UserAvatar className="h-16 w-16" src={getMediaUrl(profile.profile_picture_uuid)} name={profile.display_name} username={profile.username} />
           <p className="font-semibold text-primary text-lg">{profile.display_name || profile.username}</p>
           {blocked ? (
             <p className="text-sm">You've blocked @{profile.username}, so you can't message them.</p>
@@ -264,10 +261,7 @@ function NewConversationPage({ username }: { username: string }) {
 function ChatHeader({ user }: { user: ConversationOtherParticipant | UserProfileResponse }) {
   return (
     <Link to={`/profile/${user.username}`} className="flex items-center gap-2">
-      <Avatar className="h-9 w-9">
-        <AvatarImage src={getMediaUrl(user.profile_picture_uuid)} alt={user.display_name} />
-        <AvatarFallback>{user.display_name?.charAt(0) ?? '?'}</AvatarFallback>
-      </Avatar>
+      <UserAvatar className="h-9 w-9" src={getMediaUrl(user.profile_picture_uuid)} name={user.display_name} username={user.username} />
       <span className="font-semibold text-primary">{user.display_name || user.username}</span>
     </Link>
   );

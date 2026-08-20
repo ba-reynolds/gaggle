@@ -1,7 +1,7 @@
 import AppSplash from "@/components/AppSplash";
 import ComposeContent from "@/components/ComposeContent";
 import MobileNavigation from "@/components/MobileNavigation";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/UserAvatar";
 import { Button } from "@/components/ui/button";
 import { CustomDialogContent } from "@/components/ui/custom-dialog";
 import { DialogHeader } from "@/components/ui/dialog";
@@ -170,10 +170,7 @@ export default function SocialMediaLayout({
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="w-full flex items-center justify-center lg:justify-between text-primary">
                       <div className="flex items-center">
-                        <Avatar className="h-8 w-8 mr-2">
-                          <AvatarImage src={getMediaUrl(user.profilePictureUUID)} />
-                          <AvatarFallback>{user.displayName[0]}</AvatarFallback>
-                        </Avatar>
+                        <UserAvatar className="h-8 w-8 mr-2" src={getMediaUrl(user.profilePictureUUID)} name={user.displayName} username={user.username} />
                         <div className="hidden lg:block text-left">
                           <p className="text-sm font-medium text-primary">{user.displayName}</p>
                           <p className="text-xs text-muted-foreground">@{user.username}</p>
@@ -262,10 +259,7 @@ export default function SocialMediaLayout({
                           onFollowToggle={handleFollowToggle(username)}
                         >
                           <div className="flex items-center">
-                            <Avatar className="h-10 w-10 mr-2">
-                              <AvatarImage src={getMediaUrl(profile.profile_picture_uuid)} />
-                              <AvatarFallback>{profile.display_name.charAt(0)}</AvatarFallback>
-                            </Avatar>
+                            <UserAvatar className="h-10 w-10 mr-2" src={getMediaUrl(profile.profile_picture_uuid)} name={profile.display_name} username={profile.username} />
                             <div>
                               <p className="font-semibold text-sm text-primary">{profile.display_name}</p>
                               <p className="text-xs text-muted-foreground">@{username}</p>

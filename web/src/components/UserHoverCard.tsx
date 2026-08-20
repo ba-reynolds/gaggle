@@ -1,5 +1,5 @@
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/UserAvatar";
 import { Button } from "@/components/ui/button";
 import { useFetchProfile } from "@/hooks/useUser";
 import UserBadges from "@/components/UserBadges";
@@ -54,10 +54,7 @@ const UserHoverCard: React.FC<UserHoverCardProps> = ({
         <div className="flex flex-col space-y-4">
           <div className="flex justify-between items-start">
             <Link to={profileUrl} className="cursor-pointer">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={getMediaUrl(profile?.profile_picture_uuid)} alt={displayName} />
-                <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
-              </Avatar>
+              <UserAvatar className="h-16 w-16" src={getMediaUrl(profile?.profile_picture_uuid)} name={displayName} username={username} />
             </Link>
             {!isCurrentUser && (
               <Button

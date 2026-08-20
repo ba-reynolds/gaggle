@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/UserAvatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { CustomDialogContent } from "@/components/ui/custom-dialog";
@@ -291,10 +291,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
               isFollowing={following}
               onFollowToggle={handleFollowToggle}
             >
-              <Avatar className="h-10 w-10 cursor-pointer">
-                <AvatarImage src={getMediaUrl(author.profile_picture_uuid)} alt={author.display_name} />
-                <AvatarFallback>{author.display_name.charAt(0)}</AvatarFallback>
-              </Avatar>
+              <UserAvatar className="h-10 w-10 cursor-pointer" src={getMediaUrl(author.profile_picture_uuid)} name={author.display_name} username={author.username} />
             </UserHoverCard>
 
             <div className="flex-1 min-w-0">
@@ -638,10 +635,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
           </DialogHeader>
 
           <div className="relative flex items-start space-x-3">
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={getMediaUrl(author.profile_picture_uuid)} alt={author.display_name} />
-              <AvatarFallback>{author.display_name.charAt(0)}</AvatarFallback>
-            </Avatar>
+            <UserAvatar className="h-10 w-10" src={getMediaUrl(author.profile_picture_uuid)} name={author.display_name} username={author.username} />
 
             <div className="flex-1">
               <div className="flex items-center">

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import FeedPost from '@/components/FeedPost';
 import UserHoverCard from '@/components/UserHoverCard';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { UserAvatar } from '@/components/UserAvatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -89,10 +89,7 @@ export default function ExplorePage() {
                 onFollowToggle={toggleFollow(profile.username)}
               >
                 <div className="flex items-center">
-                  <Avatar className="h-10 w-10 mr-2">
-                    <AvatarImage src={getMediaUrl(profile.profile_picture_uuid)} alt={profile.display_name} />
-                    <AvatarFallback>{profile.display_name?.[0] ?? profile.username[0]}</AvatarFallback>
-                  </Avatar>
+                  <UserAvatar className="h-10 w-10 mr-2" src={getMediaUrl(profile.profile_picture_uuid)} name={profile.display_name} username={profile.username} />
                   <div>
                     <p className="font-semibold text-sm text-primary">{profile.display_name || profile.username}</p>
                     <p className="text-xs text-muted-foreground">@{profile.username}</p>

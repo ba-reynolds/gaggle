@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/UserAvatar";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -104,10 +104,7 @@ const FollowListPage: React.FC<FollowListPageProps> = ({ listType }) => {
             return (
               <div key={profile.username} className="flex items-start gap-3 p-4">
                 <Link to={`/profile/${profile.username}`} className="shrink-0">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={getMediaUrl(profile.profile_picture_uuid)} alt={profile.display_name} />
-                    <AvatarFallback>{(profile.display_name || profile.username).charAt(0).toUpperCase()}</AvatarFallback>
-                  </Avatar>
+                  <UserAvatar className="h-12 w-12" src={getMediaUrl(profile.profile_picture_uuid)} name={profile.display_name} username={profile.username} />
                 </Link>
                 <div className="flex-1 min-w-0">
                   <Link to={`/profile/${profile.username}`} className="block hover:underline">

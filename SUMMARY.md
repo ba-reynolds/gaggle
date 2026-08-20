@@ -1,3 +1,55 @@
+# SUMMARY — avatar-placeholder
+
+Accounts with no profile picture used to show a bare `bg-muted` gray disc with
+a lowercase single initial (or nothing at all when `display_name` was blank),
+so the avatar preview — e.g. in the sidebar "Who to follow" — looked empty.
+This branch adds a real placeholder avatar: an uppercase initial on a
+username-derived background color, falling back to a person icon when even the
+name is missing.
+
+## What was changed and why
+
+- **New shared component `web/src/components/UserAvatar.tsx`** — one place for
+  the entire app's avatar rendering, replacing the ad-hoc
+  `<Avatar><AvatarImage/><AvatarFallback/></Avatar>` blocks that were
+  copy-pasted (with subtly different fallback logic) into 13 files.
+  - Props: `src`, `name`, `username`, `alt`, `className` (sizing), and
+    `fallbackClassName` (for big avatars like the profile page's `text-6xl`).
+  - Fallback shows the first code point of `name || username`, uppercased
+    (`Array.from(...)[0]` so emoji/surrogate starts don't break), on a color
+    hashed deterministically from `username || name` (12-color palette, all
+    legible with white text). Renders a `User` lucide icon if there's no
+    initial at all.
+  - Only renders `AvatarImage` when a `src` exists (mirrors `getMediaUrl`
+    returning `undefined` for empty uuids), so a missing picture always shows
+    the placeholder instead of a broken-image attempt.
+- **Swapped every avatar usage** (sidebar logoff row, Who-to-follow, feed
+  posts, reply dialog, composer, profile header + edit dialog, search, explore,
+  notifications, DMs list + conversation + empty state, followers/following,
+  lists, list members, hover cards) to `<UserAvatar … />`. Net −57 lines.
+- Frontend-only; no server, migration, or API changes.
+
+## Verified
+
+- `npm run lint` (web-tools): 0 errors, 16 warnings — all pre-existing, none in
+  the changed files.
+- `npm run build` (web-tools, `tsc -b && vite build`): passes. A `React`
+  import left in `UserAvatar` (unused under noUnusedLocals) was caught by tsc
+  and removed.
+- Go tests not re-run — no server-side changes on this branch.
+
+## Reviewer double-checks
+
+- `UserHoverCard` 's fallback resolves through `useFetchProfile` (may be
+  undefined → falls back to the `name` prop), same as before.
+- The two `ProfilePage` avatars pass explicit `fallbackClassName` sizes
+  (`text-6xl` / `text-2xl`); everything else uses the default `font-bold`
+  white-on-color letter.
+- `ComposeContent` passes only `username` (no display name in UserContext) —
+  the initial comes from the username, which is the intended behavior.
+
+---
+
 # SUMMARY — snappy-ux
 
 Makes the web app feel immediate: sent messages appear instantly
