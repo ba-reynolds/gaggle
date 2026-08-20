@@ -1,3 +1,64 @@
+# SUMMARY — grok-logo
+
+Replaces the page's logo art (favicon + sidebar icon) with the new
+`grok_cutout` master. The user modified the original logo image; the new art is
+a background-transparent cutout stored in
+`/home/bau/Programming/svg-img/new-stuff-here/grok_cutout.svg` (vector master,
+1024²) / `grok_cutout.png` (4096² raster of the same art).
+
+## What was changed and why
+
+- Generated two web assets from `grok_cutout.svg` and swapped them in place,
+  keeping the existing filenames so **no code changes were needed**:
+  - `web/public/gaggle-goose.png` (80×80) — the brand mark used by the App Logo
+    block in `SocialMediaLayout.tsx:126` (rendered `w-10 h-10 rounded-full`
+    = 40px circle, so 2× = retina).
+  - `web/public/favicon.ico` (16/32/48/64 ICO frames) — referenced by
+    `web/index.html:5`.
+- **The cutout art is not centered**: its opaque content is flushed to the
+  bottom-right corner (SVG bbox `793x931+231+93`; the canvas corner pixel is
+  opaque). Dropping it in raw would clip part of the logo under the sidebar's
+  circular crop. So the assets were re-anchored: trim → re-center into a square
+  canvas → scale so the art's max reach from center is ≈1.045× the inscribed
+  circle radius, matching the fill ratio of the previous goose asset (measured
+  41.8px reach vs 40px radius). Verified the new 80px asset's reach is 41.9px.
+- Master choice: used the **SVG** (vector, crisp at any size via `rsvg-convert`),
+  consistent with how the old goose assets were generated. The PNG is just a
+  4096² raster of the same paths and produces the same result.
+
+## Files touched
+
+- `web/public/gaggle-goose.png` (replaced binary)
+- `web/public/favicon.ico` (replaced binary)
+- `.opencode/project-notes.md` (new note: master location + regeneration recipe)
+
+## Verification
+
+- `npm run build` (vite): passes; both new assets emitted into `dist/` and byte-
+  identical to `public/`.
+- `npm run lint`: 0 errors (16 pre-existing react-refresh warnings, none in
+  changed files — no TS/JS touched).
+- Analyzed the generated PNGs (`magick identify` + alpha threshold): content
+  bbox centered, transparent corners on the favicon frames, 80px logo reach
+  1.048× radius (target 1.045).
+
+## Things a reviewer should double-check
+
+- **Visual QA**: I can't render images in this environment, so eyeball the
+  logo at `http://localhost:5173` after a rebuild — specifically the circular
+  40px sidebar icon on light + dark themes and the browser-tab favicon. If it
+  reads too small/large, tune the `694x815` resize (raise/lower = bigger/smaller
+  in the circle) and retrim/regenerate.
+- The 80px asset name is still `gaggle-goose.png` (unchanged reference) even
+  though the art is no longer a goose — renaming was deliberately skipped to
+  avoid touching TS/HTML. A future branch could rename it to e.g. `gaggle-logo.png`.
+- Masters stay in `/home/bau/Programming/svg-img/new-stuff-here/` (outside the
+  repo), matching the existing `goose_max.svg` convention; only the raster web
+  assets are committed.
+- `package-lock.json` untouched this time (browser/`npm run build` only — no
+  `npm install` in the web-tools container).
+
+---
 # SUMMARY — news-preview
 
 Adds the ability to attach a single news article link to a post. The post then

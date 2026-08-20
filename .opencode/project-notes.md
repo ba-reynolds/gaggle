@@ -1,3 +1,17 @@
+## Page logo = grok_cutout (agent/grok-logo)
+- New logo master is `grok_cutout.svg`/`.png` in
+  `/home/bau/Programming/svg-img/new-stuff-here/` (a background-transparent
+  cutout; SVG = 1024² vector, PNG = 4096² raster — same art).
+- The art is NOT centered: opaque content flushes to the bottom-right corner
+  (SVG bbox `793x931+231+93`; render corner pixel is opaque). Regenerate with
+  trim + recenter, or the `rounded-full` 40px sidebar circle crop clips it.
+- Recipe (matches the old goose fill ratio — max reach ≈ 1.045× the inscribed
+  circle radius): `rsvg-convert -w 1024` the SVG → `magick -trim +repage` →
+  `-resize 694x815` → `-gravity center -background none -extent 1024x1024` →
+  downscale to 80×80 for the sidebar and to 16/32/48/64 → `magick` ICO.
+- Web files keep the old names (`/favicon.ico`, `/gaggle-goose.png`) so no
+  code changes were needed — only the two binary assets swapped.
+
 ## Messages: /messages/new + search debounce (agent/message-conversation-fixes)
 - **Static routes have NO route params**: `useParams()` on route `/messages/new` returns `{}` — `conversationId` is `undefined`, not `"new"`. ConversationPage tested `conversationIdStr === "new"`, so `/messages/new` fell through to the existing-conversation branch, computed `Number(undefined)` = NaN, disabled the dm-conversation query, and rendered "Conversation not found." Fix pattern: `const isNew = !conversationIdStr || conversationIdStr === "new"` (ConversationPage.tsx:21).
 - `NewMessageComposer` (MessagesPage.tsx) passed the live query to `useSearchUsers` → one `GET /search?type=users` per keystroke. Now debounces via `useDebounce` and the shared `SEARCH_DEBOUNCE_MS = 300` (exported from `web/src/hooks/useDebounce.ts`). Other keystroke-fired searches were the same way and got fixed too: ListPage `MemberSearch` (add-user), ExplorePage live `useSearchPosts`. The constant is the single source of truth — tune debounce there, don't inline `300` at new call sites. (FeedPost's 150 ms is a client-side category filter, not an API call; stays as-is.)
