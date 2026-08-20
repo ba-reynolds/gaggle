@@ -2,6 +2,83 @@
 
 Running log of agent-branch merges into main. Newest on top.
 
+## 2026-08-20 — agent/settings-page-bg-split
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md`, `.opencode/project-notes.md` — kept **every** section from both
+    sides, newest on top, `---` separated.
+- Real code (`web/src/layout/SocialMediaLayout.tsx` sidebar background split)
+  auto-merged cleanly. Migration duplicate check clean. No DB migrations.
+
+## 2026-08-20 — agent/settings-appearance-fixes
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md`, `.opencode/project-notes.md` — kept **every** section from both
+    sides, newest on top, `---` separated.
+- Real code (AppearanceSync, ThemeContext/ThemeToggle/ThemeCustomizer wiring,
+  SettingsPage, i18n strings, `web/src/index.css`) auto-merged cleanly.
+  Migration duplicate check clean. No DB migrations (frontend only).
+
+## 2026-08-20 — agent/research-db-seeding
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md`, `.opencode/project-notes.md` — kept **every** section from both
+    sides, newest on top, `---` separated.
+- Research/audit branch (seed admin flag bug, hardcoded seed user IDs) — no code
+  changes beyond the log files. Migration duplicate check clean. No DB
+  migrations.
+
+## 2026-08-20 — agent/message-grouping
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md` — kept **every** section from both sides, newest on top, `---`
+    separated.
+- Real code (`web/src/pages/ConversationPage.tsx` DM bubble grouping,
+  `web/src/index.css`) auto-merged cleanly. Migration duplicate check clean.
+  No DB migrations (frontend only).
+
+## 2026-08-20 — agent/fix-session-and-static-images
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md`, `.opencode/project-notes.md` — kept **every** section from both
+    sides, newest on top, `---` separated.
+- Real code (refresh-cookie Secure derives from `X-Forwarded-Proto`,
+  same-device token rotation replay handling, deploy/apply.sh `--no-cache` +
+  asset health-checks, auth store/service/handler, testutil UA) auto-merged
+  cleanly — including `integration_test.go` and `store.go` which admin-metrics
+  and avatar branches had also touched. Migration duplicate check clean. No DB
+  migrations.
+
+## 2026-08-20 — agent/avatar-placeholder
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md`, `.opencode/project-notes.md` — kept **every** section from both
+    sides, newest on top, `---` separated.
+- Real code (new `UserAvatar.tsx` shared component, 13 call sites swapped off
+  copy-pasted Avatar blocks) auto-merged cleanly. Migration duplicate check
+  clean. No DB migrations (frontend only).
+
+## 2026-08-20 — agent/admin-metrics-panel
+
+- Status: **conflicted**
+- Files conflicting, and how resolved:
+  - `SUMMARY.md`, `.opencode/project-notes.md` — kept **every** section from both
+    sides, newest on top, `---` separated.
+- Real code (metrics pkg, visit middleware, metrics store/service wiring,
+  `/admin/metrics` + `/admin/metrics/history` endpoints, swagger, sampler,
+  MetricsDashboard, useAdmin, types/api) auto-merged cleanly. `compose.yaml`
+  merged cleanly (branch's `- /:/host:ro` volume + main's `API_PORT` /
+  container_name removals / named cache volumes all preserved).
+- Migrations: branch adds `000022_create-page-views` + `000023_create-host-`
+  `metrics-samples`, both next free slots — pre- and post-merge duplicate
+  checks clean, no renumbering.
+
 ## 2026-08-19 — agent/snappy-ux
 
 - Status: **conflicted**
