@@ -1,5 +1,5 @@
 import FeedPost from "@/components/FeedPost";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/UserAvatar";
 import { Button } from "@/components/ui/button";
 import { CustomDialogContent } from "@/components/ui/custom-dialog";
 import { Dialog, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -259,10 +259,7 @@ const ProfilePage: React.FC = () => {
       <div className="relative px-4 pb-4">
         {/* Avatar - positioned to overlap the banner */}
         <div className="absolute -top-28 left-4 border-4 border-background rounded-full">
-          <Avatar className="h-48 w-48">
-            <AvatarImage src={profilePictureSrc} alt={displayName || username} />
-            <AvatarFallback>{(displayName || username).charAt(0).toUpperCase()}</AvatarFallback>
-          </Avatar>
+          <UserAvatar className="h-48 w-48" fallbackClassName="text-6xl" src={profilePictureSrc} name={displayName || username} username={username} />
         </div>
 
         {/* Profile action buttons */}
@@ -487,10 +484,7 @@ const ProfilePage: React.FC = () => {
               {/* Profile Picture - positioned to overlap the banner */}
               <div className="absolute -bottom-10 left-4 border-4 border-background rounded-full">
                 <div className="relative">
-                  <Avatar className="h-20 w-20">
-                    <AvatarImage src={profilePictureSrc} />
-                    <AvatarFallback>{(displayName || username).charAt(0).toUpperCase()}</AvatarFallback>
-                  </Avatar>
+                  <UserAvatar className="h-20 w-20" fallbackClassName="text-2xl" src={profilePictureSrc} name={displayName || username} username={username} />
 
                   {/* Profile picture upload button overlay */}
                   <div

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useConversations } from '@/hooks/useDms';
 import { useSearchUsers } from '@/hooks/useSearch';
 import { SEARCH_DEBOUNCE_MS, useDebounce } from '@/hooks/useDebounce';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { UserAvatar } from '@/components/UserAvatar';
 import { Input } from '@/components/ui/input';
 import { Loader2, Mail } from 'lucide-react';
 import { getMediaUrl } from '@/util/media';
@@ -38,10 +38,7 @@ export default function MessagesPage() {
               className="flex items-center justify-between rounded-xl border border-border p-4 hover:bg-muted"
             >
               <div className="flex items-center min-w-0">
-                <Avatar className="h-10 w-10 mr-3">
-                  <AvatarImage src={getMediaUrl(conv.other_participant.profile_picture_uuid)} alt={conv.other_participant.display_name} />
-                  <AvatarFallback>{conv.other_participant.display_name?.charAt(0) ?? '?'}</AvatarFallback>
-                </Avatar>
+                <UserAvatar className="h-10 w-10 mr-3" src={getMediaUrl(conv.other_participant.profile_picture_uuid)} name={conv.other_participant.display_name} username={conv.other_participant.username} />
                 <div className="min-w-0">
                   <p className="font-semibold text-primary">{conv.other_participant.display_name || conv.other_participant.username}</p>
                   <p className="text-sm text-muted-foreground truncate">@{conv.other_participant.username}</p>
@@ -79,10 +76,7 @@ function NewMessageComposer({ onPick }: { onPick: (username: string) => void }) 
               className="flex w-full items-center gap-3 rounded-lg border border-border p-2 text-left hover:bg-muted"
               onClick={() => onPick(u.username)}
             >
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={getMediaUrl(u.profile_picture_uuid)} />
-                <AvatarFallback>{u.display_name?.[0] ?? '?'}</AvatarFallback>
-              </Avatar>
+              <UserAvatar className="h-8 w-8" src={getMediaUrl(u.profile_picture_uuid)} name={u.display_name} username={u.username} />
               <span>
                 <span className="block text-sm font-medium text-primary">{u.display_name || u.username}</span>
                 <span className="block text-xs text-muted-foreground">@{u.username}</span>

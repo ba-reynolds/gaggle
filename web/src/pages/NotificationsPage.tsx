@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { UserAvatar } from '@/components/UserAvatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNotifications } from '@/contexts/NotificationsContext';
@@ -67,10 +67,7 @@ export default function NotificationsPage() {
               }}
             >
               <div className="mt-1">{notificationIcon(notification.type)}</div>
-              <Avatar className="h-10 w-10">
-                <AvatarImage src={getMediaUrl(notification.actor.profile_picture_uuid)} />
-                <AvatarFallback>{notification.actor.display_name?.[0] ?? notification.actor.username[0]}</AvatarFallback>
-              </Avatar>
+              <UserAvatar className="h-10 w-10" src={getMediaUrl(notification.actor.profile_picture_uuid)} name={notification.actor.display_name} username={notification.actor.username} />
               <div className="min-w-0 flex-1">
                 <p className="text-sm text-primary">
                   <strong>{notification.actor.display_name || notification.actor.username}</strong>{' '}

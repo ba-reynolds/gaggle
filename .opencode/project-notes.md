@@ -51,7 +51,25 @@
   `aspect-video`.
 
 ---
-# Snappy UX: optimistic DMs, staleTime, prefetch (agent/snappy-ux)
+## UserAvatar placeholder (agent/avatar-placeholder)
+- All avatar rendering now goes through `web/src/components/UserAvatar.tsx`
+  (`src`/`name`/`username`/`className`/`fallbackClassName`). Use it for any new
+  avatar; it draws an uppercase initial on a username-hashed background color
+  and a `User` lucide icon if there's no name. The old per-file
+  `<Avatar><AvatarImage/><AvatarFallback>` blocks were removed from all 13
+  sites — don't reintroduce ad-hoc fallbacks (the old ones defaulted to a bare
+  `bg-muted` circle and a `charAt(0)` lowercase/blank initial).
+- `Array.from(name||username||"")[0]?.toUpperCase()` picks the first
+  code POINT (not UTF-16 code unit) — safe for emoji-leading names.
+- `AvatarImage` is rendered only when `src` is truthy (mirrors
+  `getMediaUrl` → `undefined` for empty uuids), guaranteeing the fallback shows.
+- Frontend note again: `npx eslint`/`tsc` run via
+  `docker compose --profile tools run --rm web-tools npm run ...`; tsc's
+  `noUnusedLocals` flags unused `import * as React` in shadcn-style component
+  files — only import it when types actually reference `React` (e.g.
+  `React.ComponentProps`).
+---
+## Snappy UX: optimistic DMs, staleTime, prefetch (agent/snappy-ux)
 - **`onMutate` is NOT a valid `mutate()` option** — `MutateOptions` only supports
   onSuccess/onError/onSettled. To do optimistic UI on a mutation, either put it
   in the `useMutation({ onMutate })` definition (hook owns it) or, for page-local

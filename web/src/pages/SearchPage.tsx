@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import FeedPost from '@/components/FeedPost';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { UserAvatar } from '@/components/UserAvatar';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
@@ -216,10 +216,7 @@ export default function SearchPage() {
             {users.isLoading && <Loader2 className="mx-auto mt-8 h-8 w-8 animate-spin text-primary" />}
             {users.data?.data.items.map((user) => (
               <Link key={user.username} to={`/profile/${user.username}`} className="flex items-center gap-3 rounded-xl p-3 hover:bg-muted">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={getMediaUrl(user.profile_picture_uuid)} />
-                  <AvatarFallback>{user.display_name?.[0] ?? user.username[0]}</AvatarFallback>
-                </Avatar>
+                <UserAvatar className="h-12 w-12" src={getMediaUrl(user.profile_picture_uuid)} name={user.display_name} username={user.username} />
                 <div>
                   <p className="font-semibold text-primary">{user.display_name || user.username}</p>
                   <p className="text-sm text-muted-foreground">@{user.username} · {user.followers_count} followers</p>

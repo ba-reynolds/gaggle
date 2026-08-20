@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import FeedPost from '@/components/FeedPost';
 import UserHoverCard from '@/components/UserHoverCard';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { UserAvatar } from '@/components/UserAvatar';
 import { Button } from '@/components/ui/button';
 import { useList, useListFeed, useListMembers, useAddUserToList, useRemoveUserFromList } from '@/hooks/useLists';
 import { useSearchUsers } from '@/hooks/useSearch';
@@ -88,10 +88,7 @@ export default function ListPage() {
                   following={member.following_count}
                 >
                   <div className="flex items-center">
-                    <Avatar className="h-10 w-10 mr-2">
-                      <AvatarImage src={getMediaUrl(member.profile_picture_uuid)} alt={member.display_name} />
-                      <AvatarFallback>{member.display_name?.[0] ?? member.username[0]}</AvatarFallback>
-                    </Avatar>
+                    <UserAvatar className="h-10 w-10 mr-2" src={getMediaUrl(member.profile_picture_uuid)} name={member.display_name} username={member.username} />
                     <div>
                       <p className="font-semibold text-sm text-primary">{member.display_name || member.username}</p>
                       <p className="text-xs text-muted-foreground">@{member.username}</p>
@@ -136,10 +133,7 @@ function MemberSearch({ onAdd }: { listId: number; onAdd: (username: string) => 
           {results.data?.data.items.slice(0, 5).map((u) => (
             <div key={u.username} className="flex items-center justify-between rounded-lg border border-border p-2">
               <div className="flex items-center">
-                <Avatar className="h-8 w-8 mr-2">
-                  <AvatarImage src={getMediaUrl(u.profile_picture_uuid)} />
-                  <AvatarFallback>{u.display_name?.[0] ?? u.username[0]}</AvatarFallback>
-                </Avatar>
+                <UserAvatar className="h-8 w-8 mr-2" src={getMediaUrl(u.profile_picture_uuid)} name={u.display_name} username={u.username} />
                 <div>
                   <p className="text-sm font-medium text-primary">{u.display_name || u.username}</p>
                   <p className="text-xs text-muted-foreground">@{u.username}</p>

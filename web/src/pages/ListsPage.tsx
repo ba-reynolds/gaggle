@@ -9,7 +9,7 @@ import { CustomDialogContent } from '@/components/ui/custom-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { UserAvatar } from '@/components/UserAvatar';
 import { List as ListIcon, Loader2, Pencil, Plus, Trash2, UserPlus, Users } from 'lucide-react';
 import { getMediaUrl } from '@/util/media';
 import { toast } from 'sonner';
@@ -165,10 +165,7 @@ const ListsPage: React.FC = () => {
                         onClick={() => toggleSuggested(s.username)}
                         className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${selected ? 'bg-primary/10' : 'hover:bg-muted'} ${inList ? 'opacity-50' : ''}`}
                       >
-                        <Avatar className="h-6 w-6">
-                          <AvatarImage src={getMediaUrl(s.profile_picture_uuid)} alt={s.display_name} />
-                          <AvatarFallback>{s.display_name.charAt(0)}</AvatarFallback>
-                        </Avatar>
+                        <UserAvatar className="h-6 w-6" src={getMediaUrl(s.profile_picture_uuid)} name={s.display_name} username={s.username} />
                         <span className="min-w-0 flex-1 truncate">
                           <span className="font-medium text-primary">{s.display_name}</span>
                           <span className="ml-1 text-xs text-muted-foreground">@{s.username}</span>

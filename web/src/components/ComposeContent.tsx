@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import type { ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/UserAvatar";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Image as ImageIcon, Globe, Users, AtSign, Loader2, BarChart3, Plus, X, Link2 } from "lucide-react";
@@ -295,10 +295,7 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
 
   return (
     <div className="flex space-x-3">
-      <Avatar className="h-10 w-10">
-        <AvatarImage src={getMediaUrl(user.profilePictureUUID)} />
-        <AvatarFallback>{user.username[0]}</AvatarFallback>
-      </Avatar>
+      <UserAvatar className="h-10 w-10" src={getMediaUrl(user.profilePictureUUID)} username={user.username} />
 
       <div className="flex-1">
         {children}
