@@ -1,3 +1,17 @@
+## Page logo = grok_cutout (agent/grok-logo)
+- New logo master is `grok_cutout.svg`/`.png` in
+  `/home/bau/Programming/svg-img/new-stuff-here/` (a background-transparent
+  cutout; SVG = 1024² vector, PNG = 4096² raster — same art).
+- The art is NOT centered: opaque content flushes to the bottom-right corner
+  (SVG bbox `793x931+231+93`; render corner pixel is opaque). Regenerate with
+  trim + recenter, or the `rounded-full` 40px sidebar circle crop clips it.
+- Recipe (matches the old goose fill ratio — max reach ≈ 1.045× the inscribed
+  circle radius): `rsvg-convert -w 1024` the SVG → `magick -trim +repage` →
+  `-resize 694x815` → `-gravity center -background none -extent 1024x1024` →
+  downscale to 80×80 for the sidebar and to 16/32/48/64 → `magick` ICO.
+- Web files keep the old names (`/favicon.ico`, `/gaggle-goose.png`) so no
+  code changes were needed — only the two binary assets swapped.
+---
 ## F5 boot splash (agent/f5-loading-ui)
 - Every layout page gated on `token === undefined` rendered bare `Loading...`
   text (`SocialMediaLayout.tsx`) — now a branded `AppSplash`, plus a pre-JS
