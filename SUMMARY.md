@@ -1,11 +1,19 @@
 # SUMMARY — message-page-fixes
 
-Fixes two message-page issues: the thread could grow the page (document) height
-without bound instead of scrolling internally, and grouped DM bubbles were all
-fully-rounded instead of flattening the inner corners like the reference demo.
+Styling + layout fixes for the message pages: bounded thread height, grouped
+bubble corner rounding, the 2px within-group gap, and a theme-aware scrollbar.
 
 ## What was changed and why
 
+- **Theme-aware message scrollbar.** The default browser scrollbar on long
+  threads clashed with the UI. `.theme-scrollbar` styles the thread and
+  conversation-list scrollers using theme tokens: the standard
+  `scrollbar-width: thin` + `scrollbar-color` pair (works in **Firefox and
+  Chromium 121+**), mirrored with `::-webkit-scrollbar` (10px, pill thumb with
+  transparent border) for older WebKit/Chromium. Both read
+  `color-mix(in oklch, var(--foreground) 28%, transparent)` so the thumb
+  re-themes automatically (verified: overriding `--foreground` changed the
+  computed `scrollbar-color`).
 - **Height fix (main issue).** The `settings-page-bg-split` change made the
   layout's main column `min-h-screen self-start` (instead of `h-screen`) to kill
   the 100vh background seam on tall pages. That also removed the *definite*
@@ -33,8 +41,10 @@ fully-rounded instead of flattening the inner corners like the reference demo.
 
 ## Files touched
 - `web/src/pages/ConversationPage.tsx` — page-root height const + `group-` prefixed
-  position class + applied root height to both conversation pages.
-- `web/src/pages/MessagesPage.tsx` — root height.
+  position class + applied root height to both conversation pages + `theme-scrollbar`
+  on both thread scrollers.
+- `web/src/pages/MessagesPage.tsx` — root height + `theme-scrollbar` on the list.
+- `web/src/index.css` — `.theme-scrollbar` rules (standard props + webkit mirror).
 - `.opencode/project-notes.md`, `SUMMARY.md` — this entry.
 
 ## Verification (browser, playwright-core + host chrome, isolated preview)

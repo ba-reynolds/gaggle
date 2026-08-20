@@ -30,7 +30,7 @@ export default function MessagesPage() {
           <p className="text-sm">Find someone above and start a conversation.</p>
         </div>
       ) : (
-        <div className="flex-1 min-h-0 overflow-y-auto space-y-2 px-4 pb-8">
+        <div className="theme-scrollbar flex-1 min-h-0 overflow-y-auto space-y-2 px-4 pb-8">
           {conversations.map((conv) => (
             <Link
               key={conv.id}

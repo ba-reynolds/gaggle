@@ -19,6 +19,12 @@
   2px }`): message wrapper = `mb-0.5` within a group, `mb-3.5` (14px, demo
   `.msg-group` size) at group-end/standalone. Flush (0px) stacking reads as
   "glued/stuck" instead of iMessage-style tight-but-separated.
+- Theme-aware scrollbars: `.theme-scrollbar` uses the STANDARD
+  `scrollbar-width: thin` + `scrollbar-color` (Firefox AND Chrome 121+) AND
+  mirrors it via `::-webkit-scrollbar` (10px + 3px transparent border pill,
+  background-clip: padding-box) for older WebKit/Chromium. Always do both —
+  an `::-webkit-scrollbar` rule silently no-ops in Firefox. Use
+  `color-mix(in oklch, var(--foreground) 28%, transparent)` so it re-themes.
 - `make proj-dev` (proj-up.sh) only allocates API/WEB ports; the preview DB
   (default 6969) and Redis (6379) collide with a RUNNING shared `make dev`
   stack. Pass `DB_PORT=6970 REDIS_PORT=6380` through the environment to proj-up.
