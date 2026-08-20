@@ -202,6 +202,35 @@
   border-top-left-radius: 4px;
 }
 
+/* Message threads' scrollbar, styled with the app's theme tokens. The standard
+   `scrollbar-width`/`scrollbar-color` pair covers Firefox AND Chromium 121+;
+   the `::-webkit-scrollbar` rules mirror the same look on older
+   WebKit/Chromium. Both pull from `--foreground` (via color-mix) so the thumb
+   re-themes with the active theme automatically. */
+.theme-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklch, var(--foreground) 28%, transparent) transparent;
+}
+.theme-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.theme-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.theme-scrollbar::-webkit-scrollbar-thumb {
+  background-color: color-mix(in oklch, var(--foreground) 28%, transparent);
+  border: 3px solid transparent;
+  border-radius: 9999px;
+  background-clip: padding-box;
+}
+.theme-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in oklch, var(--foreground) 45%, transparent);
+}
+.theme-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 @layer utilities {
   @keyframes login-lab-drift {
     0%, 100% { transform: translate(0, 0) scale(1); }

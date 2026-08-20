@@ -1,3 +1,78 @@
+# SUMMARY — message-page-fixes
+
+Styling + layout fixes for the message pages: bounded thread height, grouped
+bubble corner rounding, the 2px within-group gap, and a theme-aware scrollbar.
+
+## What was changed and why
+
+- **Theme-aware message scrollbar.** The default browser scrollbar on long
+  threads clashed with the UI. `.theme-scrollbar` styles the thread and
+  conversation-list scrollers using theme tokens: the standard
+  `scrollbar-width: thin` + `scrollbar-color` pair (works in **Firefox and
+  Chromium 121+**), mirrored with `::-webkit-scrollbar` (10px, pill thumb with
+  transparent border) for older WebKit/Chromium. Both read
+  `color-mix(in oklch, var(--foreground) 28%, transparent)` so the thumb
+  re-themes automatically (verified: overriding `--foreground` changed the
+  computed `scrollbar-color`).
+- **Height fix (main issue).** The `settings-page-bg-split` change made the
+  layout's main column `min-h-screen self-start` (instead of `h-screen`) to kill
+  the 100vh background seam on tall pages. That also removed the *definite*
+  height message pages had relied on: their `h-full` roots now resolve against an
+  auto-height column, so a long thread pushed the whole document taller forever
+  and `overflow-y-auto` on the thread never engaged.
+  - Fix: `ConversationPage` (both existing + new) and `MessagesPage` roots pin
+    themselves to the viewport with `MESSAGE_PAGE_HEIGHT = 'h-dvh pb-16 md:pb-0'`,
+    independent of the column. The thread's `flex-1 min-h-0 overflow-y-auto`
+    scrolls internally; on mobile `pb-16` mirrors the column's `pb-16` so the
+    fixed bottom nav doesn't cover the composer.
+  - Layout untouched → the settings/feed background-seam fix and non-message page
+    document scrolling are unaffected.
+- **Grouped bubble corners.** The corner-flattening rules added by the earlier
+  `message-grouping` branch were dead on arrival: `index.css` targets
+  `.group-start/.group-mid/.group-end`, but the JSX emitted the bare positions
+  (`start`/`mid`/`end`), so every bubble kept `rounded-2xl`. Fixed by emitting
+  `group-${position}`. Verified radii per position (TL/TR/BR/BL):
+  `group-start`→16/16/16/4 … `group-mid`→16/4/4/16 … `group-end`→16/4/16/16 for
+  outgoing (mirrored for incoming).
+- **2px group gap.** Follow-up: the reference demo puts a small gap between
+  grouped bubbles (`.bubble-row { margin-bottom: 2px }`); the first pass stacked
+  them flush. Message rows now use `mb-0.5` (2px) within a group and `mb-3.5`
+  (14px, the demo's `.msg-group` size) after a group-end/standalone.
+
+## Files touched
+- `web/src/pages/ConversationPage.tsx` — page-root height const + `group-` prefixed
+  position class + applied root height to both conversation pages + `theme-scrollbar`
+  on both thread scrollers.
+- `web/src/pages/MessagesPage.tsx` — root height + `theme-scrollbar` on the list.
+- `web/src/index.css` — `.theme-scrollbar` rules (standard props + webkit mirror).
+- `.opencode/project-notes.md`, `SUMMARY.md` — this entry.
+
+## Verification (browser, playwright-core + host chrome, isolated preview)
+- Login as alice → DM bob 12 msgs, bob replies 10 msgs (each side grouped).
+- Radii inspected via `getComputedStyle` per bubble → group-start/mid/end flatten
+  exactly as the CSS intends; `GROUP CHECK: PASS`.
+- Document `scrollHeight` constant at 898px while adding +5 more messages
+  (24→29 msgs; internal scroller 590→978 client/scroll) → `HEIGHT CHECK: PASS`;
+  the residual 178px at a 720px viewport is the app-wide sidebar rails
+  (present on the feed page too), not message-driven.
+- Mobile (390×844): composer bottom 768 < fixed nav top 779 → `MOBILE: PASS`.
+- `npm run build` (tsc -b + vite) and `npm run lint` clean (0 errors; lint only
+  shows pre-existing react-refresh warnings).
+
+## For the reviewer to double-check
+- `h-dvh` chosen over `h-screen` for mobile dynamic viewport; both are identical
+  on desktop. If you'd rather keep `100vh` semantics everywhere, swap to
+  `h-screen`.
+- The residual page scroll from tall sidebars (left/right rails on short
+  viewports) is unchanged/global; if it's now bothersome on the conversation
+  page specifically, that'd be a layout-level change — deliberately out of scope.
+- On this machine `make proj-dev` fails when the shared `make dev` stack is up:
+  `proj-up.sh` only allocates API/WEB ports, so the preview DB (default 6969)
+  and Redis (6379) collide with the running shared stack. Workaround used here:
+  `DB_PORT=6970 REDIS_PORT=6380 make proj-dev`.
+
+---
+
 # SUMMARY — fix-goose-403-deploy
 
 Fixes the live box (http://100.31.118.41/) serving **403** for the

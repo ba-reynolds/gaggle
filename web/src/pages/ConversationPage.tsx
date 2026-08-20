@@ -22,6 +22,14 @@ const messagesAreClose = (a: Message, b: Message) =>
   getMessageDayKey(a.created_at) === getMessageDayKey(b.created_at) &&
   Math.abs(Date.parse(a.created_at) - Date.parse(b.created_at)) <= MESSAGE_GROUP_WINDOW_MS;
 
+// Message pages must NOT rely on the layout's column giving them a definite
+// height: the column is `min-h-screen` (not `h-screen`) so the page background
+// can grow past one viewport, meaning a child `h-full` resolves to auto and the
+// thread would grow the document forever instead of scrolling internally. Pin
+// the page to the viewport ourselves; on mobile the extra pb mirrors the
+// column's `pb-16` so the fixed bottom nav doesn't cover the composer.
+const MESSAGE_PAGE_HEIGHT = 'h-dvh pb-16 md:pb-0';
+
 export default function ConversationPage() {
   const { conversationId: conversationIdStr } = useParams();
   const [params] = useSearchParams();
@@ -125,13 +133,13 @@ function ExistingConversationPage({ conversationId }: { conversationId: number }
   const other = conv.other_participant;
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-xl flex-col pt-2">
+    <div className={`mx-auto flex w-full max-w-xl flex-col pt-2 ${MESSAGE_PAGE_HEIGHT}`}>
       <header className="border-b border-border px-4 py-3 flex items-center gap-3">
         <Link to="/messages" className="text-muted-foreground hover:text-primary"><ArrowLeft className="h-5 w-5" /></Link>
         <ChatHeader user={other} />
       </header>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 min-h-0">
+      <div ref={scrollRef} className="theme-scrollbar flex-1 overflow-y-auto p-4 min-h-0">
         {messages.isLoading ? (
           <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin" /></div>
         ) : (
@@ -147,7 +155,7 @@ function ExistingConversationPage({ conversationId }: { conversationId: number }
               const isGroupStart = position === 'start' || position === 'standalone';
               const isGroupEnd = position === 'end' || position === 'standalone';
               return (
-                <div key={m.id} className={isGroupEnd ? 'mb-2' : ''}>
+                <div key={m.id} className={isGroupEnd ? 'mb-3.5' : 'mb-0.5'}>
                   {isNewDay && (
                     <div className="my-3 flex items-center gap-3">
                       <div className="h-px flex-1 bg-border" />
@@ -163,7 +171,7 @@ function ExistingConversationPage({ conversationId }: { conversationId: number }
                     </div>
                   )}
                   <div className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`min-w-0 max-w-[75%] rounded-2xl px-3 py-2 text-sm ${position === 'standalone' ? '' : position} ${mine ? 'chat-bubble-mine' : 'chat-bubble-theirs text-primary'}`}>
+                    <div className={`min-w-0 max-w-[75%] rounded-2xl px-3 py-2 text-sm ${position === 'standalone' ? '' : `group-${position}`} ${mine ? 'chat-bubble-mine' : 'chat-bubble-theirs text-primary'}`}>
                       {!mine && isGroupStart && (
                         <p className="mb-0.5 text-xs text-muted-foreground">@{m.sender.username}</p>
                       )}
@@ -254,13 +262,13 @@ function NewConversationPage({ username }: { username: string }) {
   }
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-xl flex-col pt-2">
+    <div className={`mx-auto flex w-full max-w-xl flex-col pt-2 ${MESSAGE_PAGE_HEIGHT}`}>
       <header className="border-b border-border px-4 py-3 flex items-center gap-3">
         <Link to="/messages" className="text-muted-foreground hover:text-primary"><ArrowLeft className="h-5 w-5" /></Link>
         <ChatHeader user={profile} />
       </header>
 
-      <div className="flex-1 min-h-0 overflow-y-auto space-y-2 p-4">
+      <div className="theme-scrollbar flex-1 min-h-0 overflow-y-auto space-y-2 p-4">
         <div className="flex h-full min-h-0 flex-col items-center justify-center gap-3 p-8 text-center text-muted-foreground">
           <UserAvatar className="h-16 w-16" src={getMediaUrl(profile.profile_picture_uuid)} name={profile.display_name} username={profile.username} />
           <p className="font-semibold text-primary text-lg">{profile.display_name || profile.username}</p>

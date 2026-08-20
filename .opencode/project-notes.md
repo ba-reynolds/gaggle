@@ -1,3 +1,39 @@
+## Message pages: don't depend on the layout column for height (agent/message-page-fixes)
+- The main column is `min-h-screen self-start` (settings-page-bg-split fix) — a
+  child `h-full` there resolves to AUTO (indefinite height), so a long DM thread
+  grew the whole document forever and `overflow-y-auto` never engaged. Message
+  page ROOTS must pin themselves: use `h-dvh pb-16 md:pb-0`
+  (`MESSAGE_PAGE_HEIGHT` in ConversationPage.tsx; inline in MessagesPage.tsx).
+  Don't "restore" `h-screen` on the column — that reintroduces the 100vh bg seam.
+- `h-dvh` (not `h-screen`) so mobile browsers keep the composer in the dynamic
+  viewport; `pb-16` mirrors the column's bottom-nav padding (nav is `fixed`,
+  ~4rem tall).
+- Grouping corner CSS bug worth remembering: `.chat-bubble-mine.group-*` etc. in
+  index.css only fires if the JSX emits `group-start`/`group-mid`/`group-end`.
+  The earlier message-grouping branch emitted bare `start`/`mid`/`end` → all
+  bubbles stayed `rounded-2xl`, corners never flattened. Position class must be
+  `group-${position}`.
+- SSR-proving E2E lix: getComputedStyle per bubble maps to TL/TR/BR/BL. Verified
+  radii (mine): group-start=16/16/16/4, group-mid=16/4/4/16, group-end=16/4/16/16.
+- Grouped bubbles need the demo's 2px inter-row gap (`.bubble-row { margin-bottom:
+  2px }`): message wrapper = `mb-0.5` within a group, `mb-3.5` (14px, demo
+  `.msg-group` size) at group-end/standalone. Flush (0px) stacking reads as
+  "glued/stuck" instead of iMessage-style tight-but-separated.
+- Theme-aware scrollbars: `.theme-scrollbar` uses the STANDARD
+  `scrollbar-width: thin` + `scrollbar-color` (Firefox AND Chrome 121+) AND
+  mirrors it via `::-webkit-scrollbar` (10px + 3px transparent border pill,
+  background-clip: padding-box) for older WebKit/Chromium. Always do both —
+  an `::-webkit-scrollbar` rule silently no-ops in Firefox. Use
+  `color-mix(in oklch, var(--foreground) 28%, transparent)` so it re-themes.
+- `make proj-dev` (proj-up.sh) only allocates API/WEB ports; the preview DB
+  (default 6969) and Redis (6379) collide with a RUNNING shared `make dev`
+  stack. Pass `DB_PORT=6970 REDIS_PORT=6380` through the environment to proj-up.
+- Residual doc scroll on message pages (~178px at 720px height) is the global
+  sidebar rails (feed page shows the same) — not message-driven; it's constant
+  across message counts. Verified: adding +5 msgs left documentElement.scrollHeight
+  unchanged while the thread's internal scroller grew.
+
+---
 ## Deploy static-assets 403 + compose `up` recreate semantics (agent/fix-goose-403-deploy)
 - **`docker compose up -d` does NOT recreate a container when only its image
   digest changes** (same tag, config hash unchanged) — PROVEN on the preview

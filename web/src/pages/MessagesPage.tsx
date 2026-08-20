@@ -14,7 +14,7 @@ export default function MessagesPage() {
   const conversations = useMemo(() => data?.data?.items ?? [], [data]);
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-xl flex-col pt-6">
+    <div className="mx-auto flex w-full max-w-xl flex-col pt-6 h-dvh pb-16 md:pb-0">
       <header className="px-4 pb-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-primary">Messages</h1>
       </header>
@@ -30,7 +30,7 @@ export default function MessagesPage() {
           <p className="text-sm">Find someone above and start a conversation.</p>
         </div>
       ) : (
-        <div className="flex-1 min-h-0 overflow-y-auto space-y-2 px-4 pb-8">
+        <div className="theme-scrollbar flex-1 min-h-0 overflow-y-auto space-y-2 px-4 pb-8">
           {conversations.map((conv) => (
             <Link
               key={conv.id}
