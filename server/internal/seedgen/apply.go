@@ -313,6 +313,21 @@ func applyRelationships(ctx context.Context, st *store.Store, log *slog.Logger, 
 			continue
 		}
 		seen[key] = true
+
+		// Mirror the app's soft-block semantics (service CreateRelationship):
+		// blocking removes existing relationships in both directions, so a
+		// block row can never coexist with a follow row (Twitter behavior)
+		// and a blocked user is instantly unfollowed. genRelationships appends
+		// block rows after all follows, so this runs after any colliding follows.
+		if r.Type == "block" {
+			if err := st.UserRelationships.Delete(ctx, nil, follower, following); err != nil && !apperrors.Is(err, apperrors.NotFound) {
+				return fmt.Errorf("soft-block delete %d->%d: %w", follower, following, err)
+			}
+			if err := st.UserRelationships.Delete(ctx, nil, following, follower); err != nil && !apperrors.Is(err, apperrors.NotFound) {
+				return fmt.Errorf("soft-block delete %d->%d: %w", following, follower, err)
+			}
+		}
+
 		rel := &models.UserRelationship{
 			FollowerID:       follower,
 			FollowingID:      following,

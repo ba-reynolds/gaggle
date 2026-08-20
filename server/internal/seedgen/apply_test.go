@@ -2,6 +2,7 @@ package seedgen
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -184,7 +185,28 @@ func TestApplyRelationships(t *testing.T) {
 	st, ds, _ := seedEngine(t)
 	ctx := context.Background()
 
+	// Build the set of pairs soft-block removes: a block on (A,B) unfollows
+	// both A->B and B->A (Twitter soft-block semantics).
+	softRemoved := make(map[string]bool)
 	for _, r := range ds.Relationships {
+		if r.Type != "block" {
+			continue
+		}
+		a := ds.UserIDs[r.FollowerIdx]
+		b := ds.UserIDs[r.FollowingIdx]
+		softRemoved[fmt.Sprintf("%d:%d", a, b)] = true
+		softRemoved[fmt.Sprintf("%d:%d", b, a)] = true
+	}
+
+	for _, r := range ds.Relationships {
+		// Blocks always land. Follows land unless soft-block removed them.
+		if r.Type == "follow" {
+			a := ds.UserIDs[r.FollowerIdx]
+			b := ds.UserIDs[r.FollowingIdx]
+			if softRemoved[fmt.Sprintf("%d:%d", a, b)] {
+				continue
+			}
+		}
 		exists, err := st.UserRelationships.Exists(ctx, ds.UserIDs[r.FollowerIdx], ds.UserIDs[r.FollowingIdx], r.Type)
 		if err != nil {
 			t.Fatalf("Exists(%v): %v", r, err)
@@ -192,6 +214,26 @@ func TestApplyRelationships(t *testing.T) {
 		if !exists {
 			t.Errorf("relationship %v missing after Apply", r)
 		}
+	}
+
+	// Invariant: no pair may have a follow where a block exists in either
+	// direction — blocking must have soft-unfollowed them.
+	var followWithBlock int
+	if err := st.DB.QueryRowContext(ctx, `
+		SELECT COUNT(*)
+		FROM user_relationships follow
+		WHERE follow.relationship_type = 'follow'
+		  AND EXISTS (
+			SELECT 1 FROM user_relationships blk
+			WHERE blk.relationship_type = 'block'
+			  AND blk.follower_id IN (follow.follower_id, follow.following_id)
+			  AND blk.following_id IN (follow.follower_id, follow.following_id)
+			  AND blk.follower_id <> blk.following_id
+		  )`).Scan(&followWithBlock); err != nil {
+		t.Fatalf("check follow-with-block invariant: %v", err)
+	}
+	if followWithBlock != 0 {
+		t.Errorf("found %d follow rows coexisting with a block; soft-block should have removed them", followWithBlock)
 	}
 }
 
