@@ -12,7 +12,8 @@ COPY . .
 
 # Static binaries: no cgo, so they run on a minimal runtime image.
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /out/api ./cmd/api && \
-    CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /out/seed ./cmd/seed
+    CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /out/seed ./cmd/seed && \
+    CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /out/simulate ./cmd/simulate
 
 # golang-migrate CLI, used by the entrypoint to apply migrations on first start.
 ARG MIGRATE_VERSION=v4.19.1
@@ -28,6 +29,7 @@ WORKDIR /app
 
 COPY --from=build /out/api /app/api
 COPY --from=build /out/seed /app/seed
+COPY --from=build /out/simulate /app/simulate
 COPY --from=build /out/migrate /app/migrate
 COPY --from=build /src/cmd/migrate/migrations /app/migrations
 COPY scripts/docker-entrypoint.sh /app/docker-entrypoint.sh

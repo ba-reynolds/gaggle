@@ -18,5 +18,10 @@ if [ "${MIGRATE_ON_START:-true}" = "true" ]; then
   done
 fi
 
+if [ "${SEED_ON_START:-true}" != "false" ]; then
+  echo ">> seeding demo data (SEED_ON_START=true; set SEED_ON_START=false to disable)"
+  /app/seed
+fi
+
 echo ">> starting API"
 exec /app/api

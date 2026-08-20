@@ -1,4 +1,4 @@
-.PHONY: dev dev-stop dev-logs seed migrate-up reset-db test test-backend test-coverage test-frontend lint-frontend swag build build-backend build-frontend proj-dev proj-stop proj-logs proj-ps proj-seed help
+.PHONY: dev dev-stop dev-logs seed migrate-up reset-db test test-backend test-coverage test-frontend lint-frontend swag build build-backend build-frontend proj-dev proj-stop proj-logs proj-ps proj-seed simulate help
 
 # ---- One-shot stack ----
 
@@ -48,6 +48,12 @@ dev-logs:
 # Seed demo users (idempotent). Runs the seed binary inside the api image.
 seed:
 	docker compose run --rm --no-deps --entrypoint /app/seed api
+
+# Simulate one tick of live user activity (posts/replies/likes/DMs) on top of
+# the seeded data. Timestamps near now(), so the community grows over time.
+# Local analogue of the scheduled cron on the EC2 box.
+simulate:
+	docker compose run --rm --no-deps --entrypoint /app/simulate api
 
 # Apply migrations manually (the api container also auto-migrates on start).
 migrate-up:
@@ -100,7 +106,8 @@ help:
 	@echo "  make dev         build + run full stack (db redis api web)"
 	@echo "  make dev-stop    stop the stack"
 	@echo "  make dev-logs    stream logs"
-	@echo "  make seed        create demo users (idempotent)"
+	@echo "  make seed        seed demo data (idempotent; also runs on start)"
+	@echo "  make simulate    one tick of live activity (posts/replies/likes/DMs)"
 	@echo "  make test        backend tests (throwaway social_test DB)"
 	@echo "  make swag        regenerate swagger docs"
 	@echo "  make lint-frontend / test-frontend"

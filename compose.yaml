@@ -78,6 +78,7 @@ services:
       # Used by the entrypoint to apply migrations on first start.
       POSTGRES_URL: postgres://${DB_USER:-white}:${DB_PASSWORD:-teeth}@db:5432/${DB_NAME:-social}?sslmode=disable
       MIGRATE_ON_START: "true"
+      SEED_ON_START: "${SEED_ON_START:-true}"
     ports:
       - "${API_PORT:-2021}:2021"
     volumes:

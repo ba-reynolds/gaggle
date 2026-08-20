@@ -27,6 +27,7 @@ services:
     environment:
       APP_ENV: production
       COOKIE_SECURE: "true"
+      SEED_ON_START: "${SEED_ON_START:-true}"
 
   web:
     # Production publishes 80 + 443 for this service. The actual host ports
