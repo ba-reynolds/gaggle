@@ -87,11 +87,11 @@ export default function ListPage() {
                   followers={member.followers_count}
                   following={member.following_count}
                 >
-                  <div className="flex items-center">
-                    <UserAvatar className="h-10 w-10 mr-2" src={getMediaUrl(member.profile_picture_uuid)} name={member.display_name} username={member.username} />
-                    <div>
-                      <p className="font-semibold text-sm text-primary">{member.display_name || member.username}</p>
-                      <p className="text-xs text-muted-foreground">@{member.username}</p>
+                  <div className="flex min-w-0 items-center">
+                    <UserAvatar className="mr-2 h-10 w-10 shrink-0" src={getMediaUrl(member.profile_picture_uuid)} name={member.display_name} username={member.username} />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-primary">{member.display_name || member.username}</p>
+                      <p className="truncate text-xs text-muted-foreground">@{member.username}</p>
                     </div>
                   </div>
                 </UserHoverCard>

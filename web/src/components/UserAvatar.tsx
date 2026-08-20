@@ -4,18 +4,18 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 
 const AVATAR_COLORS = [
-  "#D32F2F",
-  "#E64A19",
-  "#F0932B",
-  "#6A1B9A",
-  "#283593",
-  "#1565C0",
-  "#0277BD",
-  "#00838F",
-  "#00695C",
-  "#2E7D32",
-  "#AD1457",
-  "#C2185B",
+  "#3b82f6",
+  "#0ea5e9",
+  "#14b8a6",
+  "#10b981",
+  "#84cc16",
+  "#eab308",
+  "#f59e0b",
+  "#f97316",
+  "#ef4444",
+  "#ec4899",
+  "#a855f7",
+  "#6366f1",
 ]
 
 function hashString(str: string): number {
@@ -44,16 +44,19 @@ export function UserAvatar({
   fallbackClassName,
 }: UserAvatarProps) {
   const seed = username || name || ""
-  const backgroundColor = AVATAR_COLORS[hashString(seed) % AVATAR_COLORS.length]
+  const color = AVATAR_COLORS[hashString(seed) % AVATAR_COLORS.length]
   const initial = Array.from(name || username || "")[0]?.toUpperCase()
 
   return (
     <Avatar className={className}>
       {src && <AvatarImage src={src} alt={alt ?? name ?? username} />}
       <AvatarFallback
-        style={{ backgroundColor }}
+        style={{
+          backgroundColor: `color-mix(in oklab, ${color} 18%, transparent)`,
+          color: `color-mix(in oklab, ${color} 72%, var(--foreground))`,
+        }}
         className={cn(
-          "font-bold text-white select-none",
+          "font-semibold select-none",
           fallbackClassName
         )}
       >

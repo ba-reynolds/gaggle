@@ -88,11 +88,11 @@ export default function ExplorePage() {
                 isFollowing={isFollowing(profile.username)}
                 onFollowToggle={toggleFollow(profile.username)}
               >
-                <div className="flex items-center">
-                  <UserAvatar className="h-10 w-10 mr-2" src={getMediaUrl(profile.profile_picture_uuid)} name={profile.display_name} username={profile.username} />
-                  <div>
-                    <p className="font-semibold text-sm text-primary">{profile.display_name || profile.username}</p>
-                    <p className="text-xs text-muted-foreground">@{profile.username}</p>
+                <div className="flex min-w-0 items-center">
+                  <UserAvatar className="mr-2 h-10 w-10 shrink-0" src={getMediaUrl(profile.profile_picture_uuid)} name={profile.display_name} username={profile.username} />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-primary">{profile.display_name || profile.username}</p>
+                    <p className="truncate text-xs text-muted-foreground">@{profile.username}</p>
                   </div>
                 </div>
               </UserHoverCard>

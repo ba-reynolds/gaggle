@@ -1,3 +1,32 @@
+## Per-worktree previews: DB/REDIS host ports are NOT isolated
+- `scripts/proj-up.sh` only derives/persists `API_PORT` + `WEB_PORT` — it does
+  NOT set `DB_PORT`/`REDIS_PORT`, which fall back to `6969`/`6379`. The shared
+  `gaggle` stack holds those, so a SECOND `proj-dev` stack fails with
+  "Bind for 0.0.0.0:6969 failed: port is already allocated". Fix on a rerun:
+  export free db/redis host ports before the script, e.g.
+  `DB_PORT=6971 REDIS_PORT=6381 scripts/proj-up.sh gaggle-<slug>` (as root
+  `make proj-dev` → script, `make` isn't on PATH on this NixOS box either). The
+  api connects to `db:5432` over the internal network, so DB_PORT only matters
+  for host-side access — any free port works. The env vars interpolate through
+  `${DB_PORT:-6969}` in compose.yaml.
+
+## UserAvatar fallback rethemed (agent/avatar-suggestions-polish)
+- `UserAvatar.tsx` no longer paints solid loud Material colors; fallback =
+  `color-mix(in oklab, <hue> 18%, transparent)` bg + `color-mix(in oklab, <hue>
+  72%, var(--foreground))` initial text (font-semibold). Hue set:
+  tailwind-500-range blues/greens/yellows/oranges/reds/pinks/purples. Works on
+  any theme because it blends with transparent (surface shows through) for bg
+  and toward `--foreground` for text (light+dark readable).
+- Who-to-follow (and Explore suggested / ListPage members) rows now use the
+  `min-w-0` + `truncate` pattern — ANY future user-row-with-side-button must
+  copy it or long display names (50 max) push the button out of the card.
+  `UserHoverCard` trigger anchor carries `min-w-0`.
+- Verified: playwright split-screen 1440px, user `lmnopqrstuvwxyz1` (16-char
+  username, 50-char display name) → `p.truncate.scrollWidth > clientWidth`, all
+  Follow buttons within the card. `p.truncate` in JS checks must select only the
+  card (page-wide queries catch the right rail AND the page tab lists).
+
+---
 ## Per-worktree isolated preview stacks (proj-dev)
 - Every agent worktree can now run its OWN full stack on private ports + volumes:
   `make proj-dev` inside `agent-branch/<slug>/` → project `gaggle-<slug>`
