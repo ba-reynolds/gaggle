@@ -255,11 +255,13 @@ func (store *postStore) GetParentInfo(ctx context.Context, postIDs []int) (map[i
 	return result, nil
 }
 
-// Create inserts a new post into the database
+// Create inserts a new post into the database. When post.CreatedAt is set
+// (non-zero) it is honored via COALESCE so seeds can backdate posts; the app
+// always leaves it zero, which maps to CURRENT_TIMESTAMP (unchanged behavior).
 func (store *postStore) Create(ctx context.Context, tx *sql.Tx, post *models.Post) error {
 	query := `
-		INSERT INTO posts (content, author_id, parent_id, visibility, mentioned_user_ids)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO posts (content, author_id, parent_id, visibility, mentioned_user_ids, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, COALESCE($6, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP)
 		RETURNING post_id, created_at, updated_at
 	`
 
@@ -268,7 +270,12 @@ func (store *postStore) Create(ctx context.Context, tx *sql.Tx, post *models.Pos
 		exec = tx.QueryRowContext
 	}
 
-	err := exec(ctx, query, post.Content, post.AuthorID, post.ParentID, post.Visibility, pq.Array(nonNilIntSlice(post.MentionedUserIDs))).Scan(&post.ID, &post.CreatedAt, &post.UpdatedAt)
+	var createdAt any
+	if !post.CreatedAt.IsZero() {
+		createdAt = post.CreatedAt
+	}
+
+	err := exec(ctx, query, post.Content, post.AuthorID, post.ParentID, post.Visibility, pq.Array(nonNilIntSlice(post.MentionedUserIDs)), createdAt).Scan(&post.ID, &post.CreatedAt, &post.UpdatedAt)
 	if err != nil {
 		// Log database insert errors with full context
 		store.logger.Error("database insert failed",
@@ -287,8 +294,8 @@ func (store *postStore) Create(ctx context.Context, tx *sql.Tx, post *models.Pos
 // CreateQuotedPost inserts a new post with quoted_post_id set (for quoting another post)
 func (store *postStore) CreateQuotedPost(ctx context.Context, tx *sql.Tx, post *models.Post) error {
 	query := `
-		INSERT INTO posts (content, author_id, parent_id, quoted_post_id, visibility, mentioned_user_ids)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO posts (content, author_id, parent_id, quoted_post_id, visibility, mentioned_user_ids, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP)
 		RETURNING post_id, created_at, updated_at
 	`
 
@@ -297,7 +304,12 @@ func (store *postStore) CreateQuotedPost(ctx context.Context, tx *sql.Tx, post *
 		exec = tx.QueryRowContext
 	}
 
-	err := exec(ctx, query, post.Content, post.AuthorID, post.ParentID, post.QuotedPostID, post.Visibility, pq.Array(nonNilIntSlice(post.MentionedUserIDs))).Scan(&post.ID, &post.CreatedAt, &post.UpdatedAt)
+	var createdAt any
+	if !post.CreatedAt.IsZero() {
+		createdAt = post.CreatedAt
+	}
+
+	err := exec(ctx, query, post.Content, post.AuthorID, post.ParentID, post.QuotedPostID, post.Visibility, pq.Array(nonNilIntSlice(post.MentionedUserIDs)), createdAt).Scan(&post.ID, &post.CreatedAt, &post.UpdatedAt)
 	if err != nil {
 		store.logger.Error("database insert failed",
 			"operation", "create_quoted_post",
