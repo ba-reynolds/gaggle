@@ -1,3 +1,28 @@
+## Message pages: don't depend on the layout column for height (agent/message-page-fixes)
+- The main column is `min-h-screen self-start` (settings-page-bg-split fix) — a
+  child `h-full` there resolves to AUTO (indefinite height), so a long DM thread
+  grew the whole document forever and `overflow-y-auto` never engaged. Message
+  page ROOTS must pin themselves: use `h-dvh pb-16 md:pb-0`
+  (`MESSAGE_PAGE_HEIGHT` in ConversationPage.tsx; inline in MessagesPage.tsx).
+  Don't "restore" `h-screen` on the column — that reintroduces the 100vh bg seam.
+- `h-dvh` (not `h-screen`) so mobile browsers keep the composer in the dynamic
+  viewport; `pb-16` mirrors the column's bottom-nav padding (nav is `fixed`,
+  ~4rem tall).
+- Grouping corner CSS bug worth remembering: `.chat-bubble-mine.group-*` etc. in
+  index.css only fires if the JSX emits `group-start`/`group-mid`/`group-end`.
+  The earlier message-grouping branch emitted bare `start`/`mid`/`end` → all
+  bubbles stayed `rounded-2xl`, corners never flattened. Position class must be
+  `group-${position}`.
+- SSR-proving E2E lix: getComputedStyle per bubble maps to TL/TR/BR/BL. Verified
+  radii (mine): group-start=16/16/16/4, group-mid=16/4/4/16, group-end=16/4/16/16.
+- `make proj-dev` (proj-up.sh) only allocates API/WEB ports; the preview DB
+  (default 6969) and Redis (6379) collide with a RUNNING shared `make dev`
+  stack. Pass `DB_PORT=6970 REDIS_PORT=6380` through the environment to proj-up.
+- Residual doc scroll on message pages (~178px at 720px height) is the global
+  sidebar rails (feed page shows the same) — not message-driven; it's constant
+  across message counts. Verified: adding +5 msgs left documentElement.scrollHeight
+  unchanged while the thread's internal scroller grew.
+
 ## Per-worktree isolated preview stacks (proj-dev)
 - Every agent worktree can now run its OWN full stack on private ports + volumes:
   `make proj-dev` inside `agent-branch/<slug>/` → project `gaggle-<slug>`

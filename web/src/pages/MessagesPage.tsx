@@ -14,7 +14,7 @@ export default function MessagesPage() {
   const conversations = useMemo(() => data?.data?.items ?? [], [data]);
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-xl flex-col pt-6">
+    <div className="mx-auto flex w-full max-w-xl flex-col pt-6 h-dvh pb-16 md:pb-0">
       <header className="px-4 pb-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-primary">Messages</h1>
       </header>
