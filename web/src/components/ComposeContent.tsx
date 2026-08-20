@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/UserAvatar";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Image as ImageIcon, Globe, Users, AtSign, Loader2, BarChart3, Plus, X, Link2 } from "lucide-react";
+import { Image as ImageIcon, Globe, Users, AtSign, Loader2, BarChart3, Plus, X } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,6 +47,21 @@ const VISIBILITY_WIRE_VALUE: Record<Visibility, "public" | "followers" | "mentio
   Mentions: "mentions",
 };
 
+// Extracts the first standalone http(s) URL from post text (Twitter-style:
+// pasting a link into the body is what creates the attached news card).
+function extractUrl(text: string): string | null {
+  const match = text.match(/https?:\/\/[^\s]+/);
+  if (!match) return null;
+  // Trim trailing sentence punctuation ("see https://x.com." -> the URL only).
+  let url = match[0].replace(/[.,;:!?'"]+$/, "");
+  // Trim a trailing ')' only when it has no matching '(' inside the URL
+  // (so "(programming_language)" in a Wikipedia path survives).
+  const opens = (url.match(/\(/g) || []).length;
+  const closes = (url.match(/\)/g) || []).length;
+  if (closes > opens) url = url.slice(0, -1);
+  return url;
+}
+
 export interface PostData {
   text: string;
   media: GalleryItem[];
@@ -87,13 +102,15 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
   const [visibility, setVisibility] = useState<Visibility>("Everyone");
   const [pollEnabled, setPollEnabled] = useState(false);
   const [pollOptions, setPollOptions] = useState(["", ""]);
-  const [newsUrl, setNewsUrl] = useState("");
   const [news, setNews] = useState<NewsLink | null>(null);
-  const [isPreviewingNews, setIsPreviewingNews] = useState(false);
-  const [newsInputOpen, setNewsInputOpen] = useState(false);
+  const [dismissedUrl, setDismissedUrl] = useState<string | null>(null);
+  const [newsError, setNewsError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [currentEditingMedia, setCurrentEditingMedia] = useState<GalleryItem | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Guards against out-of-order preview responses when the URL changes fast.
+  const previewSeq = useRef(0);
+  const newsTimer = useRef<number | null>(null);
   
   // Use the media upload mutation
   const mediaUploadMutation = useMediaUpload();
@@ -101,31 +118,53 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
   // Use the create post mutation
   const createPostMutation = useCreatePost();
 
-  const handlePreviewNews = async () => {
-    const trimmed = newsUrl.trim();
-    if (!trimmed) return;
-    setIsPreviewingNews(true);
+  const handlePreviewNews = async (url: string): Promise<NewsLink | null> => {
     try {
-      const response = await previewLink(trimmed);
+      const response = await previewLink(url);
       if (response.data?.url) {
-        setNews(response.data);
-        setNewsUrl("");
-        setNewsInputOpen(false);
-      } else {
-        toast.error("Could not preview that link");
+        return response.data;
       }
     } catch {
-      toast.error("Could not preview that link");
-    } finally {
-      setIsPreviewingNews(false);
+      // Fall through — caller decides whether to surface the error.
     }
+    return null;
   };
+
+  // Auto-attach a link card when the post body contains a URL. Debounced so
+  // typing doesn't fire a preview per keystroke; the card follows the URL the
+  // way major social apps unfurl a pasted link. Skipped on replies (the API
+  // only allows news attachments on top-level posts).
+  useEffect(() => {
+    if (parentId) return;
+    setNewsError(null);
+    const url = extractUrl(text);
+    if (!url) {
+      setNews(null);
+      return;
+    }
+    if (url === dismissedUrl) return;
+    if (newsTimer.current) window.clearTimeout(newsTimer.current);
+    const seq = ++previewSeq.current;
+    newsTimer.current = window.setTimeout(async () => {
+      const preview = await handlePreviewNews(url);
+      if (seq !== previewSeq.current) return;
+      setNews(preview);
+      if (preview) {
+        setDismissedUrl(null);
+      } else {
+        setNewsError("Couldn't fetch a preview for that link");
+      }
+    }, 700);
+    return () => {
+      if (newsTimer.current) window.clearTimeout(newsTimer.current);
+    };
+  }, [text, parentId, dismissedUrl]);
 
   const handleSubmit = async () => {
     try {
       let mediaPayload: MediaItem[] = [];
 
-      // If we have media files, upload them first
+      // If media files exist, upload them first
       if (mediaFiles.length > 0) {
         const mediaUploadResult = await mediaUploadMutation.mutateAsync(mediaFiles);
 
@@ -138,6 +177,18 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
         }
       }
 
+      // Resolve the news card before posting: normally the debounced auto-
+      // unfurl already attached it, but if the user typed a link and hit Post
+      // inside the debounce window, fetch it once now so the card still lands.
+      let newsToAttach = news;
+      if (!newsToAttach && !parentId) {
+        const url = extractUrl(text);
+        if (url) {
+          const preview = await handlePreviewNews(url);
+          if (preview) newsToAttach = preview;
+        }
+      }
+
       const poll = pollEnabled ? { question: text, options: pollOptions.filter(Boolean) } : undefined;
       if (handlePostCreation) {
         // Create the post with the media UUIDs
@@ -146,7 +197,7 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
           media: mediaPayload,
           parent_id: parentId,
           poll,
-          news: news ?? undefined,
+          news: newsToAttach ?? undefined,
           visibility: VISIBILITY_WIRE_VALUE[visibility],
         });
 
@@ -175,7 +226,7 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
           media: mediaItems,
           visibility,
           poll,
-          news: news ?? undefined,
+          news: newsToAttach ?? undefined,
         });
       }
 
@@ -187,8 +238,8 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
       setPollEnabled(false);
       setPollOptions(["", ""]);
       setNews(null);
-      setNewsUrl("");
-      setNewsInputOpen(false);
+      setDismissedUrl(null);
+      setNewsError(null);
     } catch {
       if (onError) {
         onError();
@@ -357,31 +408,17 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
               variant="ghost"
               size="icon"
               className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-background border border-border"
-              onClick={() => setNews(null)}
+              onClick={() => {
+                setDismissedUrl(news.url);
+                setNews(null);
+              }}
             >
               <X className="h-3 w-3" />
             </Button>
           </div>
         )}
-
-        {newsInputOpen && (
-          <div className="mt-2 flex gap-2">
-            <Input
-              placeholder="Paste a news article link..."
-              value={newsUrl}
-              onChange={(event) => setNewsUrl(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  void handlePreviewNews();
-                }
-              }}
-              className="flex-1"
-            />
-            <Button type="button" variant="outline" onClick={() => void handlePreviewNews()} disabled={isPreviewingNews} className="border-border text-primary">
-              {isPreviewingNews ? <Loader2 className="h-4 w-4 animate-spin" /> : "Preview"}
-            </Button>
-          </div>
+        {newsError && (
+          <p className="mt-1 text-xs text-muted-foreground">{newsError}</p>
         )}
 
         <div className="flex justify-between mt-3">
@@ -408,11 +445,6 @@ const ComposeContent: React.FC<ComposeContentProps> = ({
             {!parentId && <Button variant="ghost" size="icon" className="rounded-full text-primary hover:bg-primary/10" onClick={() => setPollEnabled((enabled) => !enabled)}>
               <BarChart3 className="h-5 w-5" />
             </Button>}
-
-            {!parentId && <Button variant="ghost" size="icon" className="rounded-full text-primary hover:bg-primary/10" onClick={() => setNewsInputOpen((open) => !open)}>
-              <Link2 className="h-5 w-5" />
-            </Button>}
-
 
             {/* Dropdown menu for visibility options ("who can see this") */}
             <DropdownMenu>
