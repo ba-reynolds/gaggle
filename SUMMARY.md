@@ -1,3 +1,54 @@
+# SUMMARY — message-grouping
+
+Glues DM messages sent back-to-back by the same sender into a single bubble
+group with one timestamp and flattened inner corners, iMessage/WhatsApp style.
+
+## What was changed and why
+
+- **Grouping window.** `ConversationPage.tsx` computes a per-message group
+  position (`start`/`mid`/`end`/`standalone`) in a `groupPositions` memo:
+  two messages are "close" when the same sender, same calendar day
+  (`getMessageDayKey`), and within 5 minutes of each other
+  (`MESSAGE_GROUP_WINDOW_MINUTES`, the same threshold the reference demo used).
+  Day boundaries intentionally break a group so a group can never straddle a
+  day-divider pill.
+- **One timestamp per group.** The per-bubble time line was removed. Instead a
+  centered `formatMessageHour` label renders above the first message of each
+  group (and standalone messages), matching the reference demo. A pending
+  (optimistic, unsent) message shows "Sending…" there instead.
+- **Corner rounding** (the curved top/bottom + flat middle look). The chained
+  edge of grouped bubbles flattens to a 4px radius; the outer edge keeps the
+  full `rounded-2xl` (1rem) bubble radius:
+  - `.group-start`: bottom edge flat → `bottom-left` (theirs) / `bottom-right`
+    (mine)
+  - `.group-mid`: both chained corners flat
+  - `.group-end`: top edge flat
+  - standalone unchanged. All in `web/src/index.css` next to the existing
+    `--chat-gradient` bubble rules. Specificity (0,2,0) beats `rounded-2xl`
+    (0,1,0). The `background-attachment: fixed` gradient trick is untouched,
+    so a glued stack still reads as one continuous viewport-wide gradient.
+- **Spacing.** Removed `space-y-2` from the message list and instead put
+  `mb-2` on each group-end/standalone wrapper (and the "Load older" button),
+  so bubbles within a group touch and groups keep the previous 8px gap.
+- **Sender name.** Incoming bubbles now show `@username` only on the group's
+  first message (start/standalone) instead of repeating it on every bubble.
+
+## Files touched
+
+- `web/src/pages/ConversationPage.tsx` — grouping logic + grouped rendering.
+- `web/src/index.css` — corner-radius overrides for `.group-*` bubbles.
+
+## Reviewer double-checks
+
+- Verify `npm run build` (tsc) + `npm run lint` — both pass (0 errors).
+- Threshold: 5 minutes was lifted from the reference demo; tune
+  `MESSAGE_GROUP_WINDOW_MINUTES` if it feels too sticky in real conversations.
+- Visual: mid-group messages have fully flat chained corners (4px) — confirm
+  the glue looks right with the global gradient at various bubble widths.
+- Browser verify against the running stack (no vitest in this repo), e.g. the
+  "hey / you around today? / wanted to ask" style burst from the reference.
+
+---
 # SUMMARY — snappy-ux
 
 Makes the web app feel immediate: sent messages appear instantly
