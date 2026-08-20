@@ -1358,6 +1358,97 @@ func TestBadges(t *testing.T) {
 	}
 }
 
+func TestAdminMetrics(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+	adminToken := app.RegisterUser(t, "metadmin", "metadmin@example.com")
+	userToken := app.RegisterUser(t, "metuser", "metuser@example.com")
+
+	// Non-admins cannot read the dashboard.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/admin/metrics", Token: userToken}); rec.Code != http.StatusForbidden {
+		t.Fatalf("non-admin metrics status = %d, want 403", rec.Code)
+	}
+
+	if _, err := app.DB.Exec(`UPDATE users SET is_admin = TRUE WHERE username = 'metadmin'`); err != nil {
+		t.Fatalf("promote admin: %v", err)
+	}
+
+	// Generate a little traffic so the visit middleware records a page view.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/users/me", Token: userToken}); rec.Code != http.StatusOK {
+		t.Fatalf("users/me status = %d, want 200", rec.Code)
+	}
+
+	rec := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/admin/metrics", Token: adminToken})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("admin metrics status = %d, want 200: %s", rec.Code, rec.Body.String())
+	}
+	snapshot, errObj := testutil.Decode[map[string]any](t, rec)
+	if errObj != nil {
+		t.Fatalf("metrics error envelope: %v", errObj)
+	}
+
+	host, ok := snapshot["host"].(map[string]any)
+	if !ok {
+		t.Fatalf("snapshot missing host: %v", snapshot)
+	}
+	for _, field := range []string{"cpu_percent", "mem_total", "mem_used", "mem_percent", "load1", "uptime_seconds", "disk_total", "disk_used", "disk_percent"} {
+		if _, present := host[field]; !present {
+			t.Fatalf("host missing %q: %v", field, host)
+		}
+	}
+	if host["mem_total"].(float64) <= 0 {
+		t.Fatalf("host mem_total <= 0: %v", host["mem_total"])
+	}
+
+	appStats, ok := snapshot["app"].(map[string]any)
+	if !ok {
+		t.Fatalf("snapshot missing app: %v", snapshot)
+	}
+	if appStats["users"].(float64) < 2 {
+		t.Fatalf("app users = %v, want >= 2", appStats["users"])
+	}
+
+	active, ok := snapshot["active"].(map[string]any)
+	if !ok || active["dau"].(float64) < 1 {
+		t.Fatalf("active.dau should be >= 1 (metuser viewed a page): %v", snapshot["active"])
+	}
+
+	views, ok := snapshot["views"].(map[string]any)
+	if !ok {
+		t.Fatalf("snapshot missing views: %v", snapshot)
+	}
+	if views["by_day"] == nil || len(views["by_day"].([]any)) < 1 {
+		t.Fatalf("views.by_day should have >= 1 day: %v", views)
+	}
+
+	// The visit middleware recorded the metuser /users/me GET...
+	var meViews int
+	if err := app.DB.QueryRow(`SELECT COUNT(*) FROM page_views WHERE path = '/api/v1/users/me'`).Scan(&meViews); err != nil {
+		t.Fatalf("count users/me views: %v", err)
+	}
+	if meViews != 1 {
+		t.Fatalf("users/me views = %d, want 1", meViews)
+	}
+	// ...and must NOT record the dashboard's own poll (feedback loop).
+	var adminViews int
+	if err := app.DB.QueryRow(`SELECT COUNT(*) FROM page_views WHERE path = '/api/v1/admin/metrics'`).Scan(&adminViews); err != nil {
+		t.Fatalf("count admin/metrics views: %v", err)
+	}
+	if adminViews != 0 {
+		t.Fatalf("admin/metrics views = %d, want 0", adminViews)
+	}
+	// Non-GETs are not recorded.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/posts/", Token: userToken, Body: map[string]string{"content": "not a visit"}}); rec.Code != http.StatusCreated {
+		t.Fatalf("create post status = %d, want 201", rec.Code)
+	}
+	var postViews int
+	if err := app.DB.QueryRow(`SELECT COUNT(*) FROM page_views WHERE method = 'POST'`).Scan(&postViews); err != nil {
+		t.Fatalf("count POST views: %v", err)
+	}
+	if postViews != 0 {
+		t.Fatalf("POST views = %d, want 0", postViews)
+	}
+}
+
 func TestLists(t *testing.T) {
 	app := testutil.NewApp(t, testutil.Database(t))
 	ownerToken := app.RegisterUser(t, "listowner", "listowner@example.com")

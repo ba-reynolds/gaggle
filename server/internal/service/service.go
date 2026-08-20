@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"log/slog"
 	"mime/multipart"
+	"time"
 
 	"github.com/ba-reynolds/gaggle/internal/auth"
 	"github.com/ba-reynolds/gaggle/internal/models"
@@ -138,10 +139,17 @@ type Service struct {
 	DMs interface {
 		Send(ctx context.Context, senderID int, recipientUsername, body string) (*models.Message, error)
 		ListConversations(ctx context.Context, viewerID int) (*models.ConversationFeed, error)
-		ListMessages(ctx context.Context, viewerID, conversationID, limit int, cursor string) (*models.MessageFeed, error)
+		ListMessages(ctx context.Context, viewerID, conversationID int, limit int, cursor string) (*models.MessageFeed, error)
 		GetConversation(ctx context.Context, viewerID, conversationID int) (*models.Conversation, error)
 		UnreadCount(ctx context.Context, viewerID int) (int, error)
 		MarkRead(ctx context.Context, viewerID, conversationID int) error
+	}
+	Metrics interface {
+		Record(ctx context.Context, userID *int, ip, method, path string, status int) error
+		AppStats(ctx context.Context) (*models.AppStats, error)
+		ViewsByDay(ctx context.Context, days int) ([]models.DayViewCount, error)
+		RequestsLastMinute(ctx context.Context) (int, error)
+		DistinctUsersActiveSince(ctx context.Context, since time.Time) (int, error)
 	}
 }
 
@@ -163,5 +171,6 @@ func NewService(store *store.Store, logger *slog.Logger, authenticator *auth.JWT
 		Badges:            NewBadgeService(store, logger),
 		Lists:             NewListService(store, logger),
 		DMs:               NewDmService(store, hub, logger),
+		Metrics:           store.Metrics,
 	}
 }

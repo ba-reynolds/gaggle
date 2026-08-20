@@ -524,6 +524,85 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/metrics": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Live host stats (CPU, memory, load, uptime, disk), platform\ncounters, active users, and page-view traffic. Admin only.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Admin metrics dashboard",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.AdminMetrics"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "error": {
+                                            "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/admin/users/{username}/badges/{badgeID}": {
             "post": {
                 "security": [
@@ -7278,6 +7357,95 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_ba-reynolds_gaggle_internal_metrics.HostStats": {
+            "type": "object",
+            "properties": {
+                "cpu_percent": {
+                    "type": "number"
+                },
+                "disk_percent": {
+                    "type": "number"
+                },
+                "disk_total": {
+                    "type": "integer"
+                },
+                "disk_used": {
+                    "type": "integer"
+                },
+                "load1": {
+                    "type": "number"
+                },
+                "load15": {
+                    "type": "number"
+                },
+                "load5": {
+                    "type": "number"
+                },
+                "mem_percent": {
+                    "type": "number"
+                },
+                "mem_total": {
+                    "type": "integer"
+                },
+                "mem_used": {
+                    "type": "integer"
+                },
+                "uptime_seconds": {
+                    "type": "number"
+                }
+            }
+        },
+        "github_com_ba-reynolds_gaggle_internal_models.ActiveUsers": {
+            "type": "object",
+            "properties": {
+                "dau": {
+                    "type": "integer"
+                },
+                "wau": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_ba-reynolds_gaggle_internal_models.AdminMetrics": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.ActiveUsers"
+                },
+                "app": {
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.AppStats"
+                },
+                "host": {
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_metrics.HostStats"
+                },
+                "views": {
+                    "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.ViewStats"
+                }
+            }
+        },
+        "github_com_ba-reynolds_gaggle_internal_models.AppStats": {
+            "type": "object",
+            "properties": {
+                "likes": {
+                    "type": "integer"
+                },
+                "messages": {
+                    "type": "integer"
+                },
+                "posts": {
+                    "type": "integer"
+                },
+                "signups_24h": {
+                    "type": "integer"
+                },
+                "users": {
+                    "type": "integer"
+                },
+                "views_total": {
+                    "type": "integer"
+                }
+            }
+        },
         "github_com_ba-reynolds_gaggle_internal_models.AppearanceSettings": {
             "type": "object",
             "properties": {
@@ -7575,6 +7743,17 @@ const docTemplate = `{
             "properties": {
                 "time.Time": {
                     "type": "string"
+                }
+            }
+        },
+        "github_com_ba-reynolds_gaggle_internal_models.DayViewCount": {
+            "type": "object",
+            "properties": {
+                "day": {
+                    "type": "string"
+                },
+                "views": {
+                    "type": "integer"
                 }
             }
         },
@@ -8159,6 +8338,16 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 96
                 },
+                "language": {
+                    "description": "Optional UI language seed from the browser. Empty = server default (\"en\").",
+                    "type": "string",
+                    "enum": [
+                        "en",
+                        "es",
+                        "fr",
+                        "de"
+                    ]
+                },
                 "password": {
                     "type": "string",
                     "maxLength": 72,
@@ -8507,6 +8696,21 @@ const docTemplate = `{
                 },
                 "username": {
                     "type": "string"
+                }
+            }
+        },
+        "github_com_ba-reynolds_gaggle_internal_models.ViewStats": {
+            "type": "object",
+            "properties": {
+                "by_day": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_ba-reynolds_gaggle_internal_models.DayViewCount"
+                    }
+                },
+                "requests_per_minute": {
+                    "description": "RequestsPerMinute is the number of recorded views in the last 60s.",
+                    "type": "number"
                 }
             }
         }

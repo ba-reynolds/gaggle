@@ -4,8 +4,10 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/ba-reynolds/gaggle/internal/apperrors"
+	hostmetrics "github.com/ba-reynolds/gaggle/internal/metrics"
 	"github.com/ba-reynolds/gaggle/internal/middleware"
 	"github.com/ba-reynolds/gaggle/internal/models"
 	"github.com/ba-reynolds/gaggle/internal/service"
@@ -204,4 +206,65 @@ func (h *AdminHandler) RevokeBadge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	util.RespondWithJson(w, http.StatusOK, map[string]bool{"success": true})
+}
+
+// Metrics godoc
+//
+// @Summary      Admin metrics dashboard
+// @Description  Live host stats (CPU, memory, load, uptime, disk), platform
+// @Description  counters, active users, and page-view traffic. Admin only.
+// @Tags         admin
+// @Produce      json
+// @Success      200 {object} models.Envelope{data=models.AdminMetrics}
+// @Failure      403 {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Failure      500 {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Security     ApiKeyAuth
+// @Router       /admin/metrics [get]
+func (h *AdminHandler) Metrics(w http.ResponseWriter, r *http.Request) {
+	host, err := hostmetrics.ReadHostStats()
+	if err != nil {
+		h.respondError(w, apperrors.InternalServerError(err))
+		return
+	}
+
+	app, err := h.service.Metrics.AppStats(r.Context())
+	if err != nil {
+		h.respondError(w, err)
+		return
+	}
+
+	now := time.Now()
+	dau, err := h.service.Metrics.DistinctUsersActiveSince(r.Context(), now.Add(-24*time.Hour))
+	if err != nil {
+		h.respondError(w, err)
+		return
+	}
+	wau, err := h.service.Metrics.DistinctUsersActiveSince(r.Context(), now.Add(-7*24*time.Hour))
+	if err != nil {
+		h.respondError(w, err)
+		return
+	}
+
+	lastMinute, err := h.service.Metrics.RequestsLastMinute(r.Context())
+	if err != nil {
+		h.respondError(w, err)
+		return
+	}
+
+	byDay, err := h.service.Metrics.ViewsByDay(r.Context(), 14)
+	if err != nil {
+		h.respondError(w, err)
+		return
+	}
+
+	snapshot := &models.AdminMetrics{
+		Host:   *host,
+		App:    *app,
+		Active: models.ActiveUsers{DAU: dau, WAU: wau},
+		Views: models.ViewStats{
+			RequestsPerMinute: float64(lastMinute),
+			ByDay:             byDay,
+		},
+	}
+	util.RespondWithJson(w, http.StatusOK, snapshot)
 }

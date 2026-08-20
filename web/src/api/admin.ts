@@ -1,5 +1,10 @@
 import api from "@/lib/api";
-import type { Badge, CreateBadgePayload, Envelope } from "@/types/api";
+import type { AdminMetrics, Badge, CreateBadgePayload, Envelope } from "@/types/api";
+
+export const getAdminMetrics = async (): Promise<Envelope<AdminMetrics>> => {
+  const response = await api.get<Envelope<AdminMetrics>>('/admin/metrics');
+  return response.data;
+};
 
 export const listBadgeCatalog = async (): Promise<Envelope<Badge[]>> => {
   const response = await api.get<Envelope<Badge[]>>('/admin/badges');

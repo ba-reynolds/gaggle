@@ -84,6 +84,10 @@ services:
       - "2021:2021"
     volumes:
       - api_media:/app/media
+      # Host filesystem mounted read-only so the admin metrics endpoint can
+      # report real disk usage via statfs (the internal/metrics package falls
+      # back to "/" when this mount is absent, e.g. in tests).
+      - /:/host:ro
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:2021/swagger/doc.json >/dev/null 2>&1"]
       interval: 5s

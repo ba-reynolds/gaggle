@@ -7,6 +7,7 @@ import type { CreateBadgePayload, UserProfileResponse } from "@/types/api";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { CustomDialogContent } from "@/components/ui/custom-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,6 +16,7 @@ import { Loader2, Plus, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { useUser } from "@/contexts/UserContext";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import MetricsDashboard from "@/components/MetricsDashboard";
 
 const emptyForm = (): CreateBadgePayload => ({ key: "", label: "", description: "", icon: "Award" });
 
@@ -29,6 +31,7 @@ const AdminPage: React.FC = () => {
 
   const [userQuery, setUserQuery] = useState("");
   const debouncedQuery = useDebounce(userQuery, SEARCH_DEBOUNCE_MS);
+  const [tab, setTab] = useState("overview");
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<{ id: number } | null>(null);
   const [form, setForm] = useState<CreateBadgePayload>(emptyForm());
@@ -128,68 +131,85 @@ const AdminPage: React.FC = () => {
   );
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 py-6 space-y-8">
+    <div className="w-full max-w-4xl mx-auto px-4 py-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-primary">Admin</h1>
-        <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />New badge</Button>
+        {tab === "badges" && (
+          <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />New badge</Button>
+        )}
       </div>
 
-      <section>
-        <h2 className="text-lg font-semibold text-primary mb-3">Badge catalog</h2>
-        {catalogQuery.isLoading ? (
-          <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
-        ) : (
-          <>
-            {earnedBadges.length > 0 && (
-              <>
-                <h3 className="text-sm font-medium text-muted-foreground mb-2">Earned (auto)</h3>
-                <div className="space-y-2 mb-4">{earnedBadges.map(renderBadgeRow)}</div>
-              </>
-            )}
-            {assignedBadges.length > 0 && (
-              <>
-                <h3 className="text-sm font-medium text-muted-foreground mb-2">Assigned</h3>
-                <div className="space-y-2">{assignedBadges.map(renderBadgeRow)}</div>
-              </>
-            )}
-          </>
-        )}
-      </section>
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="badges">Badges</TabsTrigger>
+        </TabsList>
 
-      <section>
-        <h2 className="text-lg font-semibold text-primary mb-3">Assign badges</h2>
-        <Input placeholder="Search users by name or username..." value={userQuery} onChange={e => setUserQuery(e.target.value)} />
-        {debouncedQuery && (
-          <div className="mt-3 space-y-2">
-            {results.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No users found.</p>
-            ) : (
-              results.map((profile: UserProfileResponse) => (
-                <div key={profile.username} className="rounded-lg border border-border p-3">
-                  <p className="font-semibold text-primary">{profile.display_name}</p>
-                  <p className="text-xs text-muted-foreground">@{profile.username}</p>
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    {assignedBadges.map(b => {
-                      const granted = hasBadge(profile.username, b.id);
-                      return (
-                        <Button
-                          key={b.id}
-                          size="sm"
-                          variant={granted ? "default" : "outline"}
-                          onClick={() => toggleGrant(profile.username, b.id)}
-                        >
-                          {b.label}
-                        </Button>
-                      );
-                    })}
-                    {assignedBadges.length === 0 && <span className="text-xs text-muted-foreground">Create an assigned badge first.</span>}
-                  </div>
+        <TabsContent value="overview" className="mt-4">
+          <MetricsDashboard />
+        </TabsContent>
+
+        <TabsContent value="badges" className="mt-4">
+          <div className="space-y-8">
+            <section>
+              <h2 className="text-lg font-semibold text-primary mb-3">Badge catalog</h2>
+              {catalogQuery.isLoading ? (
+                <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
+              ) : (
+                <>
+                  {earnedBadges.length > 0 && (
+                    <>
+                      <h3 className="text-sm font-medium text-muted-foreground mb-2">Earned (auto)</h3>
+                      <div className="space-y-2 mb-4">{earnedBadges.map(renderBadgeRow)}</div>
+                    </>
+                  )}
+                  {assignedBadges.length > 0 && (
+                    <>
+                      <h3 className="text-sm font-medium text-muted-foreground mb-2">Assigned</h3>
+                      <div className="space-y-2">{assignedBadges.map(renderBadgeRow)}</div>
+                    </>
+                  )}
+                </>
+              )}
+            </section>
+
+            <section>
+              <h2 className="text-lg font-semibold text-primary mb-3">Assign badges</h2>
+              <Input placeholder="Search users by name or username..." value={userQuery} onChange={e => setUserQuery(e.target.value)} />
+              {debouncedQuery && (
+                <div className="mt-3 space-y-2">
+                  {results.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No users found.</p>
+                  ) : (
+                    results.map((profile: UserProfileResponse) => (
+                      <div key={profile.username} className="rounded-lg border border-border p-3">
+                        <p className="font-semibold text-primary">{profile.display_name}</p>
+                        <p className="text-xs text-muted-foreground">@{profile.username}</p>
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {assignedBadges.map(b => {
+                            const granted = hasBadge(profile.username, b.id);
+                            return (
+                              <Button
+                                key={b.id}
+                                size="sm"
+                                variant={granted ? "default" : "outline"}
+                                onClick={() => toggleGrant(profile.username, b.id)}
+                              >
+                                {b.label}
+                              </Button>
+                            );
+                          })}
+                          {assignedBadges.length === 0 && <span className="text-xs text-muted-foreground">Create an assigned badge first.</span>}
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
-              ))
-            )}
+              )}
+            </section>
           </div>
-        )}
-      </section>
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <CustomDialogContent className="sm:max-w-md bg-card">

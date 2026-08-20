@@ -1,4 +1,81 @@
+# SUMMARY — admin-metrics-panel
+
+Adds a live metrics dashboard to the existing `/admin` area so an admin can
+see EC2 instance stats (CPU, memory, load, uptime, disk), platform counters,
+active users, and visit traffic at a glance.
+
+## What was changed and why
+
+- **Backend — host stats** (`server/internal/metrics/host.go`, new pkg). Reads
+  whole-box CPU %, memory, load average, uptime and disk usage straight from
+  `/proc/*` + `statfs`. The api container shares the host kernel, so
+  `/proc/stat`, `/proc/meminfo`, `/proc/loadavg`, `/proc/uptime` report the
+  host, not the container — no cloud creds or extra agents. CPU% is a 200ms
+  busy/total delta sample. Disk stats statfs the host filesystem mounted
+  read-only at `/host` (new `- /:/host:ro` bind mount in `compose.yaml`), with
+  a `/` fallback when the mount is absent (tests).
+- **Backend — visit tracking** (migration `000022_create-page-views`).
+  New `page_views` table (`user_id` FK SET NULL, `ip INET`, `method`, `path`,
+  `status`, `created_at`; indexes on `created_at DESC` + `user_id`).
+  `server/internal/middleware/visit.go` records GETs served inside the
+  protected API tree (mounted in `router.go` right after `AuthTokenMiddleware`,
+  so the user id is in context). Excludes non-GETs and everything under
+  `/api/v1/admin/*` so the dashboard's own 5s poll never pollutes the table.
+  The existing `clientIP()` (rate_limit.go, X-Forwarded-For aware) is reused.
+- **Backend — metrics store + endpoint.** `store/metrics_store.go` exposes
+  `Record` + aggregate queries (app counters, views-by-day for the last 14
+  days, views in the last 60s, distinct active users since a timestamp), wired
+  through `Store` and `Service` like every other sub-store. New
+  `GET /admin/metrics` (admin-only, swagger-annotated) returns one
+  `AdminMetrics` snapshot `{host, app, active, views}`.
+- **Frontend.** `/admin` is now tabbed: **Overview** (new `MetricsDashboard`
+  component: meter cards for CPU/mem/disk, load + uptime, platform stat cards,
+  and a pure-CSS views-per-day bar chart — no chart lib) and **Badges** (the
+  existing badge-management UI, untouched). Polls the metrics endpoint every 5s
+  via `useAdminMetrics` (`refetchInterval`, `web/src/hooks/useAdmin.ts`).
+  `web/src/api/admin.ts` + `web/src/types/api.ts` gained the endpoint + types.
+- **Tests.** `TestAdminMetrics` in `server/internal/handlers/integration_test.go`:
+  403 for non-admins, 200 with populated host/app/active/views for admins, the
+  visit middleware records a `GET /users/me` exactly once, never records
+  `/admin/metrics` (feedback loop) nor POSTs. Full `go test ./...` + frontend
+  `npm run build` + `npm run lint` (0 errors) pass.
+
+## Files touched
+
+- `server/cmd/migrate/migrations/000022_create-page-views.{up,down}.sql` (new)
+- `server/internal/metrics/host.go` (new)
+- `server/internal/middleware/visit.go` (new)
+- `server/internal/store/metrics_store.go` (new)
+- `server/internal/models/metrics.go` (new)
+- `server/internal/store/store.go`, `server/internal/service/service.go` (wire
+  Metrics sub-store)
+- `server/internal/handlers/admin_handler.go` (Metrics endpoint + swagger)
+- `server/internal/api/router.go` (visit middleware + `/admin/metrics` route)
+- `server/internal/handlers/integration_test.go` (TestAdminMetrics)
+- `server/docs/*` (regenerated swagger)
+- `compose.yaml` (`- /:/host:ro` api volume)
+- `web/src/components/MetricsDashboard.tsx` (new)
+- `web/src/pages/AdminPage.tsx` (tabs), `web/src/hooks/useAdmin.ts`,
+  `web/src/api/admin.ts`, `web/src/types/api.ts`
+
+## Reviewer checkpoints
+
+- **"Visits" semantic**: since the app is an SPA, page views are proxied by
+  authenticated GET traffic on API endpoints (everything meaningful is behind
+  login). The `/admin/metrics` poll is excluded so it doesn't self-inflate.
+- **Host stats accuracy**: inside Docker the values are host-wide because
+  `/proc` is shared; the disk number depends on the `/host` bind mount being
+  present (prod compose merges it in via the base file).
+- **DB write per GET**: every protected GET now INSERTs into `page_views`
+  (best-effort, non-fatal on error). Fine at this app's traffic level; a
+  heavier app would want sampling/aggregation.
+- **Migration version `000022`** is the next free slot (verified unique);
+  watch for parallel branches minting the same number.
+
+---
+
 # SUMMARY — snappy-ux
+
 
 Makes the web app feel immediate: sent messages appear instantly
 (optimistic), navigating between pages no longer round-trips on every mount,

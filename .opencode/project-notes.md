@@ -1,4 +1,18 @@
-## Snappy UX: optimistic DMs, staleTime, prefetch (agent/snappy-ux)
+# Admin metrics dashboard (agent/admin-metrics-panel)
+- Host stats (`internal/metrics/host.go`) read `/proc/stat|meminfo|loadavg|uptime`
+  inside the api container — values are host-wide because containers share the
+  kernel. Disk needs the `- /:/host:ro` bind mount (compose.yaml) or falls back
+  to the container root. CPU% is a 200ms two-sample delta.
+- `page_views` (migration 000022) is written by `VisitMiddleware` on EVERY
+  protected GET (mounted after auth, so user_id is set); `/api/v1/admin/*` is
+  excluded so the dashboard's 5s poll doesn't self-inflate the table. "Visits"
+  == authenticated GET traffic (the SPA hides everything behind login).
+- New admin store pattern: `Store.Metrics`/`Service.Metrics` (metrics_store.go)
+  follows the sub-store wiring (store.go interface + NewStore + service.go
+  interface + NewService). If adding another aggregate query, mirror `AppStats`.
+
+---
+# Snappy UX: optimistic DMs, staleTime, prefetch (agent/snappy-ux)
 - **`onMutate` is NOT a valid `mutate()` option** — `MutateOptions` only supports
   onSuccess/onError/onSettled. To do optimistic UI on a mutation, either put it
   in the `useMutation({ onMutate })` definition (hook owns it) or, for page-local

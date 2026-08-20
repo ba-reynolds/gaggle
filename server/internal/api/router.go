@@ -79,6 +79,10 @@ func NewRouter(
 		// Protected routes (require authentication)
 		r.Group(func(protected chi.Router) {
 			protected.Use(mid.AuthTokenMiddleware(service, logger))
+			// Record page views for the admin metrics dashboard (only GETs,
+			// and never the admin area itself — avoids polluting with the
+			// dashboard's own polling).
+			protected.Use(mid.VisitMiddleware(service.Metrics, logger))
 
 			protected.Route("/users", func(r chi.Router) {
 				r.Route("/me", func(r chi.Router) {
@@ -189,6 +193,7 @@ func NewRouter(
 
 			protected.Route("/admin", func(r chi.Router) {
 				r.Use(mid.AdminOnlyMiddleware)
+				r.Get("/metrics", adminHandler.Metrics)
 				r.Get("/badges", adminHandler.ListBadges)
 				r.Post("/badges", adminHandler.CreateBadge)
 				r.Patch("/badges/{badgeID}", adminHandler.UpdateBadge)
