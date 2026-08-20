@@ -248,7 +248,7 @@ export default function SocialMediaLayout({
                     const username = profile.username;
                     const isFollowing = followingUsers[username] || false;
                     return (
-                      <div key={username} className="flex items-center justify-between">
+                      <div key={username} className="flex items-center justify-between gap-3">
                         <UserHoverCard
                           name={profile.display_name}
                           username={username}

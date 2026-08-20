@@ -27,6 +27,9 @@ UX:
      about.
    - `FollowListPage` already had the `flex-1 min-w-0` + truncate pattern; left
      untouched.
+- Follow-up: who-to-follow rows got `gap-3` on the `flex justify-between` row so
+  a truncated name/@username keeps ≥12px clearance from the Follow button
+  (they used to sit flush against it when truncating).
 
 ## Files touched
 - `web/src/components/UserAvatar.tsx` — muted palette + `color-mix` theme-aware fallback.
