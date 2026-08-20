@@ -137,7 +137,9 @@ export default function SocialMediaLayout({
             <div className="sticky top-4 space-y-6 min-w-0">
               {/* App Logo */}
               <div className="flex items-center justify-center lg:justify-start gap-2 mb-6 min-w-0">
-                <img src="/gaggle-goose.png" alt="Gaggle" className="w-10 h-10 shrink-0 rounded-full" />
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary">
+                  <img src="/gaggle-goose.png" alt="Gaggle" className="h-full w-full object-cover object-bottom" />
+                </span>
                 <span className="text-xl font-bold flex-1 min-w-0 truncate hidden lg:inline text-primary">Gaggle</span>
               </div>
 
