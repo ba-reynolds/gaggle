@@ -202,7 +202,7 @@ export default function SocialMediaLayout({
           </div>
 
           {/* Main Content */}
-          <div className="col-span-12 md:col-span-10 lg:col-span-7 border-x border-border bg-background/25 h-screen flex flex-col px-6 pb-16 md:pb-0">
+          <div className="col-span-12 md:col-span-10 lg:col-span-7 border-x border-border bg-background/25 min-h-screen self-start flex flex-col px-6 pb-16 md:pb-0">
             <div className="flex-1 min-h-0">
               {children}
             </div>

@@ -131,6 +131,24 @@
   "Dark" while already dark sends no PATCH (used to tell "did the earlier assertion's run persist" apart
   when the settings-reset check depended on it during browser verification).
 
+## Background-split-at-100vh (agent/settings-page-bg-split)
+- The layout main column (`SocialMediaLayout.tsx:208`) paints the page bg as
+  `bg-background/25` (comic theme overrides `.bg-background\/25` with solid
+  cream + halftone dots). It must stay `min-h-screen self-start`, NOT `h-screen`:
+  `h-screen` clamps the box (and its bg) to one viewport while non-message pages
+  overflow past it → a hard color seam at exactly 100vh as the document scrolls.
+- `self-start` is required too: without it the grid item stretches to the grid
+  row's height (driven by the sidebar rails on short viewports, ~100–200px),
+  which pushes the fixed-height message pages' composer below the fold. Keep the
+  `flex flex-col` + inner `flex-1 min-h-0` wrapper — message pages
+  (ConversationPage/MessagesPage `h-full` roots) need that chain for their
+  internal thread scroll. (The `h-screen` was introduced by improve-message-flow
+  commit 33e0f97.)
+- Verify pattern: playwright + vite dev on a spare port proxied to :2021; measure
+  `column.getBoundingClientRect().bottom + scrollY` vs `documentElement.scrollHeight`
+  — they must be equal for any page taller than the viewport.
+
+---
 ## Snappy UX: optimistic DMs, staleTime, prefetch (agent/snappy-ux)
 - **`onMutate` is NOT a valid `mutate()` option** — `MutateOptions` only supports
   onSuccess/onError/onSettled. To do optimistic UI on a mutation, either put it
