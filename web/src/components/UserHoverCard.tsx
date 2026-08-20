@@ -46,7 +46,7 @@ const UserHoverCard: React.FC<UserHoverCardProps> = ({
   return (
     <HoverCard>
       <HoverCardTrigger asChild>
-        <a href={profileUrl} className="cursor-pointer">
+        <a href={profileUrl} className="min-w-0 cursor-pointer">
           {children}
         </a>
       </HoverCardTrigger>

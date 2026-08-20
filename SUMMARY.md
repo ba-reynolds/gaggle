@@ -1,3 +1,54 @@
+# SUMMARY — avatar-suggestions-polish
+
+Two polish fixes for the "no profile picture" and right-rail "Who to follow"
+UX:
+
+1. **Avatar placeholder look (tacky → clean).** `UserAvatar.tsx` used to paint
+   the fallback solid with 12 loud Material palette colors (`#D32F2F` red,
+   `#283593` indigo, …) and `text-white` bold — garish next to the themed
+   shadcn surfaces (and every theme: comic, kanagawa, catppuccin…). Now the
+   fallback backgrounds are a soft theme-derived tint —
+   `color-mix(in oklab, <hue> 18%, transparent)` — and the initial is drawn in
+   the same hue pulled toward `var(--foreground)`
+   (`color-mix(in oklab, <hue> 72%, var(--foreground))`) so it stays readable
+   on light AND dark themes. Color variety per user is kept (same hash), just
+   quiet. Swapped `font-bold text-white` → `font-semibold`. `color-mix` needs
+   Chrome 111+/FF 113+/Safari 16.2+ — fine for a 2026 web app.
+2. **Who-to-follow overflow with long usernames/display names.** The right-rail
+   row (`flex items-center justify-between`, avatar+name/@username then Follow
+   button) had no min-width/truncation, so a long `@username` (16 chars is
+   legal) or long display name (50 chars) shoved the Follow button out of the
+   `bg-muted` box. Fixed by allowing the text to shrink + ellipsis:
+   - `UserHoverCard.tsx` anchor gets `min-w-0` (was an unconstrained inline `<a>`
+     as a flex item) so the row can shrink below min-content width.
+   - The three list call sites (`SocialMediaLayout` who-to-follow, `ExplorePage`
+     suggested tab, `ListPage` members) now use `min-w-0` + `shrink-0` avatar +
+     `truncate` on display_name/@username — the "trailing dots" the ticket asked
+     about.
+   - `FollowListPage` already had the `flex-1 min-w-0` + truncate pattern; left
+     untouched.
+- Follow-up: who-to-follow rows got `gap-3` on the `flex justify-between` row so
+  a truncated name/@username keeps ≥12px clearance from the Follow button
+  (they used to sit flush against it when truncating).
+
+## Files touched
+- `web/src/components/UserAvatar.tsx` — muted palette + `color-mix` theme-aware fallback.
+- `web/src/components/UserHoverCard.tsx` — `min-w-0` on the trigger anchor.
+- `web/src/layout/SocialMediaLayout.tsx` — who-to-follow row truncation.
+- `web/src/pages/ExplorePage.tsx` — suggested rows truncation.
+- `web/src/pages/ListPage.tsx` — members rows truncation.
+
+## Reviewer double-checks
+- Avatar contrast on dark themes: the initial uses `color-mix(…, var(--foreground))`,
+  which resolves from `<html data-theme>` at render time — verify it reads on
+  comic-dark / catppuccin dark where the fallback sits on `bg-muted`.
+- Anyone adding a new user-row list must copy the `min-w-0` + `truncate` pattern
+  (and keep it if a follow/member action button sits on the row).
+- No backend changes; frontend-only. Verified with a split-screen 1440px
+  playwright check: `longboy` (@lmnopqrstuvwxyz1, 50-char display name) truncates
+  with ellipsis and all Follow buttons stay inside the card.
+
+---
 # SUMMARY — per-worktree isolated preview stacks
 
 Lets each agent worktree run its OWN copy of the whole stack (db + redis + api
