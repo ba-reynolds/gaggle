@@ -20,10 +20,23 @@ interface AuthContextType {
   setToken: (token: string | null) => void;
 }
 
+// The bootstrap refresh-token /users/me round trip must never hold the app on
+// the boot screen forever: if the box stops answering, abort after this long
+// and fall back to the logged-out state (login page) instead of a dead
+// "Loading..." splash.
+const AUTH_BOOTSTRAP_TIMEOUT_MS = 10_000;
+
 // The server reports "your session is over" distinctly from a generic auth
 // failure so we can tell the user why they're being signed out.
 const isSessionExpired = (err: unknown) =>
   (err as AxiosError<Envelope<unknown>> | undefined)?.response?.data?.error?.code === 'SESSION_EXPIRED';
+
+// AbortSignal.timeout isn't universal yet; fall back to no timeout where it's
+// missing. The refresh request keeps its own .finally() cleanup either way.
+const bootstrapSignal = (): AbortSignal | undefined =>
+  typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
+    ? AbortSignal.timeout(AUTH_BOOTSTRAP_TIMEOUT_MS)
+    : undefined;
 
 const notifySessionExpired = () => {
   toast.error(translate(getCurrentLanguage(), "auth.sessionExpired"));
@@ -57,10 +70,10 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
   // Single-flight: all concurrent 401s share one refresh request.
   const refreshPromiseRef = useRef<Promise<string> | null>(null);
 
-  const refreshAccessToken = async (): Promise<string> => {
+  const refreshAccessToken = async (signal?: AbortSignal): Promise<string> => {
     if (!refreshPromiseRef.current) {
       refreshPromiseRef.current = api
-        .post<Envelope<RefreshTokenResponse>>('/auth/refresh-token')
+        .post<Envelope<RefreshTokenResponse>>('/auth/refresh-token', undefined, { signal })
         .then((res) => {
           const accessToken = res.data.data.access_token;
           setToken(accessToken);
@@ -78,12 +91,14 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     const fetchMe = async () => {
       try {
-        const accessToken = await refreshAccessToken();
+        const signal = bootstrapSignal();
+        const accessToken = await refreshAccessToken(signal);
 
         const meResponse = await api.get<Envelope<{ username: string; display_name: string; profile_picture_uuid?: string; is_admin?: boolean }>>('/users/me', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
+          signal,
         });
         setUser({
           username: meResponse.data.data.username,

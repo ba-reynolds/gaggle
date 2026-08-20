@@ -1,3 +1,4 @@
+import AppSplash from "@/components/AppSplash";
 import ComposeContent from "@/components/ComposeContent";
 import MobileNavigation from "@/components/MobileNavigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -92,7 +93,7 @@ export default function SocialMediaLayout({
 
 
   if (token === undefined) {
-    return <div>{t("app.loading")}</div>;
+    return <AppSplash />;
   }
 
   if (token === null) {

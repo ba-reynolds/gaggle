@@ -1,3 +1,50 @@
+# SUMMARY — f5-loading-ui
+
+Kills the ugly bare "Loading..." text on full page reloads (F5). Every
+authenticated page (feed, profile, messages, settings, …) showed a lone
+raw-text `Loading...` in the corner of a white page while the auth bootstrap
+(refresh-token round trip) was in flight; on a slow/stalled AWS box that state
+could persist indefinitely because the requests had no client-side timeout.
+
+## What was changed and why
+
+- **New branded boot splash** (`web/src/components/AppSplash.tsx`): full-screen,
+  centered goose logo + "Gaggle" wordmark + spinner, themed via the app's CSS
+  vars (`bg-background`, `text-primary`) so it matches light/dark. Replaces the
+  bare text in `SocialMediaLayout.tsx` (`token === undefined` branch) — the only
+  auth gate, so it covers every layout page.
+- **Pre-JS splash in `web/index.html`**: branded markup inside `#root` (inline
+  styles + `gaggle-spin` keyframes) covers the F5 gap *before* the bundle
+  loads/parses — the old behaviour was a blank white page there. React
+  overwrites the `#root` children on mount, so the swap is seamless.
+- **Bootstrap timeout** in `web/src/contexts/AuthContext.tsx`: the bootstrap
+  refresh-token POST and `/users/me` GET now carry an `AbortSignal.timeout`
+  (10s, with fallback where unsupported). If the box stops answering, the
+  promise rejects and the app falls back to the logged-out state (login page)
+  instead of hanging on the boot screen forever. The single-flight
+  `refreshPromiseRef` cleanup (`.finally`) is unchanged.
+
+## Files touched
+
+- `web/src/components/AppSplash.tsx` (new)
+- `web/src/layout/SocialMediaLayout.tsx` (use AppSplash for auth loading)
+- `web/index.html` (pre-JS branded splash + keyframes)
+- `web/src/contexts/AuthContext.tsx` (bootstrap timeout + signal plumbing)
+
+## Review notes
+
+- Tradeoff: a session whose refresh takes >10s is treated as signed-out (login
+  redirect) rather than waiting forever. 10s is generous for the AWS box
+  (nginx + API are same-host); revisit if users on very slow links complain.
+- `AbortSignal.timeout` is skipped on browsers without it (older Safari) —
+  those get the old no-timeout behaviour, which is the conservative choice.
+- Verified: `npm run build` (tsc + vite), `npm run lint` (0 errors; the two
+  AuthContext warnings are pre-existing on the base branch), and a playwright
+  smoke test against `vite preview` — pre-JS splash served in index.html,
+  `/login` renders app UI, `/` resolves (redirects to login) instead of
+  parking on the splash.
+
+---
 # SUMMARY — news-preview
 
 Adds the ability to attach a single news article link to a post. The post then

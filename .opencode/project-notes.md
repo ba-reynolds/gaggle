@@ -1,3 +1,15 @@
+## F5 boot splash (agent/f5-loading-ui)
+- Every layout page gated on `token === undefined` rendered bare `Loading...`
+  text (`SocialMediaLayout.tsx`) — now a branded `AppSplash`, plus a pre-JS
+  inline splash in `index.html` inside `#root`.
+- React `createRoot` overwrites `#root` children on first render, so pre-JS
+  splash markup in `index.html` gets replaced cleanly at mount.
+- **Axios has NO default timeout** (timeout 0 = wait forever). The auth
+  bootstrap now passes `AbortSignal.timeout(10_000)` to the refresh-token
+  POST and `/users/me` GET so a hung AWS box can't park the app on the boot
+  screen indefinitely; on abort it falls back to signed-out (login redirect).
+  Tradeoff: >10s refresh treats the session as gone.
+---
 ## Messages: /messages/new + search debounce (agent/message-conversation-fixes)
 - **Static routes have NO route params**: `useParams()` on route `/messages/new` returns `{}` — `conversationId` is `undefined`, not `"new"`. ConversationPage tested `conversationIdStr === "new"`, so `/messages/new` fell through to the existing-conversation branch, computed `Number(undefined)` = NaN, disabled the dm-conversation query, and rendered "Conversation not found." Fix pattern: `const isNew = !conversationIdStr || conversationIdStr === "new"` (ConversationPage.tsx:21).
 - `NewMessageComposer` (MessagesPage.tsx) passed the live query to `useSearchUsers` → one `GET /search?type=users` per keystroke. Now debounces via `useDebounce` and the shared `SEARCH_DEBOUNCE_MS = 300` (exported from `web/src/hooks/useDebounce.ts`). Other keystroke-fired searches were the same way and got fixed too: ListPage `MemberSearch` (add-user), ExplorePage live `useSearchPosts`. The constant is the single source of truth — tune debounce there, don't inline `300` at new call sites. (FeedPost's 150 ms is a client-side category filter, not an API call; stays as-is.)
