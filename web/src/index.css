@@ -47,6 +47,10 @@
    original slate look. Theme catalogs live in theme-themes.css. */
 :root {
   --radius: 0.5rem;
+  /* Root font size the appearance "Font Size" setting scales (14/16/18px). All
+     Tailwind rem-based sizes follow, so the whole UI zooms proportionally. */
+  --app-font-size: 16px;
+  font-size: var(--app-font-size);
   --background: oklch(1 0 0);
   --foreground: oklch(0.141 0.005 285.823);
   --card: oklch(1 0 0);

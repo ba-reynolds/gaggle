@@ -2,7 +2,18 @@ import { createContext, useContext, useEffect, useState } from "react"
 
 type Theme = "dark" | "light" | "system"
 
+export type { Theme }
+
 export type ThemeFont = "inter" | "geist" | "jetbrains" | "lora" | "sketch" | "comic"
+
+export type ThemeFontSize = "small" | "medium" | "large"
+
+/** Root font sizes that the whole app scales from (all Tailwind sizes are rem-based). */
+export const FONT_SIZES: Record<ThemeFontSize, string> = {
+  small: "14px",
+  medium: "16px",
+  large: "18px",
+}
 
 export interface ThemeDefinition {
   id: string
@@ -51,6 +62,7 @@ type ThemeProviderProps = {
   storageKey?: string
   themeIdStorageKey?: string
   fontStorageKey?: string
+  fontSizeStorageKey?: string
 }
 
 type ThemeProviderState = {
@@ -60,6 +72,11 @@ type ThemeProviderState = {
   setThemeId: (id: string) => void
   font: ThemeFont
   setFont: (font: ThemeFont) => void
+  fontSize: ThemeFontSize
+  setFontSize: (size: ThemeFontSize) => void
+  // True once the user has changed any appearance control this session. Keeps
+  // server-persisted settings from clobbering a fresh local choice.
+  appearanceTouched: boolean
 }
 
 const initialState: ThemeProviderState = {
@@ -69,6 +86,9 @@ const initialState: ThemeProviderState = {
   setThemeId: () => null,
   font: "inter",
   setFont: () => null,
+  fontSize: "medium",
+  setFontSize: () => null,
+  appearanceTouched: false,
 }
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
@@ -80,6 +100,7 @@ export function ThemeProvider({
   storageKey = "vite-ui-theme",
   themeIdStorageKey = "vite-ui-theme-id",
   fontStorageKey = "vite-ui-font",
+  fontSizeStorageKey = "vite-ui-font-size",
   ...props
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(
@@ -92,6 +113,11 @@ export function ThemeProvider({
     const stored = localStorage.getItem(fontStorageKey) as ThemeFont | null
     return stored && FONT_STACKS[stored] ? stored : "inter"
   })
+  const [fontSize, setFontSize] = useState<ThemeFontSize>(() => {
+    const stored = localStorage.getItem(fontSizeStorageKey) as ThemeFontSize | null
+    return stored && FONT_SIZES[stored] ? stored : "medium"
+  })
+  const [appearanceTouched, setAppearanceTouched] = useState(false)
 
   useEffect(() => {
     const root = window.document.documentElement
@@ -122,22 +148,38 @@ export function ThemeProvider({
     window.document.documentElement.style.setProperty("--app-font-sans", FONT_STACKS[font])
   }, [font])
 
+  // Font size -> --app-font-size on <html>; index.css uses it as the root
+  // font-size, so every rem-based sizing scales proportionally.
+  useEffect(() => {
+    window.document.documentElement.style.setProperty("--app-font-size", FONT_SIZES[fontSize])
+  }, [fontSize])
+
   const value = {
     theme,
     setTheme: (theme: Theme) => {
+      setAppearanceTouched(true)
       localStorage.setItem(storageKey, theme)
       setTheme(theme)
     },
     themeId,
     setThemeId: (id: string) => {
+      setAppearanceTouched(true)
       localStorage.setItem(themeIdStorageKey, id)
       setThemeId(id)
     },
     font,
     setFont: (font: ThemeFont) => {
+      setAppearanceTouched(true)
       localStorage.setItem(fontStorageKey, font)
       setFont(font)
     },
+    fontSize,
+    setFontSize: (size: ThemeFontSize) => {
+      setAppearanceTouched(true)
+      localStorage.setItem(fontSizeStorageKey, size)
+      setFontSize(size)
+    },
+    appearanceTouched,
   }
 
   return (

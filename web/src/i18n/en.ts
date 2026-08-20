@@ -131,14 +131,6 @@ const en = {
     appearance: {
       title: "Appearance",
       description: "Customize how the app looks",
-      theme: "Theme",
-      light: "Light",
-      dark: "Dark",
-      system: "System",
-      fontSize: "Font Size",
-      small: "Small",
-      medium: "Medium",
-      large: "Large",
     },
     language: {
       title: "Language",

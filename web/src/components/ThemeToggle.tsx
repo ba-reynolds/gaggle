@@ -1,12 +1,23 @@
 import { Moon, Sun, Monitor } from "lucide-react";
-import { useTheme } from "@/contexts/ThemeContext";
+import { useTheme, type Theme } from "@/contexts/ThemeContext";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-export function ThemeToggle() {
+export function ThemeToggle({
+  onThemeChange,
+}: {
+  onThemeChange?: (theme: Theme) => void;
+}) {
   const { theme, setTheme } = useTheme();
 
   return (
-    <Tabs defaultValue={theme} onValueChange={(value) => setTheme(value as "light" | "dark" | "system")}>
+    <Tabs
+      value={theme}
+      onValueChange={(value) => {
+        const next = value as Theme;
+        setTheme(next);
+        onThemeChange?.(next);
+      }}
+    >
       <TabsList className="w-full grid grid-cols-3 bg-foreground/10">
         <TabsTrigger value="system" className="flex items-center justify-center">
           <Monitor className="h-4 w-4 xl:mr-2" />
