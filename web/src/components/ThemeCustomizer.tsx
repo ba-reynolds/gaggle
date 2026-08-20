@@ -1,7 +1,9 @@
-import { useTheme, FONT_STACKS, THEME_CATALOG, type ThemeFont } from "@/contexts/ThemeContext";
+import { useTheme, FONT_STACKS, THEME_CATALOG, type Theme, type ThemeFont, type ThemeFontSize } from "@/contexts/ThemeContext";
+import { useSettings } from "@/hooks/useSettings";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const FONTS: { id: ThemeFont; label: string }[] = [
   { id: "inter", label: "Inter" },
@@ -11,14 +13,53 @@ const FONTS: { id: ThemeFont; label: string }[] = [
   { id: "comic", label: "Comic" },
 ];
 
+const FONT_SIZES: { id: ThemeFontSize; label: string }[] = [
+  { id: "small", label: "Small" },
+  { id: "medium", label: "Medium" },
+  { id: "large", label: "Large" },
+];
+
 const ThemeCustomizer: React.FC = () => {
-  const { themeId, setThemeId, font, setFont } = useTheme();
+  const { themeId, setThemeId, font, setFont, fontSize, setFontSize } = useTheme();
+  const { settings, updateSettings } = useSettings();
   const groups = ["Brands", "Catppuccin", "Editor", "Fun"] as const;
+
+  // Light/dark/system + font size persist to the account so they survive
+  // across browsers; the theme catalog and font family stay local (no server
+  // fields exist for them yet).
+  const handleThemeChange = (theme: Theme) => {
+    updateSettings({ appearance: { ...settings?.appearance, theme } });
+  };
+
+  const handleFontSizeChange = (size: ThemeFontSize) => {
+    updateSettings({ appearance: { ...settings?.appearance, fontSize: size } });
+  };
 
   return (
     <div className="space-y-4">
       {/* Light / dark / system */}
-      <ThemeToggle />
+      <ThemeToggle onThemeChange={handleThemeChange} />
+
+      {/* Font size */}
+      <div>
+        <Label className="text-primary">Font Size</Label>
+        <Tabs
+          value={fontSize}
+          onValueChange={(value) => {
+            const next = value as ThemeFontSize;
+            setFontSize(next);
+            handleFontSizeChange(next);
+          }}
+        >
+          <TabsList className="w-full grid grid-cols-3 bg-foreground/10">
+            {FONT_SIZES.map((f) => (
+              <TabsTrigger key={f.id} value={f.id} className="flex items-center justify-center">
+                <span>{f.label}</span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      </div>
 
       {/* Theme catalog grouped by source */}
       {groups.map((group) => (

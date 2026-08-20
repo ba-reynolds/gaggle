@@ -133,14 +133,6 @@ const es: MessageKey = {
     appearance: {
       title: "Apariencia",
       description: "Personaliza el aspecto de la aplicación",
-      theme: "Tema",
-      light: "Claro",
-      dark: "Oscuro",
-      system: "Sistema",
-      fontSize: "Tamaño de fuente",
-      small: "Pequeño",
-      medium: "Mediano",
-      large: "Grande",
     },
     language: {
       title: "Idioma",

@@ -133,14 +133,6 @@ const de: MessageKey = {
     appearance: {
       title: "Darstellung",
       description: "Passe das Aussehen der App an",
-      theme: "Design",
-      light: "Hell",
-      dark: "Dunkel",
-      system: "System",
-      fontSize: "Schriftgröße",
-      small: "Klein",
-      medium: "Mittel",
-      large: "Groß",
     },
     language: {
       title: "Sprache",

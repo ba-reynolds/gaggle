@@ -8,6 +8,7 @@ import { UserProvider } from './contexts/UserContext';
 import { Toaster } from './components/ui/sonner';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { I18nProvider } from './contexts/I18nContext';
+import AppearanceSync from './components/AppearanceSync';
 import SocialMediaLayout from '@/layout/SocialMediaLayout';
 import FeedPage from './pages/FeedPage';
 import ProfilePage from './pages/ProfilePage';
@@ -53,6 +54,7 @@ function App() {
           <AuthProvider>
             <NotificationsProvider>
               <I18nProvider>
+                <AppearanceSync />
                 <Router>
                   <Routes>
                     <Route path="/" element={<SocialMediaLayout><FeedPage /></SocialMediaLayout>} />

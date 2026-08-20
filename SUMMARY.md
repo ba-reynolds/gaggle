@@ -1,3 +1,84 @@
+# SUMMARY — settings-appearance-fixes
+
+Settings → Appearance was partly fake UI: two shadcn dropdowns (a light/dark/
+system Theme select and a Font Size select) PATCHed the server's
+`appearance.*`, but NOTHING in the frontend ever applied them — `ThemeProvider`
+only reads localStorage, and font size had no implementation at all. Worse, the
+Theme dropdown duplicated the `ThemeToggle` tabs already sitting inside
+`ThemeCustomizer`, and the dropdown didn't match the customizer's bespoke
+Tabs/button-grid UI.
+
+## What was changed and why
+
+- **Removed the two duplicate dropdowns** from the Appearance card in
+  `SettingsPage`. Appearance controls now live solely in `ThemeCustomizer`
+  (ThemeToggle tabs + theme catalog + font picker + a new font-size row), so
+  there is exactly ONE light/dark/system control and it matches the existing
+  UI.
+- **Font size now actually works.** `settings.appearance.fontSize` only got
+  PATCHed (`--app-font-sans` just sets font *family*). Added a real scale:
+  - `ThemeContext`: new `fontSize` state (`small|medium|large`, persisted to
+    `localStorage["vite-ui-font-size"]`, default `medium`) that sets
+    `--app-font-size` on `<html>`.
+  - `index.css`: `:root` declares `--app-font-size: 16px` and
+    `font-size: var(--app-font-size)`. Every Tailwind size is rem-based, so
+    the whole UI scales proportionally (14 / 16 / 18px).
+  - `ThemeCustomizer`: a "Font Size" row of Small/Medium/Large tabs (radix
+    Tabs — same visual style as the ThemeToggle row above it).
+- **Appearance settings now persist AND apply.** `ThemeToggle` +
+  `ThemeCustomizer` PATCH `appearance.theme` / `appearance.fontSize` to the
+  account on change (the theme catalog id + font family stay localStorage-only —
+  the server settings model has no fields for them). New `AppearanceSync`
+  component (mounted under `I18nProvider`) reads the shared `['settings']`
+  query and adopts the account's persisted `appearance.*` into `ThemeContext`
+  on load — so the setting follows the account across browsers, not just one
+  browser's localStorage. A choice the user made this session
+  (`appearanceTouched` flag on the context setters) always wins over a
+  refetch.
+- Removed the now-dead `settings.appearance.{theme,light,dark,system,fontSize,
+  small,medium,large}` i18n keys from `en`/`es`/`fr`/`de`.
+
+## Files touched
+
+- `web/src/pages/SettingsPage.tsx` — deleted the duplicate theme + font-size dropdowns
+- `web/src/contexts/ThemeContext.tsx` — `fontSize` state + `--app-font-size` + `appearanceTouched` guard; exported `Theme` type + `FONT_SIZES`
+- `web/src/index.css` — root font-size scales from `--app-font-size`
+- `web/src/components/ThemeCustomizer.tsx` — Font Size tabs; persists theme/fontSize to the server
+- `web/src/components/ThemeToggle.tsx` — optional `onThemeChange` callback; controlled `value`
+- `web/src/components/AppearanceSync.tsx` (new) — adopts server appearance into ThemeContext
+- `web/src/App.tsx` — mounts `AppearanceSync`
+- `web/src/i18n/{en,es,fr,de}.ts` — dropped unused appearance sub-keys
+
+## Verification
+
+- `npm run lint` 0 errors (17 pre-existing react-refresh warnings); `npm run
+  build` (tsc + vite) passes (pre-existing >500kB chunk warning only).
+- Playwright smoke (vite dev on :5199 proxying the live api): Appearance card
+  has **0** Select/combobox dropdowns; Font Size renders as a tab control;
+  clicking **Large** → computed `html` font-size 16px → 18px, localStorage +
+  `PATCH /users/settings` both update; clicking **Dark** → `.dark` class +
+  localStorage + PATCH `theme:"dark"`; after a full reload the appearance is
+  re-adopted from the server. Also observed the sync applying across browser
+  contexts (a brand-new context picked up the account's persisted dark/large).
+  The account's settings were reset to system/medium at the end of the run.
+- No server or migration changes (the model already had
+  `appearance.theme`/`appearance.fontSize`).
+
+## Reviewers should double-check
+
+- Font size is implemented as **root font-size scaling**, so ALL rem-based UI
+  (buttons, sidebar, spacing) zooms ±12.5%, not just typography. Intended —
+  it's the standard way to scale a Tailwind app; if "font size" should only
+  change body text, that's a substantially larger refactor.
+- Theme catalog (`themeId`) + font family remain localStorage-only. Only
+  `theme` + `fontSize` sync to the account. Extending the server settings
+  schema (and defaults/migrations docs) for the other two is possible future
+  work.
+- `AppearanceSync` adopts once per session (guarded by `appearanceTouched`);
+  a theme change made on another device is picked up on the next page load,
+  not live mid-session.
+
+---
 # SUMMARY — snappy-ux
 
 Makes the web app feel immediate: sent messages appear instantly

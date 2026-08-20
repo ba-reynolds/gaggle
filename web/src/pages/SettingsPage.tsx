@@ -174,49 +174,7 @@ const SettingsPage = () => {
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                            <Label>{t("settings.appearance.theme")}</Label>
-                            <Select
-                                value={settings?.appearance.theme}
-                                onValueChange={(value) =>
-                                    updateSettings({
-                                        appearance: { ...settings?.appearance, theme: value as "light" | "dark" | "system" },
-                                    })
-                                }
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="light">{t("settings.appearance.light")}</SelectItem>
-                                    <SelectItem value="dark">{t("settings.appearance.dark")}</SelectItem>
-                                    <SelectItem value="system">{t("settings.appearance.system")}</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>{t("settings.appearance.fontSize")}</Label>
-                            <Select
-                                value={settings?.appearance.fontSize}
-                                onValueChange={(value) =>
-                                    updateSettings({
-                                        appearance: { ...settings?.appearance, fontSize: value as "small" | "medium" | "large" },
-                                    })
-                                }
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="small">{t("settings.appearance.small")}</SelectItem>
-                                    <SelectItem value="medium">{t("settings.appearance.medium")}</SelectItem>
-                                    <SelectItem value="large">{t("settings.appearance.large")}</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="mt-4 border-t border-border pt-4">
-                            <ThemeCustomizer />
-                        </div>
+                        <ThemeCustomizer />
                     </CardContent>
                 </Card>
 

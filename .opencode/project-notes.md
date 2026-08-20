@@ -1,3 +1,16 @@
+## Settings appearance actually works (agent/settings-appearance-fixes)
+- `settings.appearance.theme`/`fontSize` were dead: PATCHed to the server but never applied —
+  `ThemeProvider` only reads localStorage and font size had zero implementation. Fixed: fontSize is now a
+  real root-font-size scale (`--app-font-size` → `html { font-size: var(...) }`; all Tailwind rem sizes
+  zoom), and appearance syncs to/from the server via `AppearanceSync` (adopts on load; the
+  `appearanceTouched` flag set by the context setters stops a refetch clobbering a fresh local pick).
+- Font size = root font-size scaling (14/16/18px). That zooms ALL rem-based spacing, not just text —
+  deliberate, the standard Tailwind approach. Theme-catalog id + font *family* are still localStorage-only
+  (server settings model has no fields for them); only `theme` + `fontSize` persist per-account.
+- **Radix Tabs `onValueChange` does NOT fire when clicking the already-active trigger** — clicking
+  "Dark" while already dark sends no PATCH (used to tell "did the earlier assertion's run persist" apart
+  when the settings-reset check depended on it during browser verification).
+
 ## Snappy UX: optimistic DMs, staleTime, prefetch (agent/snappy-ux)
 - **`onMutate` is NOT a valid `mutate()` option** — `MutateOptions` only supports
   onSuccess/onError/onSettled. To do optimistic UI on a mutation, either put it
