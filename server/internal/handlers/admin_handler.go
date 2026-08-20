@@ -4,8 +4,10 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/ba-reynolds/gaggle/internal/apperrors"
+	hostmetrics "github.com/ba-reynolds/gaggle/internal/metrics"
 	"github.com/ba-reynolds/gaggle/internal/middleware"
 	"github.com/ba-reynolds/gaggle/internal/models"
 	"github.com/ba-reynolds/gaggle/internal/service"
@@ -204,4 +206,120 @@ func (h *AdminHandler) RevokeBadge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	util.RespondWithJson(w, http.StatusOK, map[string]bool{"success": true})
+}
+
+// Metrics godoc
+//
+// @Summary      Admin metrics dashboard
+// @Description  Live host stats (CPU, memory, load, uptime, disk), platform
+// @Description  counters, active users, and page-view traffic. Admin only.
+// @Tags         admin
+// @Produce      json
+// @Success      200 {object} models.Envelope{data=models.AdminMetrics}
+// @Failure      403 {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Failure      500 {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Security     ApiKeyAuth
+// @Router       /admin/metrics [get]
+func (h *AdminHandler) Metrics(w http.ResponseWriter, r *http.Request) {
+	host, err := hostmetrics.ReadHostStats()
+	if err != nil {
+		h.respondError(w, apperrors.InternalServerError(err))
+		return
+	}
+
+	app, err := h.service.Metrics.AppStats(r.Context())
+	if err != nil {
+		h.respondError(w, err)
+		return
+	}
+
+	now := time.Now()
+	dau, err := h.service.Metrics.DistinctUsersActiveSince(r.Context(), now.Add(-24*time.Hour))
+	if err != nil {
+		h.respondError(w, err)
+		return
+	}
+	wau, err := h.service.Metrics.DistinctUsersActiveSince(r.Context(), now.Add(-7*24*time.Hour))
+	if err != nil {
+		h.respondError(w, err)
+		return
+	}
+
+	lastMinute, err := h.service.Metrics.RequestsLastMinute(r.Context())
+	if err != nil {
+		h.respondError(w, err)
+		return
+	}
+
+	byDay, err := h.service.Metrics.ViewsByDay(r.Context(), 14)
+	if err != nil {
+		h.respondError(w, err)
+		return
+	}
+
+	snapshot := &models.AdminMetrics{
+		Host:   *host,
+		App:    *app,
+		Active: models.ActiveUsers{DAU: dau, WAU: wau},
+		Views: models.ViewStats{
+			RequestsPerMinute: float64(lastMinute),
+			ByDay:             byDay,
+		},
+	}
+	util.RespondWithJson(w, http.StatusOK, snapshot)
+}
+
+// History godoc
+//
+// @Summary      Admin metrics history
+// @Description  Host-stats and view-traffic time series over a range. Admin only.
+// @Tags         admin
+// @Produce      json
+// @Param        range query string false "Host-history range: 24h, 7d, or 30d" Enums(24h, 7d, 30d) default(24h)
+// @Param        days  query int    false "View-traffic window in days (1-90); defaults to the range width" default(30)
+// @Success      200 {object} models.Envelope{data=models.MetricsHistory}
+// @Failure      400 {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Failure      403 {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Failure      500 {object} models.Envelope{data=nil,error=apperrors.AppError}
+// @Security     ApiKeyAuth
+// @Router       /admin/metrics/history [get]
+func (h *AdminHandler) History(w http.ResponseWriter, r *http.Request) {
+	rangeParam := r.URL.Query().Get("range")
+	if rangeParam == "" {
+		rangeParam = string(models.History24h)
+	}
+	hr := models.HistoryRange(rangeParam)
+	if !hr.Valid() {
+		h.respondError(w, apperrors.BadRequestError(`invalid range (use "24h", "7d", or "30d")`, nil))
+		return
+	}
+
+	days := 30
+	if hr == models.History24h {
+		days = 1
+	} else if hr == models.History7d {
+		days = 7
+	}
+	if rawDays := r.URL.Query().Get("days"); rawDays != "" {
+		parsed, err := strconv.Atoi(rawDays)
+		if err != nil || parsed < 1 || parsed > 90 {
+			h.respondError(w, apperrors.BadRequestError("invalid days (use 1-90)", nil))
+			return
+		}
+		days = parsed
+	}
+
+	hostSeries, err := h.service.Metrics.HostSeries(r.Context(), hr)
+	if err != nil {
+		h.respondError(w, err)
+		return
+	}
+
+	views, err := h.service.Metrics.ViewsByDay(r.Context(), days)
+	if err != nil {
+		h.respondError(w, err)
+		return
+	}
+
+	util.RespondWithJson(w, http.StatusOK, models.MetricsHistory{Range: hr, Days: days, Host: hostSeries, Views: views})
 }

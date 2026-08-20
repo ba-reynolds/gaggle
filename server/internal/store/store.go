@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ba-reynolds/gaggle/internal/models"
+	"github.com/ba-reynolds/gaggle/internal/metrics"
 	"github.com/ba-reynolds/gaggle/pkg/config"
 	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -158,6 +159,17 @@ type Store struct {
 		MarkRead(ctx context.Context, conversationID, readerID int) (int, error)
 		IsParticipant(ctx context.Context, conversationID, userID int) (bool, error)
 	}
+	Metrics interface {
+		Record(ctx context.Context, userID *int, ip, method, path string, status int) error
+		AppStats(ctx context.Context) (*models.AppStats, error)
+		ViewsByDay(ctx context.Context, days int) ([]models.DayViewCount, error)
+		RequestsLastMinute(ctx context.Context) (int, error)
+		DistinctUsersActiveSince(ctx context.Context, since time.Time) (int, error)
+		InsertHostSample(ctx context.Context, h *metrics.HostStats) error
+		HostSeries(ctx context.Context, r models.HistoryRange) ([]models.HostSamplePoint, error)
+		PrunePageViews(ctx context.Context, cutoff time.Time) error
+		PruneHostSamples(ctx context.Context, cutoff time.Time) error
+	}
 }
 
 func NewStore(db *sql.DB, logger *slog.Logger, mediaDir string) *Store {
@@ -177,6 +189,7 @@ func NewStore(db *sql.DB, logger *slog.Logger, mediaDir string) *Store {
 		Badges:            &badgeStore{db: db, logger: logger},
 		Lists:             &listStore{db: db, logger: logger},
 		DMs:               &dmStore{db: db, logger: logger},
+		Metrics:           &metricsStore{db: db, logger: logger},
 	}
 }
 

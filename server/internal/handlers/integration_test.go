@@ -13,6 +13,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 
+	hostmetrics "github.com/ba-reynolds/gaggle/internal/metrics"
 	"github.com/ba-reynolds/gaggle/internal/testutil"
 )
 
@@ -1355,6 +1356,211 @@ func TestBadges(t *testing.T) {
 	}
 	if !found {
 		t.Fatalf("earned prolific_poster missing from profile: %v", badges)
+	}
+}
+
+func TestAdminMetrics(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+	adminToken := app.RegisterUser(t, "metadmin", "metadmin@example.com")
+	userToken := app.RegisterUser(t, "metuser", "metuser@example.com")
+
+	// Non-admins cannot read the dashboard.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/admin/metrics", Token: userToken}); rec.Code != http.StatusForbidden {
+		t.Fatalf("non-admin metrics status = %d, want 403", rec.Code)
+	}
+
+	if _, err := app.DB.Exec(`UPDATE users SET is_admin = TRUE WHERE username = 'metadmin'`); err != nil {
+		t.Fatalf("promote admin: %v", err)
+	}
+
+	// Generate a little traffic so the visit middleware records a page view.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/users/me", Token: userToken}); rec.Code != http.StatusOK {
+		t.Fatalf("users/me status = %d, want 200", rec.Code)
+	}
+
+	rec := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/admin/metrics", Token: adminToken})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("admin metrics status = %d, want 200: %s", rec.Code, rec.Body.String())
+	}
+	snapshot, errObj := testutil.Decode[map[string]any](t, rec)
+	if errObj != nil {
+		t.Fatalf("metrics error envelope: %v", errObj)
+	}
+
+	host, ok := snapshot["host"].(map[string]any)
+	if !ok {
+		t.Fatalf("snapshot missing host: %v", snapshot)
+	}
+	for _, field := range []string{"cpu_percent", "mem_total", "mem_used", "mem_percent", "load1", "uptime_seconds", "disk_total", "disk_used", "disk_percent"} {
+		if _, present := host[field]; !present {
+			t.Fatalf("host missing %q: %v", field, host)
+		}
+	}
+	if host["mem_total"].(float64) <= 0 {
+		t.Fatalf("host mem_total <= 0: %v", host["mem_total"])
+	}
+
+	appStats, ok := snapshot["app"].(map[string]any)
+	if !ok {
+		t.Fatalf("snapshot missing app: %v", snapshot)
+	}
+	if appStats["users"].(float64) < 2 {
+		t.Fatalf("app users = %v, want >= 2", appStats["users"])
+	}
+
+	active, ok := snapshot["active"].(map[string]any)
+	if !ok || active["dau"].(float64) < 1 {
+		t.Fatalf("active.dau should be >= 1 (metuser viewed a page): %v", snapshot["active"])
+	}
+
+	views, ok := snapshot["views"].(map[string]any)
+	if !ok {
+		t.Fatalf("snapshot missing views: %v", snapshot)
+	}
+	if views["by_day"] == nil || len(views["by_day"].([]any)) < 1 {
+		t.Fatalf("views.by_day should have >= 1 day: %v", views)
+	}
+
+	// The visit middleware recorded the metuser /users/me GET...
+	var meViews int
+	if err := app.DB.QueryRow(`SELECT COUNT(*) FROM page_views WHERE path = '/api/v1/users/me'`).Scan(&meViews); err != nil {
+		t.Fatalf("count users/me views: %v", err)
+	}
+	if meViews != 1 {
+		t.Fatalf("users/me views = %d, want 1", meViews)
+	}
+	// ...and must NOT record the dashboard's own poll (feedback loop).
+	var adminViews int
+	if err := app.DB.QueryRow(`SELECT COUNT(*) FROM page_views WHERE path = '/api/v1/admin/metrics'`).Scan(&adminViews); err != nil {
+		t.Fatalf("count admin/metrics views: %v", err)
+	}
+	if adminViews != 0 {
+		t.Fatalf("admin/metrics views = %d, want 0", adminViews)
+	}
+	// Non-GETs are not recorded.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodPost, Path: "/api/v1/posts/", Token: userToken, Body: map[string]string{"content": "not a visit"}}); rec.Code != http.StatusCreated {
+		t.Fatalf("create post status = %d, want 201", rec.Code)
+	}
+	var postViews int
+	if err := app.DB.QueryRow(`SELECT COUNT(*) FROM page_views WHERE method = 'POST'`).Scan(&postViews); err != nil {
+		t.Fatalf("count POST views: %v", err)
+	}
+	if postViews != 0 {
+		t.Fatalf("POST views = %d, want 0", postViews)
+	}
+}
+
+func TestAdminMetricsHistory(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+	adminToken := app.RegisterUser(t, "histadmin", "histadmin@example.com")
+	userToken := app.RegisterUser(t, "histuser", "histuser@example.com")
+
+	// Non-admins cannot read history.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/admin/metrics/history", Token: userToken}); rec.Code != http.StatusForbidden {
+		t.Fatalf("non-admin history status = %d, want 403", rec.Code)
+	}
+
+	if _, err := app.DB.Exec(`UPDATE users SET is_admin = TRUE WHERE username = 'histadmin'`); err != nil {
+		t.Fatalf("promote admin: %v", err)
+	}
+
+	// Invalid range -> 400.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/admin/metrics/history?range=bogus", Token: adminToken}); rec.Code != http.StatusBadRequest {
+		t.Fatalf("invalid range status = %d, want 400", rec.Code)
+	}
+	// Invalid days -> 400.
+	if rec := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/admin/metrics/history?days=0", Token: adminToken}); rec.Code != http.StatusBadRequest {
+		t.Fatalf("invalid days status = %d, want 400", rec.Code)
+	}
+	if rec := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/admin/metrics/history?days=abc", Token: adminToken}); rec.Code != http.StatusBadRequest {
+		t.Fatalf("non-numeric days status = %d, want 400", rec.Code)
+	}
+
+	// Backfill a host sample the way the sampler does.
+	sample := &hostmetrics.HostStats{
+		CPUPercent: 12.5, MemTotalBytes: 8 << 30, MemUsedBytes: 4 << 30, MemPercent: 50,
+		Load1: 0.5, Load5: 0.4, Load15: 0.3, UptimeSeconds: 1000,
+		DiskTotalBytes: 100 << 30, DiskUsedBytes: 40 << 30, DiskPercent: 40,
+	}
+	if err := app.Service.Metrics.InsertHostSample(context.Background(), sample); err != nil {
+		t.Fatalf("insert host sample: %v", err)
+	}
+
+	rec := app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/admin/metrics/history?range=24h", Token: adminToken})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("history status = %d, want 200: %s", rec.Code, rec.Body.String())
+	}
+	hist, errObj := testutil.Decode[map[string]any](t, rec)
+	if errObj != nil {
+		t.Fatalf("history error envelope: %v", errObj)
+	}
+	if hist["range"] != "24h" {
+		t.Fatalf("history range = %v, want 24h", hist["range"])
+	}
+	if hist["days"] != float64(1) {
+		t.Fatalf("history days = %v, want 1", hist["days"])
+	}
+
+	// days override is honored.
+	rec = app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/admin/metrics/history?range=7d&days=45", Token: adminToken})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("history with days status = %d, want 200: %s", rec.Code, rec.Body.String())
+	}
+	hist, errObj = testutil.Decode[map[string]any](t, rec)
+	if errObj != nil {
+		t.Fatalf("history with days error envelope: %v", errObj)
+	}
+	if hist["days"] != float64(45) {
+		t.Fatalf("history days override = %v, want 45", hist["days"])
+	}
+	host := hist["host"].([]any)
+	if len(host) < 1 {
+		t.Fatalf("expected >= 1 host sample point, got %d", len(host))
+	}
+	point := host[0].(map[string]any)
+	if point["cpu_percent"].(float64) <= 0 {
+		t.Fatalf("host point cpu_percent = %v, want > 0", point["cpu_percent"])
+	}
+	if point["mem_percent"].(float64) <= 0 {
+		t.Fatalf("host point mem_percent = %v, want > 0", point["mem_percent"])
+	}
+	if _, ok := point["ts"]; !ok {
+		t.Fatalf("host point missing ts: %v", point)
+	}
+	if hist["views"] == nil {
+		t.Fatalf("history missing views: %v", hist)
+	}
+
+	// Pruning: age rows well past the retention window, prune, expect nothing left.
+	if _, err := app.DB.Exec(`UPDATE host_metrics_samples SET created_at = now() - interval '200 days'`); err != nil {
+		t.Fatalf("age host sample: %v", err)
+	}
+	if _, err := app.DB.Exec(`INSERT INTO page_views (method, path, status) VALUES ('GET', '/api/v1/stale', 200)`); err != nil {
+		t.Fatalf("insert stale page view: %v", err)
+	}
+	if _, err := app.DB.Exec(`UPDATE page_views SET created_at = now() - interval '200 days'`); err != nil {
+		t.Fatalf("age page view: %v", err)
+	}
+	cutoff := time.Now().Add(-90 * 24 * time.Hour)
+	if err := app.Service.Metrics.PruneHostSamples(context.Background(), cutoff); err != nil {
+		t.Fatalf("prune host samples: %v", err)
+	}
+	var hostCount int
+	if err := app.DB.QueryRow(`SELECT COUNT(*) FROM host_metrics_samples`).Scan(&hostCount); err != nil {
+		t.Fatalf("count host samples: %v", err)
+	}
+	if hostCount != 0 {
+		t.Fatalf("host samples after prune = %d, want 0", hostCount)
+	}
+	if err := app.Service.Metrics.PrunePageViews(context.Background(), cutoff); err != nil {
+		t.Fatalf("prune page views: %v", err)
+	}
+	var staleViews int
+	if err := app.DB.QueryRow(`SELECT COUNT(*) FROM page_views WHERE path = '/api/v1/stale'`).Scan(&staleViews); err != nil {
+		t.Fatalf("count stale views: %v", err)
+	}
+	if staleViews != 0 {
+		t.Fatalf("stale views after prune = %d, want 0", staleViews)
 	}
 }
 

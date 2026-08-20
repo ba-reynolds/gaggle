@@ -56,6 +56,70 @@ export interface UserBadge extends Badge {
   granted_at?: string;
 }
 
+// Admin metrics dashboard
+export interface HostMetrics {
+  cpu_percent: number;
+  mem_total: number;
+  mem_used: number;
+  mem_percent: number;
+  load1: number;
+  load5: number;
+  load15: number;
+  uptime_seconds: number;
+  disk_total: number;
+  disk_used: number;
+  disk_percent: number;
+}
+
+export interface AppStats {
+  users: number;
+  posts: number;
+  likes: number;
+  messages: number;
+  views_total: number;
+  signups_24h: number;
+}
+
+export interface ActiveUsers {
+  dau: number;
+  wau: number;
+}
+
+export interface DayViewCount {
+  day: string;
+  views: number;
+}
+
+export interface ViewStats {
+  requests_per_minute: number;
+  by_day: DayViewCount[];
+}
+
+export type HistoryRange = '24h' | '7d' | '30d';
+export type ViewRange = '14d' | '30d' | '90d';
+
+export interface HostSamplePoint {
+  ts: string;
+  cpu_percent: number;
+  mem_percent: number;
+  disk_percent: number;
+  load1: number;
+}
+
+export interface MetricsHistory {
+  range: HistoryRange;
+  days: number;
+  host: HostSamplePoint[];
+  views: DayViewCount[];
+}
+
+export interface AdminMetrics {
+  host: HostMetrics;
+  app: AppStats;
+  active: ActiveUsers;
+  views: ViewStats;
+}
+
 export interface UserProfileResponse {
   username: string;
   display_name: string;

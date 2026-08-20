@@ -9,6 +9,64 @@ definitions:
       message:
         type: string
     type: object
+  github_com_ba-reynolds_gaggle_internal_metrics.HostStats:
+    properties:
+      cpu_percent:
+        type: number
+      disk_percent:
+        type: number
+      disk_total:
+        type: integer
+      disk_used:
+        type: integer
+      load1:
+        type: number
+      load5:
+        type: number
+      load15:
+        type: number
+      mem_percent:
+        type: number
+      mem_total:
+        type: integer
+      mem_used:
+        type: integer
+      uptime_seconds:
+        type: number
+    type: object
+  github_com_ba-reynolds_gaggle_internal_models.ActiveUsers:
+    properties:
+      dau:
+        type: integer
+      wau:
+        type: integer
+    type: object
+  github_com_ba-reynolds_gaggle_internal_models.AdminMetrics:
+    properties:
+      active:
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.ActiveUsers'
+      app:
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.AppStats'
+      host:
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_metrics.HostStats'
+      views:
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.ViewStats'
+    type: object
+  github_com_ba-reynolds_gaggle_internal_models.AppStats:
+    properties:
+      likes:
+        type: integer
+      messages:
+        type: integer
+      posts:
+        type: integer
+      signups_24h:
+        type: integer
+      users:
+        type: integer
+      views_total:
+        type: integer
+    type: object
   github_com_ba-reynolds_gaggle_internal_models.AppearanceSettings:
     properties:
       fontSize:
@@ -213,6 +271,13 @@ definitions:
       time.Time:
         type: string
     type: object
+  github_com_ba-reynolds_gaggle_internal_models.DayViewCount:
+    properties:
+      day:
+        type: string
+      views:
+        type: integer
+    type: object
   github_com_ba-reynolds_gaggle_internal_models.Envelope:
     properties:
       data: {}
@@ -256,6 +321,29 @@ definitions:
           Visibility controls who may see this post: "public" (everyone),
           "followers" (the author + their followers), or "mentions" (the author +
           users @mentioned in the content).
+        type: string
+    type: object
+  github_com_ba-reynolds_gaggle_internal_models.HistoryRange:
+    enum:
+    - 24h
+    - 7d
+    - 30d
+    type: string
+    x-enum-varnames:
+    - History24h
+    - History7d
+    - History30d
+  github_com_ba-reynolds_gaggle_internal_models.HostSamplePoint:
+    properties:
+      cpu_percent:
+        type: number
+      disk_percent:
+        type: number
+      load1:
+        type: number
+      mem_percent:
+        type: number
+      ts:
         type: string
     type: object
   github_com_ba-reynolds_gaggle_internal_models.LikeResponse:
@@ -352,6 +440,21 @@ definitions:
         type: string
       username:
         type: string
+    type: object
+  github_com_ba-reynolds_gaggle_internal_models.MetricsHistory:
+    properties:
+      days:
+        type: integer
+      host:
+        items:
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.HostSamplePoint'
+        type: array
+      range:
+        $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.HistoryRange'
+      views:
+        items:
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.DayViewCount'
+        type: array
     type: object
   github_com_ba-reynolds_gaggle_internal_models.NewsLink:
     properties:
@@ -596,6 +699,15 @@ definitions:
       email:
         maxLength: 96
         type: string
+      language:
+        description: Optional UI language seed from the browser. Empty = server default
+          ("en").
+        enum:
+        - en
+        - es
+        - fr
+        - de
+        type: string
       password:
         maxLength: 72
         minLength: 8
@@ -835,6 +947,17 @@ definitions:
         $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.UserProfile'
       username:
         type: string
+    type: object
+  github_com_ba-reynolds_gaggle_internal_models.ViewStats:
+    properties:
+      by_day:
+        items:
+          $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.DayViewCount'
+        type: array
+      requests_per_minute:
+        description: RequestsPerMinute is the number of recorded views in the last
+          60s.
+        type: number
     type: object
 host: localhost:2021
 info:
@@ -1119,6 +1242,118 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Update an assigned badge
+      tags:
+      - admin
+  /admin/metrics:
+    get:
+      description: |-
+        Live host stats (CPU, memory, load, uptime, disk), platform
+        counters, active users, and page-view traffic. Admin only.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.AdminMetrics'
+              type: object
+        "403":
+          description: Forbidden
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Admin metrics dashboard
+      tags:
+      - admin
+  /admin/metrics/history:
+    get:
+      description: Host-stats and view-traffic time series over a range. Admin only.
+      parameters:
+      - default: 24h
+        description: 'Host-history range: 24h, 7d, or 30d'
+        enum:
+        - 24h
+        - 7d
+        - 30d
+        in: query
+        name: range
+        type: string
+      - default: 30
+        description: View-traffic window in days (1-90); defaults to the range width
+        in: query
+        name: days
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.MetricsHistory'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
+              type: object
+        "403":
+          description: Forbidden
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_models.Envelope'
+            - properties:
+                data:
+                  type: object
+                error:
+                  $ref: '#/definitions/github_com_ba-reynolds_gaggle_internal_apperrors.AppError'
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Admin metrics history
       tags:
       - admin
   /admin/users/{username}/badges/{badgeID}:

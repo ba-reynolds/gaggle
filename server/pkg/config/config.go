@@ -17,6 +17,7 @@ type AllConfigs struct {
 	AppConfig     AppConfig
 	AuthConfig    AuthConfig
 	RedisConfig   RedisConfig
+	MetricsConfig MetricsConfig
 }
 
 type DBConfig struct {
@@ -66,6 +67,15 @@ type RedisConfig struct {
 	FeedCacheTTL         time.Duration
 	RateLimitMaxRequests int
 	RateLimitWindow      time.Duration
+}
+
+// MetricsConfig drives the background host-stats sampler and metric retention.
+type MetricsConfig struct {
+	// HostSampleInterval is how often the sampler records a host snapshot.
+	HostSampleInterval time.Duration
+	// RetentionDays is how long page_views and host_metrics_samples rows are
+	// kept before the hourly prune deletes them.
+	RetentionDays int
 }
 
 func LoadConfig() (AllConfigs, error) {
@@ -121,6 +131,11 @@ func LoadConfig() (AllConfigs, error) {
 		RateLimitWindow:      time.Duration(getEnvInt("RATE_LIMIT_WINDOW_SECONDS", 60)) * time.Second,
 	}
 
+	metricsConfig := MetricsConfig{
+		HostSampleInterval: time.Duration(getEnvInt("METRICS_HOST_SAMPLE_SECONDS", 60)) * time.Second,
+		RetentionDays:      getEnvInt("METRICS_RETENTION_DAYS", 90),
+	}
+
 	// Production fails fast: never boot with a shipped dev secret.
 	if getEnv("APP_ENV", "development") == "production" {
 		if !isStrongSecret(authConfig.JWTSecret) {
@@ -138,6 +153,7 @@ func LoadConfig() (AllConfigs, error) {
 		AppConfig:     appConfig,
 		AuthConfig:    authConfig,
 		RedisConfig:   redisConfig,
+		MetricsConfig: metricsConfig,
 	}, nil
 
 }
