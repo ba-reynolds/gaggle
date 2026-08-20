@@ -1,3 +1,68 @@
+# SUMMARY — snappy-ux
+
+Makes the web app feel immediate: sent messages appear instantly
+(optimistic), navigating between pages no longer round-trips on every mount,
+and incoming DMs show up live while you're reading a conversation.
+
+## What was changed and why
+
+- **Optimistic message sending (the big UX win).** `useSendMessage`
+  (`web/src/hooks/useDms.ts`) had no `onMutate` — a sent message only appeared
+  after the POST round-trip *and* a follow-up `['dm-messages']` refetch, which
+  is why sending felt broken/slow. It now cancels in-flight message queries,
+  prepends a `pending` placeholder message into the cached pages, and returns a
+  context for rollback. `ConversationPage` clears the composer immediately on
+  send (restores it on error) and renders the placeholder with a "Sending…"
+  timestamp + reduced opacity. `onSuccess` swaps the placeholder for the
+  server-confirmed message (matching on its negative temp id) before the usual
+  invalidation, so there's no flicker or duplicate. `onError` restores the
+  previous cache state and the user's draft.
+  - New-`conversationId` adds `sender` (from `UserContext`) to the mutation
+    variables so the placeholder can render correctly; `Message` gained a
+    `pending?: boolean` field.
+  - `/messages/new` conversations still must wait for the server (the
+    conversation id only exists after creation) — the composer still clears
+    instantly and navigates on success.
+- **Snappier navigation.** The QueryClient had no default `staleTime`, so
+  React Query treated every cached page as stale and refetched on every mount
+  (spinners/skeletons on each visit). Added a global `staleTime: 60_000`
+  (`web/src/App.tsx`) so data is served from cache within a minute; refetches
+  still happen in the background for fresh data. Also prefetch the two most
+  visited destinations in `SocialMediaLayout`: notifications and DM
+  conversations are fetched at layout mount, so first navigation to those
+  pages is instant instead of a round-trip.
+- **Live DMs.** The SSE handler only invalidated `dm-unread-count` +
+  `dm-conversations`, so a message arriving mid-conversation never appeared.
+  It now also invalidates `['dm-messages']`.
+- The notifications infinite query is now centralized in a new hook
+  (`web/src/hooks/useNotifications.ts`) shared by `NotificationsPage` and the
+  layout prefetch, so prefetch populates the correct `InfiniteData` shape.
+
+## Files touched
+
+- `web/src/hooks/useDms.ts` — optimistic `useSendMessage` + `sender`/`conversationId` variables
+- `web/src/pages/ConversationPage.tsx` — instant clear, draft restore, `Sending…` indicator
+- `web/src/types/api.ts` — `Message.pending?`
+- `web/src/App.tsx` — default `staleTime: 60s`
+- `web/src/layout/SocialMediaLayout.tsx` — prefetch notifications + conversations
+- `web/src/hooks/useNotifications.ts` — new shared infinite-query options/hook
+- `web/src/pages/NotificationsPage.tsx` — uses the shared hook
+- `web/src/contexts/NotificationsContext.tsx` — SSE invalidates `['dm-messages']`
+
+## Reviewers should double-check
+
+- The optimistic placeholder swap relies on the temp message still being in
+  cache in `onSuccess`; if a background refetch completes first, the replace is
+  a no-op and the refetch already reconciled — no duplication either way.
+- The `60s` global staleTime is a behavior change for every query (only the
+  feed was `Infinity` before). If any page needs fresher data, prefer a
+  per-query `staleTime` override over lowering the default.
+- Prefetching adds two GETs on authenticated app load (notifications,
+  conversations). Cheap, but it's a per-session cost on every full page load.
+- No server code changed; frontend verification = `npm run build` + `npm run
+  lint` (repo has no frontend test runner).
+
+---
 # SUMMARY — nickname-default (follow-up: no fake birthday for unset profiles)
 
 A brand-new account's profile showed **"Born January 1, 0001"** even though no

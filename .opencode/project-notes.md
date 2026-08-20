@@ -1,3 +1,27 @@
+## Snappy UX: optimistic DMs, staleTime, prefetch (agent/snappy-ux)
+- **`onMutate` is NOT a valid `mutate()` option** — `MutateOptions` only supports
+  onSuccess/onError/onSettled. To do optimistic UI on a mutation, either put it
+  in the `useMutation({ onMutate })` definition (hook owns it) or, for page-local
+  state like clearing the composer, do it BEFORE calling `mutate()` and restore in
+  `onError`. `useSendMessage` does both: the hook now has an `onMutate` cache
+  write, and the page clears the input pre-mutate.
+- Optimistic message pattern (`useSendMessage`): cancel `['dm-messages', id]`,
+  snapshot, prepend a `pending:true` temp (negative id) into `page[0].items`
+  (messages are newest-first), return `{previous, conversationId, tempId}`; on
+  success `setQueryData` swaps temp id → `_data.data`, onError restores
+  `previous`. `Message.pending?` drives the "Sending…" label + `opacity-70`.
+- **Mutation variables must carry the sender** for optimistic rendering — the DM
+  mutation takes `{ username, body, conversationId?, sender }`; sender comes from
+  `UserContext` (`displayName`→`display_name`, `profilePictureUUID`→
+  `profile_picture_uuid`).
+- QueryClient now has a global default `staleTime: 60_000` (was 0 → every mount
+  refetched). Feed keeps its explicit `staleTime: Infinity`. Prefetching an
+  infinite query must use `queryClient.prefetchInfiniteQuery(options)` (NOT
+  `prefetchQuery`) or the cache gets the wrong `InfiniteData` shape and the page
+  crashes. Shared options live in `web/src/hooks/useNotifications.ts`.
+- SSE `dm.new`/`dm.unread` in NotificationsContext now also invalidates
+  `['dm-messages']` so live incoming messages appear while viewing a conversation.
+---
 ## Birth date "not set" sentinel (agent/nickname-default follow-up)
 - The API serializes an unset `birth_date` (DB NULL) as `"0001-01-01"` (Go zero `models.Date` → `MarshalJSON` always emits). Frontend must treat that sentinel as "no birthday" — ProfilePage `formatDate`/editor use `UNSET_BIRTH_DATE = "0001-01-01"` via `isUnsetBirthDate()`. Decision: wire format stays as-is; the client hides/clears it. (If the server ever switches to `null`, the `!dateString` branch already covers it.)
 - `models.Date.Scope` note: `Date.Value()` returns the zero `time.Time` (not nil), so a PATCH `birth_date: ""`/zero persists "0001-01-01" in the DB instead of NULL — a user can't truly clear a birthday. Known, deliberately unfixed (legacy/edge; dev data gets wiped).
@@ -34,7 +58,7 @@
   screen indefinitely; on abort it falls back to signed-out (login redirect).
   Tradeoff: >10s refresh treats the session as gone.
 ---
-## Messages: /messages/new + search debounce (agent/message-conversation-fixes)
+## Messages: /messages/new + search debounce
 - **Static routes have NO route params**: `useParams()` on route `/messages/new` returns `{}` — `conversationId` is `undefined`, not `"new"`. ConversationPage tested `conversationIdStr === "new"`, so `/messages/new` fell through to the existing-conversation branch, computed `Number(undefined)` = NaN, disabled the dm-conversation query, and rendered "Conversation not found." Fix pattern: `const isNew = !conversationIdStr || conversationIdStr === "new"` (ConversationPage.tsx:21).
 - `NewMessageComposer` (MessagesPage.tsx) passed the live query to `useSearchUsers` → one `GET /search?type=users` per keystroke. Now debounces via `useDebounce` and the shared `SEARCH_DEBOUNCE_MS = 300` (exported from `web/src/hooks/useDebounce.ts`). Other keystroke-fired searches were the same way and got fixed too: ListPage `MemberSearch` (add-user), ExplorePage live `useSearchPosts`. The constant is the single source of truth — tune debounce there, don't inline `300` at new call sites. (FeedPost's 150 ms is a client-side category filter, not an API call; stays as-is.)
 - Message threads are ALREADY fixed-height + internal-scroll (flex-1 min-h-0 overflow-y-auto under the h-screen column). The remaining ~98px page scroll on message pages is the app-wide sidebar (taller than 100vh on typical viewports), present on every page and unrelated to messages.

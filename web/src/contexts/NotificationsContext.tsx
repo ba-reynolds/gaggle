@@ -39,6 +39,9 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     const refreshDms = () => {
       void queryClient.invalidateQueries({ queryKey: ['dm-unread-count'] });
       void queryClient.invalidateQueries({ queryKey: ['dm-conversations'] });
+      // Also refetch any open conversation so incoming messages appear live
+      // instead of only after a manual reload.
+      void queryClient.invalidateQueries({ queryKey: ['dm-messages'] });
     };
     source.addEventListener('notification.new', refreshNotifications);
     source.addEventListener('feed.post_created', refreshFeed);

@@ -1,9 +1,8 @@
-import { getNotifications } from '@/api/notifications';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNotifications } from '@/contexts/NotificationsContext';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useNotificationsQuery } from '@/hooks/useNotifications';
 import { Bell, CheckCheck, Heart, MessageCircle, Repeat2, UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getMediaUrl } from '@/util/media';
@@ -32,12 +31,7 @@ function notificationIcon(type: string) {
 export default function NotificationsPage() {
   const navigate = useNavigate();
   const { unreadCount, markRead, markAllRead } = useNotifications();
-  const query = useInfiniteQuery({
-    queryKey: ['notifications'],
-    queryFn: ({ pageParam }) => getNotifications(pageParam),
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: (last) => last.data.next_cursor ?? undefined,
-  });
+  const query = useNotificationsQuery();
   const notifications = query.data?.pages.flatMap((page) => page.data.items) ?? [];
 
   return (

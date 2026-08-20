@@ -21,6 +21,8 @@ import { useNotifications } from "@/contexts/NotificationsContext";
 import { useTrends, useSuggestedUsers } from "@/hooks/useSearch";
 import { useUser } from "@/contexts/UserContext";
 import { useDmUnreadCount } from "@/hooks/useDms";
+import { notificationsInfiniteOptions } from "@/hooks/useNotifications";
+import { getConversations } from "@/api/dms";
 import { useLogoutMutation } from "@/hooks/useAuth";
 import { getMediaUrl } from "@/util/media";
 import { Dialog, DialogTitle } from "@radix-ui/react-dialog";
@@ -39,8 +41,9 @@ import {
   AtSign,
   PenSquare
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, Navigate, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface SocialMediaLayoutProps {
   children: React.ReactNode;
@@ -62,6 +65,16 @@ export default function SocialMediaLayout({
   const trends = useTrends(isAuthenticated);
   const suggested = useSuggestedUsers(10, isAuthenticated);
   const dmUnread = useDmUnreadCount(isAuthenticated);
+  const queryClient = useQueryClient();
+
+  // Warm the cache for the destinations users navigate to most, so the first
+  // visit (Notifications / Messages) renders instantly instead of showing a
+  // skeleton while the server round-trips.
+  useEffect(() => {
+    if (typeof token !== 'string') return;
+    void queryClient.prefetchInfiniteQuery(notificationsInfiniteOptions);
+    void queryClient.prefetchQuery({ queryKey: ['dm-conversations'], queryFn: getConversations });
+  }, [token, queryClient]);
 
   const handleNewPost = () => {
     setIsComposing(false);
