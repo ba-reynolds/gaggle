@@ -345,6 +345,9 @@ func TestProfileLifecycle(t *testing.T) {
 	if _, ok := me["display_name"]; !ok {
 		t.Fatal("me missing display_name (flat profile shape expected)")
 	}
+	if me["display_name"] != "alice" {
+		t.Fatalf("me.display_name = %v, want alice (fresh accounts default display_name to their username)", me["display_name"])
+	}
 	if me["followers_count"] == nil {
 		t.Fatal("me missing followers_count")
 	}

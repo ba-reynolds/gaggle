@@ -24,6 +24,14 @@ import type { InfiniteData } from "@tanstack/react-query";
 import type { Envelope, PaginatedFeedResponse } from "@/types/api";
 import { toast } from "sonner";
 
+// The API serializes an unset birth_date (DB NULL) as the zero Date
+// "0001-01-01". Treat that sentinel as "no birthday set" everywhere instead
+// of showing a fake "Born January 1, 0001" or pre-filling the editor with it.
+const UNSET_BIRTH_DATE = "0001-01-01";
+
+const isUnsetBirthDate = (dateString: string | null | undefined): boolean =>
+  !dateString || dateString === UNSET_BIRTH_DATE;
+
 const ProfilePage: React.FC = () => {
   const { username } = useParams<{ username: string }>();
   const safeUsername = username ?? "";
@@ -85,7 +93,7 @@ const ProfilePage: React.FC = () => {
     setBio(profile.bio);
     setLocation(profile.location);
     setWebsite(profile.website);
-    setBirthDate(profile.birth_date);
+    setBirthDate(isUnsetBirthDate(profile.birth_date) ? "" : profile.birth_date);
     setProfilePictureSrc(getMediaUrl(profile.profile_picture_uuid));
     setBannerSrc(getMediaUrl(profile.banner_uuid));
     setProfilePictureFile(null);
@@ -217,8 +225,8 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "";
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString || dateString === UNSET_BIRTH_DATE) return "";
     try {
       return format(parseISO(dateString), 'MMMM d, yyyy');
     } catch {

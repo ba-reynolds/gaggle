@@ -1,3 +1,13 @@
+## Birth date "not set" sentinel (agent/nickname-default follow-up)
+- The API serializes an unset `birth_date` (DB NULL) as `"0001-01-01"` (Go zero `models.Date` → `MarshalJSON` always emits). Frontend must treat that sentinel as "no birthday" — ProfilePage `formatDate`/editor use `UNSET_BIRTH_DATE = "0001-01-01"` via `isUnsetBirthDate()`. Decision: wire format stays as-is; the client hides/clears it. (If the server ever switches to `null`, the `!dateString` branch already covers it.)
+- `models.Date.Scope` note: `Date.Value()` returns the zero `time.Time` (not nil), so a PATCH `birth_date: ""`/zero persists "0001-01-01" in the DB instead of NULL — a user can't truly clear a birthday. Known, deliberately unfixed (legacy/edge; dev data gets wiped).
+
+## Profile display_name default (agent/nickname-default)
+- `user_profiles.display_name` is `NOT NULL` with NO column default (migration 000004) — the value comes solely from the store INSERT, which used to hardcode `''`. New profiles now default `display_name = username` (`user_store.go` `Users.Create`). If you create profiles anywhere new, pass a real display name or rely on `$1`/`user.Username` — a bare INSERT leaves the account "naked".
+- Username (max 16) always fits the 50-char display_name column, so the username default can't overflow.
+- A display-name backfill migration (`000022`) was drafted then dropped — existing accounts are being wiped; only the creation default ships. No migration on this branch.
+
+---
 ## Page logo = grok_cutout (agent/grok-logo)
 - New logo master is `grok_cutout.svg`/`.png` in
   `/home/bau/Programming/svg-img/new-stuff-here/` (a background-transparent

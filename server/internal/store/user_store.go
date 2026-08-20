@@ -164,7 +164,9 @@ func (store *userStore) Create(ctx context.Context, tx *sql.Tx, user *models.Use
 
 	user.ID = id
 
-	// Create user profile
+	// Create user profile. Default the display name to the username so a brand
+	// new account shows a name everywhere instead of walking around "naked"
+	// until the user edits their profile.
 	queryCreateProfile := `
 		INSERT INTO user_profiles (user_id, display_name, bio, profile_picture_uuid, banner_uuid, birth_date, location, website)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -175,7 +177,7 @@ func (store *userStore) Create(ctx context.Context, tx *sql.Tx, user *models.Use
 		exec = tx.ExecContext
 	}
 
-	_, err = exec(ctx, queryCreateProfile, id, "", "", nil, nil, nil, "", "")
+	_, err = exec(ctx, queryCreateProfile, id, user.Username, "", nil, nil, nil, "", "")
 	if err != nil {
 		store.logger.Error("database insert failed",
 			"operation", "create_user_profile",

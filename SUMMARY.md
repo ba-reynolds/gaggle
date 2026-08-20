@@ -1,3 +1,96 @@
+# SUMMARY — nickname-default (follow-up: no fake birthday for unset profiles)
+
+A brand-new account's profile showed **"Born January 1, 0001"** even though no
+birthday is set. Root cause: the API serializes an unset `birth_date` (DB
+`NULL` in `user_profiles`) as the Go zero `Date` — the string `"0001-01-01"` —
+and `ProfilePage` formatted and rendered it as a real birthday.
+
+## What was changed and why
+
+Frontend-only fix in `web/src/pages/ProfilePage.tsx` (per decision: leave the
+API wire format alone, handle the "not set" sentinel on the client):
+
+- Added `UNSET_BIRTH_DATE = "0001-01-01"` + `isUnsetBirthDate()` helper: treat
+  that sentinel (or empty/null) as "no birthday set".
+- **Display** — `formatDate` now returns `""` for the sentinel, so the existing
+  `{formatDate(...) && <…>Born …}` guard hides the "Born" row for users who
+  haven't set a birthday.
+- **Edit dialog** — the Date of Birth input is seeded with `""` instead of
+  `"0001-01-01"` when unset, so opening the editor no longer shows the fake
+  date (and a save without touching it sends `""` rather than the sentinel).
+
+## Files touched
+
+- `web/src/pages/ProfilePage.tsx`
+
+## Verification
+
+- `docker compose --profile tools run --rm web-tools npm run build` — passes
+  (tsc + vite). `npm run lint` — 0 errors.
+- Playwright headless (vite dev on :5174 proxied to the live api) — new
+  registered user's profile shows no "Born" text; their edit dialog's Date of
+  Birth field is empty; regression: alice (real birthday) still shows
+  "February 3, 1994" and her editor keeps the real date.
+
+## Reviewer double-checks
+
+- This relies on the API always returning `"0001-01-01"` (confirmed live: a
+  fresh account's `GET /users/nigga` returns `birth_date=0001-01-01`). If the
+  server ever switches to `null` for unset, the `!dateString` branch already
+  covers it.
+- Deliberately frontend-only / no server or DB change: the user is wiping dev
+  data, so legacy rows were explicitly out of scope (the earlier display-name
+  backfill migration `000022` was removed for the same reason).
+---
+
+# SUMMARY — nickname-default
+
+New accounts used to be created with an **empty display name** (`display_name`)
+— the "nickname" the app shows next to a username. They walked around "naked":
+posts, avatars, DMs, notifications, the sidebar account row, etc. rendered a
+blank name (and `name={author.display_name}` alt / `charAt(0)` fallbacks had
+nothing to show) until the user went into profile edit and typed one.
+
+## What was changed and why
+
+- **Store-level creation default** (`server/internal/store/user_store.go`,
+  `Users.Create`): the user_profiles INSERT hardcoded `display_name = ''`
+  (line 178). It now inserts `user.Username` — every new profile's nickname is
+  its username until the user changes it. `models.User` carries no display
+  name and the register request has no nickname field, so the store is the one
+  seam all creators go through (register, admin `CreateUser`, seed). The seed
+  still overrides with its fancified names afterwards, unchanged. Usernames are
+  ≤ 16 chars so the value always fits the 50-char column (which is also why
+  that column is `NOT NULL` with no default — the INSERT was bare).
+- **Regression test** (`server/internal/handlers/integration_test.go`,
+  `TestProfileLifecycle`): strengthened — a freshly registered user's
+  `GET /users/me` must return `display_name == username` (was only checked for
+  the key's existence before).
+- Note: a backfill for already-created rows was drafted (`000022`) but removed
+  — existing accounts are being wiped, so only the creation default ships.
+
+## Files touched
+
+- `server/internal/store/user_store.go` — default display_name to username in
+  `Users.Create`
+- `server/internal/handlers/integration_test.go` — `TestProfileLifecycle`
+  assertion
+
+## Verification
+
+- `go build ./...`, `go vet ./...` — clean (tools container).
+- `go test ./...` — all packages pass. `TestProfileLifecycle` passes with the
+  new username-default assertion.
+- Frontend untouched (server data is now always non-empty, which existing
+  `display_name || username` fallbacks still handle).
+
+## Reviewer double-checks
+
+- The store write still passes every other profile column explicitly; only the
+  `$2` display_name argument changed from `""` to `user.Username`.
+- No migration ships on this branch (the values are produced by the store), so
+  there is zero migration-version collision risk at /merge-all.
+---
 # SUMMARY — web-healthcheck
 
 Deploy gave a false-negative "health check FAILED" after the enable-https
