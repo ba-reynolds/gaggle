@@ -63,11 +63,18 @@ EOF
 deploy() {
   cd "$DEPLOY_DIR"
   docker compose -f compose.yaml -f compose.prod.yaml build
-  docker compose -f compose.yaml -f compose.prod.yaml up -d
+  # --wait blocks until every service reports healthy (or the 5min timeout
+  # hits), so the health check below never races a just-booted container.
+  # Both api and web carry healthchecks; services without one (certbot) are
+  # considered ready once running.
+  docker compose -f compose.yaml -f compose.prod.yaml up -d --wait --wait-timeout 300
 }
 
 health_check() {
   docker compose -f compose.yaml -f compose.prod.yaml ps --status running api web > /dev/null
+  # Final gate over the real production path: web is already healthy (up
+  # --wait above), so this HTTPS probe must succeed — a failure here means a
+  # genuinely broken TLS/SPA/proxy, not a container that just hadn't booted.
   # TLS is self-signed until a real cert is issued, so curl skips
   # verification for the HTTPS health check.
   curl -kfsS https://localhost/swagger/doc.json > /dev/null

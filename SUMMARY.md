@@ -1,3 +1,62 @@
+# SUMMARY — web-healthcheck
+
+Deploy gave a false-negative "health check FAILED" after the enable-https
+merge: `deploy/apply.sh` fired a single-shot `curl -kfsS
+https://localhost/swagger/doc.json` immediately after `docker compose up -d`.
+Since the web container's entrypoint now generates a self-signed cert before
+nginx listens, the probe raced container boot (curl "Send failure: Broken pipe"
+0.2s after `web Started`). The app was actually fine — the workflow just kept
+the box on the previous SHA.
+
+## What was changed and why
+
+- **Native `healthcheck` on the `web` service** (`compose.yaml`): rides the same
+  proxied path the deploy probes — `wget -qO-
+  http://127.0.0.1/swagger/doc.json` — so "web healthy" == nginx serving the
+  SPA *and* the proxy to the api, not merely that a socket is bound. Params
+  mirror the existing `api` healthcheck (5s/5s/20/10s).
+- **`deploy/apply.sh`: `up -d` → `up -d --wait --wait-timeout 300`**: compose
+  now blocks until every service reports healthy (or fails after 5 min),
+  eliminating the race by construction instead of a retry loop. Services
+  without a healthcheck (certbot) count as ready once running. The existing
+  `curl` stays as the final gate over the real HTTPS production path.
+- No retry/poll hacks — health is expressed natively and compose does the
+  waiting.
+
+## Files touched
+
+- `compose.yaml` — added `web.healthcheck`.
+- `deploy/apply.sh` — `up --wait` in `deploy()` + comment on `health_check()`.
+
+## Verification
+
+- `docker compose -f compose.yaml config -q` and `-f compose.yaml -f
+  compose.prod.yaml config -q` both parse.
+- Healthcheck command proven against the live web container (same image built
+  here): `127.0.0.1` PASS. `localhost` FAILS (resolves to `::1`, nginx binds
+  IPv4 only) — hence `127.0.0.1` in the test and the comment explaining why.
+- Full isolated stack (`up --wait` with the healthchecked web + migrated api +
+  db + redis) reached all-Healthy in ~17s, exit 0 — i.e. the exact condition
+  the deploy waits for.
+- `bash -n deploy/apply.sh` clean.
+
+## Reviewer double-checks
+
+- **IPv6/localhost trap**: keep `127.0.0.1` in the healthcheck. `localhost`
+  resolves to `::1` inside the container and busybox wget can't reach an IPv4
+  nginx bind → a false-unhealthy check would make `up --wait` hang for
+  `--wait-timeout` then fail. The comment in compose.yaml explains this.
+- **`--wait-timeout 300`** covers cold DNS/pull + 20×5s api healthcheck retries
+  with margin; the box already implicitly needs a current compose (the
+  enable-https overlay uses `ports: !reset []`, compose ≥ 2.23), and `--wait`
+  needs compose ≥ 2.20 — satisfied.
+- The healthcheck intentionally depends on the api (swagger is proxied). That's
+  the point: web depends_on api:service_healthy anyway, so web's health only
+  starts being evaluated after api is already healthy.
+- Deploy fragment is exercised end-to-end by an isolated scratch stack that was
+  torn down (`down -v`); no test artifact left in the tree.
+
+---
 # SUMMARY — news-preview
 
 Adds the ability to attach a single news article link to a post. The post then

@@ -116,6 +116,21 @@ services:
       # are symlinks into archive/, so nginx needs the whole tree.
       - letsencrypt:/etc/letsencrypt
       - certbot_www:/var/www/certbot
+    healthcheck:
+      # nginx serves the SPA and reverse-proxies /swagger/ to the api — the
+      # healthcheck rides that proxied path so "web healthy" means the whole
+      # request path the deploy probes is actually serving, not just that
+      # nginx bound a socket. TLS itself is guaranteed: the entrypoint either
+      # mounts a real cert or generates the self-signed fallback before nginx
+      # boots, so nginx refusing to start is caught here via HTTP.
+      # Use 127.0.0.1, not localhost: nginx binds IPv4 only and "localhost"
+      # resolves to ::1 inside the container (Docker /etc/hosts), which busybox
+      # wget can't reach → a false-unhealthy check.
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/swagger/doc.json >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
 
   # Local Go toolchain without needing anything installed on the host.
   # Not started by `make dev` (profile "tools"); use it via:
