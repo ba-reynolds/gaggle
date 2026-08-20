@@ -1,3 +1,31 @@
+## Deploy static-assets 403 + compose `up` recreate semantics (agent/fix-goose-403-deploy)
+- **`docker compose up -d` does NOT recreate a container when only its image
+  digest changes** (same tag, config hash unchanged) — PROVEN on the preview
+  stack: rebuilt `web` to a new digest, `up -d web` left the old container
+  (id unchanged) serving the old bundle. Deploys that rebuild images MUST use
+  `up --force-recreate <services>` or the rebuilt image never goes live.
+  `deploy/apply.sh` now does `--force-recreate api web`.
+- **Live-box 403 diagnosis recipe:** with the SPA `try_files $uri ... /index.html`
+  fallback, a MISSING static file returns 200 — so a 403 for a public asset
+  (`/favicon.ico`, `/gaggle-goose.png`) means the file EXISTS but nginx gets
+  EACCES opening it (bad perms / broken container layer), NOT "missing". Probe
+  `/gaggle-goose.png/` too: trailing-slash 200 rules out "it's a directory".
+- **nginx `--force-recreate` and `--no-recreate` are MUTUALLY EXCLUSIVE**
+  (compose errors), and `--force-recreate api web` ALSO re-creates db/redis
+  (dependencies) — harmless here (images unchanged, data in volumes), just plan
+  for the restart.
+- **busybox `wget -qO- url` exits non-zero on 403/404** → safe to chain into a
+  container healthcheck. The web container's healthcheck now includes the two
+  fixed-name files so a broken dist fails `up --wait` (unhealthy) instead of
+  silently deploying.
+- `docker compose config --images` prints `service=image` lines — the deploy's
+  image pre-flight resolves the web image with `sed -n 's/^web=//p'` rather
+  than assuming `<project>-web`.
+- proj-up.sh only picks API_PORT/WEB_PORT; **db (6969)/redis (6379) host ports
+  still collide with the shared stack across parallel previews** — run a
+  worktree preview with `export DB_PORT=15432 REDIS_PORT=26379 bash
+  scripts/proj-up.sh gaggle-<slug>` or the bind 6969/6379 fails.
+---
 ## Per-worktree previews: DB/REDIS host ports are NOT isolated
 - `scripts/proj-up.sh` only derives/persists `API_PORT` + `WEB_PORT` — it does
   NOT set `DB_PORT`/`REDIS_PORT`, which fall back to `6969`/`6379`. The shared

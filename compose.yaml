@@ -120,13 +120,20 @@ services:
       # nginx serves the SPA and reverse-proxies /swagger/ to the api — the
       # healthcheck rides that proxied path so "web healthy" means the whole
       # request path the deploy probes is actually serving, not just that
-      # nginx bound a socket. TLS itself is guaranteed: the entrypoint either
-      # mounts a real cert or generates the self-signed fallback before nginx
-      # boots, so nginx refusing to start is caught here via HTTP.
+      # nginx bound a socket. It ALSO asserts the fixed-name public assets
+      # (favicon.ico, gaggle-goose.png) return 200: these keep FIXED filenames
+      # while /assets/* are content-hashed, and the SPA fallback would 200 a
+      # MISSING file, so a broken dist layer surfaces only as nginx 403 —
+      # probing them here makes a bad web image fail `up --wait` instead of
+      # sailing through to the deploy's own gate.
+      # TLS itself is guaranteed: the entrypoint either mounts a real cert or
+      # generates the self-signed fallback before nginx boots, so nginx
+      # refusing to start is caught here via HTTP.
       # Use 127.0.0.1, not localhost: nginx binds IPv4 only and "localhost"
       # resolves to ::1 inside the container (Docker /etc/hosts), which busybox
-      # wget can't reach → a false-unhealthy check.
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/swagger/doc.json >/dev/null 2>&1"]
+      # wget can't reach → a false-unhealthy check. busybox wget exits non-zero
+      # on HTTP errors (403/404), which is what flips the health state.
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/swagger/doc.json >/dev/null 2>&1 && wget -qO- http://127.0.0.1/favicon.ico >/dev/null 2>&1 && wget -qO- http://127.0.0.1/gaggle-goose.png >/dev/null 2>&1"]
       interval: 5s
       timeout: 5s
       retries: 20
