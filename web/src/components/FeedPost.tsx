@@ -257,7 +257,12 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
     });
   };
 
-  const handlePostClick = () => {
+  const handlePostClick = (event: React.MouseEvent) => {
+    // Middle-click (button 1) opens in a new tab; let the browser handle it
+    if (event.button === 1) {
+      window.open(`/post/${id}`, "_blank");
+      return;
+    }
     navigate(`/post/${id}`);
   };
 
@@ -278,6 +283,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
       <Card
         className="w-full max-w-xl border border-border rounded-lg overflow-hidden mb-2 cursor-pointer transition-colors hover:bg-accent py-2 gap-2"
         onClick={handlePostClick}
+        onAuxClick={handlePostClick}
         tabIndex={0}
         role="link"
         aria-label={`Post by ${author.display_name}: ${content}`}
