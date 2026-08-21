@@ -2,6 +2,11 @@
 
 Running log of agent-branch merges into main. Newest on top.
 
+## 2026-08-20 — agent/link-click-middle-open (worktree removal — already merged)
+
+- Status: **clean — already up to date** (branch `agent/link-click-middle-open` at 9b536cf is ancestor of HEAD via merge `24ebb35` on 2026-08-20; `git merge --no-edit agent/link-click-middle-open` reports Already up to date, no new changes)
+- `git -C ./agent-branch/link-click-middle-open status` clean (no uncommitted changes), worktree removed, preview torn down. Original merge logged on 2026-08-20 as conflicted (SUMMARY.md clobber restored) — no duplicate entry beyond this removal note.
+
 ## 2026-08-20 — agent/instant-tabs (worktree removal — already merged)
 
 - Status: **clean — already up to date** (branch `agent/instant-tabs` at e2fb5f8 is ancestor of HEAD via merge `2ac37af` on 2026-08-20; `git merge --no-edit agent/instant-tabs` reports Already up to date, no new changes)
