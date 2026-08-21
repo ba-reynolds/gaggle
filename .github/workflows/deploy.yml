@@ -30,6 +30,10 @@ jobs:
           GAGGLE_DB_PASSWORD: ${{ secrets.GAGGLE_DB_PASSWORD }}
           GAGGLE_DEPLOY_KEY: ${{ secrets.GAGGLE_DEPLOY_KEY }}
           GAGGLE_HTTPS_DOMAIN: ${{ secrets.GAGGLE_HTTPS_DOMAIN }}
+          GAGGLE_GOOGLE_CLIENT_ID: ${{ secrets.GAGGLE_GOOGLE_CLIENT_ID }}
+          GAGGLE_GOOGLE_CLIENT_SECRET: ${{ secrets.GAGGLE_GOOGLE_CLIENT_SECRET }}
+          GAGGLE_GOOGLE_REDIRECT_URL: ${{ secrets.GAGGLE_GOOGLE_REDIRECT_URL }}
+          GAGGLE_FRONTEND_URL: ${{ secrets.GAGGLE_FRONTEND_URL }}
           TARGET_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
