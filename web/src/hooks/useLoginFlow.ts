@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import * as z from 'zod';
+import { useMemo } from 'react';
 import api from '@/lib/api';
 import type { Envelope, UserProfileResponse } from '@/types/api';
 import { useLoginMutation } from './useAuth';
@@ -28,8 +29,19 @@ export function useLoginFlow() {
   const { t } = useI18n();
   const loginMutation = useLoginMutation();
 
+  const translatedSchema = useMemo(() => z.object({
+    identifier: z.string()
+      .min(1, t("auth.identifierRequired"))
+      .min(3, t("auth.identifierMin3"))
+      .max(96, t("auth.identifierMax96")),
+    password: z.string()
+      .min(1, t("auth.passwordRequired"))
+      .min(8, t("auth.passwordAtLeast8"))
+      .max(72, t("auth.passwordAtMost72")),
+  }), [t]);
+
   const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(translatedSchema),
     defaultValues: {
       identifier: '',
       password: '',

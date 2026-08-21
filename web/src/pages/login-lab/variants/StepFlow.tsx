@@ -11,11 +11,13 @@ import { Input } from '@/components/ui/input';
 import { useLoginFlow } from '@/hooks/useLoginFlow';
 import { ArrowLeft, ArrowRight, Check, Loader2, Lock, Mail, User } from 'lucide-react';
 import { useState, type FormEvent, type ReactNode } from 'react';
+import { useI18n } from '@/contexts/I18nContext';
 
 type Step = 'identifier' | 'password';
 
 export function StepFlow({ footer }: { footer?: ReactNode } = {}) {
   const { form, loginMutation, onSubmit } = useLoginFlow();
+  const { t } = useI18n();
   const [step, setStep] = useState<Step>('identifier');
   const identifier = form.watch('identifier');
 
@@ -68,7 +70,7 @@ export function StepFlow({ footer }: { footer?: ReactNode } = {}) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-base font-semibold">
-                        What&apos;s your username or email?
+                        {t("auth.whatsYourUsernameOrEmail")}
                       </FormLabel>
                       <FormControl>
                         <div className="relative">
@@ -76,7 +78,7 @@ export function StepFlow({ footer }: { footer?: ReactNode } = {}) {
                             {field.value.includes('@') ? <Mail size={18} /> : <User size={18} />}
                           </div>
                           <Input
-                            placeholder="you@example.com"
+                            placeholder={t("auth.usernameOrEmailPlaceholder")}
                             className="h-12 pl-10"
                             autoFocus
                             {...field}
@@ -92,7 +94,7 @@ export function StepFlow({ footer }: { footer?: ReactNode } = {}) {
                   className="h-12 w-full"
                   disabled={!identifier}
                 >
-                  Continue
+                  {t("auth.continue")}
                   <ArrowRight size={18} />
                 </Button>
               </div>
@@ -104,7 +106,7 @@ export function StepFlow({ footer }: { footer?: ReactNode } = {}) {
                   render={({ field }) => (
                     <FormItem>
                       <h2 className="flex items-center gap-2 text-base font-semibold">
-                        Welcome back
+                        {t("auth.welcomeBack")}
                         <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
                           {identifier}
                         </span>
@@ -116,7 +118,7 @@ export function StepFlow({ footer }: { footer?: ReactNode } = {}) {
                           </div>
                           <Input
                             type="password"
-                            placeholder="Enter your password"
+                            placeholder={t("auth.enterPassword")}
                             className="h-12 pl-10"
                             autoFocus
                             {...field}
@@ -149,7 +151,7 @@ export function StepFlow({ footer }: { footer?: ReactNode } = {}) {
                     ) : (
                       <Check size={18} />
                     )}
-                    {loginMutation.isPending ? 'Signing in...' : 'Sign in'}
+                    {loginMutation.isPending ? t("auth.signingIn") : t("auth.signIn")}
                   </Button>
                 </div>
               </div>

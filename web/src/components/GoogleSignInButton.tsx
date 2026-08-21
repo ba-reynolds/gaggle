@@ -66,10 +66,10 @@ export default function GoogleSignInButton({ mode = "signin" }: { mode?: "signin
           isAdmin: me.data.data.is_admin ?? false,
         });
         const isNew = (res.data as unknown as { is_new_user?: boolean }).is_new_user;
-        toast.success(isNew ? "Account created with Google" : "Signed in with Google");
+        toast.success(isNew ? t("auth.accountCreatedWithGoogle") : t("auth.signedInWithGoogle"));
         navigate("/");
       } catch {
-        toast.error("Google sign-in failed");
+        toast.error(t("auth.googleSignInFailed"));
       }
     },
     [mutation, navigate, setUser],
@@ -177,7 +177,7 @@ export default function GoogleSignInButton({ mode = "signin" }: { mode?: "signin
         </svg>
         {t("auth.continueWithGoogle")}
       </Button>
-      {mutation.isPending && <p className="text-center text-xs text-muted-foreground">Verifying with Google…</p>}
+      {mutation.isPending && <p className="text-center text-xs text-muted-foreground">{t("auth.verifyingWithGoogle")}</p>}
     </div>
   );
 }
