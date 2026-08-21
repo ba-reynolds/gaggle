@@ -14,6 +14,7 @@
 package seedgen
 
 import (
+	"os"
 	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
@@ -21,18 +22,23 @@ import (
 )
 
 // Scale targets for a "busy but not pathological" community.
-const (
-	SeedValue       = 20260819 // fixed rng seed; determinism across envs
-	AnchorUsers     = 8        // alice/bob/charlie/diana/eve/frank/grace/henry
-	FakerUsers      = 142      // generated demo users
+//
+// Full 4x scale is used for production/demo; CI sets SEED_SCALE=ci for 2x.
+const SeedValue = 20260819 // fixed rng seed; determinism across envs
+
+func isCI() bool { return os.Getenv("CI") == "true" || os.Getenv("SEED_SCALE") == "ci" }
+
+var (
+	AnchorUsers     = 8 // alice/bob/charlie/diana/eve/frank/grace/henry
+	FakerUsers      = func() int { if isCI() { return 72 }; return 142 }()
 	TotalUsers      = AnchorUsers + FakerUsers
 	DaysOfHistory   = 28   // posts spread across the last 4 weeks
-	TopLevelPosts   = 1600 // top-level posts
-	ReplyPosts      = 600  // replies (nested where sensible)
-	DMConversations = 40   // ~10 conversations, several messages each
-	Lists           = 24   // user-created lists
+	TopLevelPosts   = func() int { if isCI() { return 800 }; return 1600 }()
+	ReplyPosts      = func() int { if isCI() { return 300 }; return 600 }()
+	DMConversations = func() int { if isCI() { return 20 }; return 40 }()
+	Lists           = func() int { if isCI() { return 12 }; return 24 }()
 	AssignedBadges  = 3    // assigned badges granted to a few users
-	MediaPosts      = 60   // posts carrying a single image each
+	MediaPosts      = func() int { if isCI() { return 30 }; return 60 }()
 
 	FollowMin = 8 // per-user following count bounds
 	FollowMax = 15

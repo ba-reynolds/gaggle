@@ -208,39 +208,47 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshTokenString strin
 // device: instead of nuking the whole family, the live token simply moves one
 // step forward so every open client can keep refreshing.
 func (s *AuthService) rotateCurrentActiveToken(ctx context.Context, sessionID uuid.UUID, userID int, ipAddress string, userAgent string) (*models.Token, *models.Token, error) {
-	tx, err := s.store.DB.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, nil, apperrors.InternalServerError(err)
-	}
-	defer tx.Rollback()
+	for attempt := 0; attempt < 3; attempt++ {
+		tx, err := s.store.DB.BeginTx(ctx, nil)
+		if err != nil {
+			return nil, nil, apperrors.InternalServerError(err)
+		}
 
-	active, err := s.store.Auth.GetCurrentActiveToken(ctx, tx, sessionID)
-	if err != nil {
-		return nil, nil, err
-	}
+		active, err := s.store.Auth.GetCurrentActiveToken(ctx, tx, sessionID)
+		if err != nil {
+			tx.Rollback()
+			return nil, nil, err
+		}
 
-	newRefreshToken, err := s.issueRefreshToken(ctx, tx, userID, sessionID, ipAddress, userAgent)
-	if err != nil {
-		return nil, nil, err
-	}
-	if err := s.store.Auth.RotateRefreshToken(ctx, tx, active.TokenHash); err != nil {
-		return nil, nil, err
-	}
-	if err := tx.Commit(); err != nil {
-		return nil, nil, apperrors.InternalServerError(err)
-	}
+		newRefreshToken, err := s.issueRefreshToken(ctx, tx, userID, sessionID, ipAddress, userAgent)
+		if err != nil {
+			tx.Rollback()
+			return nil, nil, err
+		}
+		if err := s.store.Auth.RotateRefreshToken(ctx, tx, active.TokenHash); err != nil {
+			tx.Rollback()
+			if apperrors.Is(err, apperrors.NotFound) && attempt < 2 {
+				continue
+			}
+			return nil, nil, err
+		}
+		if err := tx.Commit(); err != nil {
+			return nil, nil, apperrors.InternalServerError(err)
+		}
 
-	// Generate new access token
-	accessToken, err := s.authenticator.GenerateAccessToken(userID)
-	if err != nil {
-		s.logger.Error("failed to generate new access token during refresh",
-			"operation", "refresh_token",
-			"userID", userID,
-			"error", err,
-		)
-		return nil, nil, apperrors.InternalServerError(err)
+		// Generate new access token
+		accessToken, err := s.authenticator.GenerateAccessToken(userID)
+		if err != nil {
+			s.logger.Error("failed to generate new access token during refresh",
+				"operation", "refresh_token",
+				"userID", userID,
+				"error", err,
+			)
+			return nil, nil, apperrors.InternalServerError(err)
+		}
+		return accessToken, newRefreshToken, nil
 	}
-	return accessToken, newRefreshToken, nil
+	return nil, nil, apperrors.SessionExpiredError("session expired", nil)
 }
 
 // CreateRefreshToken issues a refresh token for a brand-new session family.

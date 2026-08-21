@@ -1314,13 +1314,10 @@ func TestBookmarkCategories(t *testing.T) {
 	app := testutil.NewApp(t, testutil.Database(t))
 	token := app.RegisterUser(t, "bmuser", "bm@example.com")
 
-	// A "General" category is auto-created on registration.
+	// No default category is auto-created; categories exist only if created or seeded (migration 000024).
 	cats, _ := testutil.Decode[[]map[string]any](t, app.Do(t, testutil.Request{Method: http.MethodGet, Path: "/api/v1/bookmarks/category", Token: token}))
-	if len(cats) != 1 {
-		t.Fatalf("expected 1 default category, got %d", len(cats))
-	}
-	if cats[0]["name"] != "General" {
-		t.Fatalf("default category name = %v", cats[0]["name"])
+	if len(cats) != 0 {
+		t.Fatalf("expected 0 default categories, got %d", len(cats))
 	}
 
 	// Create category (payload uses "name")

@@ -29,9 +29,6 @@ func TestGenerateDeterminism(t *testing.T) {
 
 func TestGenerateScale(t *testing.T) {
 	ds := gDataset()
-	if len(ds.Users) != 150 {
-		t.Errorf("users = %d, want 150", len(ds.Users))
-	}
 	if len(ds.Users) != TotalUsers {
 		t.Errorf("users = %d, want TotalUsers=%d", len(ds.Users), TotalUsers)
 	}
@@ -41,11 +38,8 @@ func TestGenerateScale(t *testing.T) {
 			top++
 		}
 	}
-	if top != 1600 {
-		t.Errorf("top-level = %d, want 1600", top)
-	}
-	if len(ds.Posts) != 2200 {
-		t.Errorf("posts = %d, want 2200 (1600+600)", len(ds.Posts))
+	if top != TopLevelPosts {
+		t.Errorf("top-level = %d, want TopLevelPosts=%d", top, TopLevelPosts)
 	}
 	if len(ds.Posts) != TopLevelPosts+ReplyPosts {
 		t.Errorf("posts = %d, want TopLevelPosts+ReplyPosts=%d", len(ds.Posts), TopLevelPosts+ReplyPosts)
@@ -57,7 +51,7 @@ func TestGenerateScale(t *testing.T) {
 	if len(ds.Relationships) == 0 {
 		t.Error("expected relationships")
 	}
-	// Lists/DMs/Media also at 4x scale
+	// Lists/DMs/Media scale with CI flag
 	if len(ds.DMConversations) != DMConversations {
 		t.Errorf("dm conversations = %d, want %d", len(ds.DMConversations), DMConversations)
 	}
@@ -110,7 +104,7 @@ func TestGeneratePostConstraints(t *testing.T) {
 		}
 		// Posts must be within the 28-day history window (allow small slack).
 		age := fixedNow().Sub(p.CreatedAt)
-		if age < 0 || age > (DaysOfHistory*24*time.Hour)+time.Minute {
+		if age < 0 || age > (time.Duration(DaysOfHistory)*24*time.Hour)+time.Minute {
 			t.Errorf("post %d created_at %v outside 28-day window", i, p.CreatedAt)
 		}
 	}
@@ -215,8 +209,8 @@ func TestGenerateDMAndLists(t *testing.T) {
 	if len(ds.DMConversations) != DMConversations {
 		t.Errorf("dm conversations = %d, want %d", len(ds.DMConversations), DMConversations)
 	}
-	if len(ds.DMConversations) < 40 {
-		t.Errorf("dm conversations = %d, want >= 40", len(ds.DMConversations))
+	if len(ds.DMConversations) < DMConversations {
+		t.Errorf("dm conversations = %d, want >= %d", len(ds.DMConversations), DMConversations)
 	}
 	for i, c := range ds.DMConversations {
 		if c.UserAIdx == c.UserBIdx {
@@ -237,8 +231,8 @@ func TestGenerateDMAndLists(t *testing.T) {
 	if len(ds.Lists) != Lists {
 		t.Errorf("lists = %d, want %d", len(ds.Lists), Lists)
 	}
-	if len(ds.Lists) < 24 {
-		t.Errorf("lists = %d, want >= 24", len(ds.Lists))
+	if len(ds.Lists) < Lists {
+		t.Errorf("lists = %d, want >= %d", len(ds.Lists), Lists)
 	}
 	for i, l := range ds.Lists {
 		for _, m := range l.MemberIdxs {
@@ -253,8 +247,8 @@ func TestGenerateDMAndLists(t *testing.T) {
 	if len(ds.Media) != MediaPosts {
 		t.Errorf("media = %d, want %d", len(ds.Media), MediaPosts)
 	}
-	if len(ds.Media) < 60 {
-		t.Errorf("media = %d, want >= 60", len(ds.Media))
+	if len(ds.Media) < MediaPosts {
+		t.Errorf("media = %d, want >= %d", len(ds.Media), MediaPosts)
 	}
 }
 

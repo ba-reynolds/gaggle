@@ -146,7 +146,7 @@ func (g *generator) genUsers() {
 			Website:     "https://" + g.f.DomainName(),
 			BirthDate:   g.f.DateRange(g.now.AddDate(-60, 0, 0), g.now.AddDate(-18, 0, 0)),
 		}
-		if i == 7 || i == 35 || i == 90 {
+		if i == 7 || i == 35 || (i == 90 && i < FakerUsers) {
 			user.IsPrivate = true
 		}
 		g.ds.Users = append(g.ds.Users, user)
