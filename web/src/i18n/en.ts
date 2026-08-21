@@ -106,6 +106,7 @@ const en = {
     resetSent: "Password reset email sent",
     resetFailed: "Reset request failed, please try again later",
     sessionExpired: "Your session has expired. Please sign in again.",
+    continueWithGoogle: "Continue with Google",
   },
   settings: {
     title: "Settings",

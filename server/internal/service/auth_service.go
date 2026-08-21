@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -580,6 +582,65 @@ func (s *AuthService) GoogleAuth(ctx context.Context, idToken string, clientID s
 		isNew = true
 		break
 	}
+	// Fallback: random suffix if deterministic attempts all collided
+	for attempt := 0; created == nil && attempt < 5; attempt++ {
+		randSuffix := randomUsernameSuffix()
+		// Keep base truncated to 9 chars so "base_xxxxxx" <=16
+		base := username
+		if len(base) > 9 {
+			base = base[:9]
+		}
+		base = strings.TrimSuffix(base, "_")
+		trial := fmt.Sprintf("%s_%s", base, randSuffix)
+		if len(trial) > 16 {
+			trial = trial[:16]
+		}
+		// If random still collides, try pure user_xxxxxx form
+		if attempt == 4 {
+			trial = fmt.Sprintf("user_%s", randSuffix)
+		}
+		user := &models.User{
+			Username:     trial,
+			Email:        info.Email,
+			Password:     "",
+			GoogleID:     &info.Sub,
+			AuthProvider: "google",
+		}
+		tx, err := s.store.DB.BeginTx(ctx, nil)
+		if err != nil {
+			return nil, nil, nil, false, apperrors.InternalServerError(err)
+		}
+		err = s.store.Users.Create(ctx, tx, user)
+		if err != nil {
+			tx.Rollback()
+			if apperr, ok := err.(*apperrors.AppError); ok && apperr.Code == apperrors.AlreadyExists {
+				s.logger.Info("random username collided, retrying", "trial", trial, "attempt", attempt)
+				continue
+			}
+			return nil, nil, nil, false, err
+		}
+		settings := defaultSettings(language)
+		if err := s.store.Users.CreateSettings(ctx, tx, user.ID, settings); err != nil {
+			tx.Rollback()
+			return nil, nil, nil, false, err
+		}
+		displayName := info.Name
+		if displayName == "" {
+			displayName = trial
+		}
+		if len(displayName) > 50 {
+			displayName = displayName[:50]
+		}
+		if _, err := tx.ExecContext(ctx, `UPDATE user_profiles SET display_name = $1 WHERE user_id = $2`, displayName, user.ID); err != nil {
+			s.logger.Warn("failed to set google display_name", "userID", user.ID, "displayName", displayName, "error", err)
+		}
+		if err := tx.Commit(); err != nil {
+			return nil, nil, nil, false, apperrors.InternalServerError(err)
+		}
+		created = user
+		isNew = true
+		break
+	}
 	if created == nil {
 		return nil, nil, nil, false, apperrors.InternalServerError(fmt.Errorf("failed to create google user after retries"))
 	}
@@ -612,6 +673,15 @@ func sanitizeUsername(s string) string {
 		s = s[:16]
 	}
 	return s
+}
+
+func randomUsernameSuffix() string {
+	b := make([]byte, 3)
+	if _, err := rand.Read(b); err != nil {
+		// fallback to pseudo-random
+		return fmt.Sprintf("%06d", 100000+int(b[0])%900000)
+	}
+	return hex.EncodeToString(b)
 }
 
 func deriveUsername(info *models.GoogleUserInfo) string {

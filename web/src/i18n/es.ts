@@ -108,6 +108,7 @@ const es: MessageKey = {
     resetSent: "Correo de restablecimiento de contraseña enviado",
     resetFailed: "La solicitud de restablecimiento falló, inténtalo más tarde",
     sessionExpired: "Tu sesión ha expirado. Vuelve a iniciar sesión.",
+    continueWithGoogle: "Continuar con Google",
   },
   settings: {
     title: "Ajustes",

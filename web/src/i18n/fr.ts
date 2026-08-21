@@ -108,6 +108,7 @@ const fr: MessageKey = {
     resetSent: "E-mail de réinitialisation du mot de passe envoyé",
     resetFailed: "Échec de la demande de réinitialisation, veuillez réessayer plus tard",
     sessionExpired: "Votre session a expiré. Veuillez vous reconnecter.",
+    continueWithGoogle: "Continuer avec Google",
   },
   settings: {
     title: "Paramètres",

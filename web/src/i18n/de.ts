@@ -108,6 +108,7 @@ const de: MessageKey = {
     resetSent: "E-Mail zum Zurücksetzen des Passworts gesendet",
     resetFailed: "Anfrage zum Zurücksetzen fehlgeschlagen, versuche es später erneut",
     sessionExpired: "Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.",
+    continueWithGoogle: "Mit Google fortfahren",
   },
   settings: {
     title: "Einstellungen",
