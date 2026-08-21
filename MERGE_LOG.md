@@ -2,6 +2,13 @@
 
 Running log of agent-branch merges into main. Newest on top.
 
+## 2026-08-20 — agent/fix-feed-middle-click
+
+- Status: **clean** (fast-forward from 26a2b17 → e641064; no conflicts)
+- Files merged: `SUMMARY.md` (prepended fix-feed-middle-click section above link-click-middle-open/instant-tabs), `web/src/components/FeedPost.tsx` (split handlePostClick/handleAuxClick + handleMouseDown autoscroll suppression + handleKeyDown Enter + focus-visible ring + closest(a,button) guard + auxClick/mouseDown stops on inner controls), `web/src/components/MediaGallery.tsx` (SingleImage auxClick/mouseDown stops), `web/src/components/UserHoverCard.tsx` (a → Link with stopPropagation on click/auxClick/mouseDown)
+- `SUMMARY.md` intent consulted: feed middle-click swallowed by autoscroll, keyboard Enter missing, profile click double-push via UserHoverCard bubbling — all preserved as-is (fast-forward, no resolution needed)
+- Migration duplicate check clean (no migrations). No DB migrations (frontend only).
+
 ## 2026-08-20 — agent/message-page-fixes
 
 - Status: **conflicted**
