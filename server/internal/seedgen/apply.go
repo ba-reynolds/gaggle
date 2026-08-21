@@ -272,6 +272,12 @@ func applyPolls(ctx context.Context, st *store.Store, log *slog.Logger, ds *Data
 				if apperrors.Is(err, apperrors.AlreadyExists) {
 					continue
 				}
+				// A poll whose ends_at already passed (e.g. re-seeding old
+				// data or a fixed test clock) can't accept votes; skip them
+				// instead of failing the whole seed.
+				if appErr, ok := err.(*apperrors.AppError); ok && appErr.Code == apperrors.BadRequest {
+					continue
+				}
 				return fmt.Errorf("vote on post %d: %w", i, err)
 			}
 			if err := vtx.Commit(); err != nil {
