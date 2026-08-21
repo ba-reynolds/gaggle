@@ -92,9 +92,9 @@ export default function GoogleSignInButton({ mode = "signin" }: { mode?: "signin
     };
   }, [config]);
 
-  // Initialize GIS when ready (no visible Google-rendered button — we use our own styled button)
+  // Initialize GIS and render a hidden Google button — our styled button will proxy-click it
   useEffect(() => {
-    if (!gsiReady || !config?.client_id || !window.google) return;
+    if (!gsiReady || !config?.client_id || !window.google || !gsiContainerRef.current) return;
     try {
       window.google.accounts.id.initialize({
         client_id: config.client_id,
@@ -102,10 +102,18 @@ export default function GoogleSignInButton({ mode = "signin" }: { mode?: "signin
           void handleCredential(resp.credential);
         },
       });
+      gsiContainerRef.current.innerHTML = "";
+      window.google.accounts.id.renderButton(gsiContainerRef.current, {
+        theme: "outline",
+        size: "large",
+        width: 320,
+        text: mode === "signup" ? "signup_with" : "signin_with",
+        shape: "rectangular",
+      });
     } catch {
-      // GIS init failed; fallback to redirect flow
+      // GIS init/render failed; fallback to redirect flow
     }
-  }, [gsiReady, config, handleCredential]);
+  }, [gsiReady, config, mode, handleCredential]);
 
   if (config === null) {
     return (
@@ -117,14 +125,27 @@ export default function GoogleSignInButton({ mode = "signin" }: { mode?: "signin
   }
 
   const handleGoogleClick = () => {
-    // Prefer GIS credential flow (works with just JS origin whitelisted).
-    // Fallback to code flow if GIS not ready (requires redirect URI whitelisted).
+    // Proxy click to the hidden GIS button — keeps our custom styling but uses Google's credential flow.
+    // Falls back to code-flow redirect if GIS not ready (requires redirect URI whitelisted).
+    if (gsiContainerRef.current) {
+      const googleBtn = gsiContainerRef.current.querySelector<HTMLElement>('div[role="button"]');
+      if (googleBtn) {
+        googleBtn.click();
+        return;
+      }
+      // Some GIS versions render an iframe; try the container itself
+      const fallback = gsiContainerRef.current.firstElementChild as HTMLElement | null;
+      if (fallback) {
+        (fallback as HTMLElement).click();
+        return;
+      }
+    }
     if (gsiReady && window.google?.accounts?.id) {
       try {
         window.google.accounts.id.prompt();
         return;
       } catch {
-        // fall through to redirect
+        // fall through
       }
     }
     const base = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "/api/v1";
@@ -133,8 +154,12 @@ export default function GoogleSignInButton({ mode = "signin" }: { mode?: "signin
 
   return (
     <div className="space-y-3">
-      {/* hidden GIS anchor — keep for init but not rendered */}
-      <div ref={gsiContainerRef} className="hidden" aria-hidden="true" />
+      {/* hidden GIS button — off-screen but still rendered so we can proxy-click it */}
+      <div
+        ref={gsiContainerRef}
+        className="absolute left-[-9999px] top-0 h-0 w-[320px] overflow-hidden opacity-0 pointer-events-none"
+        aria-hidden="true"
+      />
       <Button
         type="button"
         variant="outline"
