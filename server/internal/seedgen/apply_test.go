@@ -168,8 +168,24 @@ func TestApplyPollsAndEngagement(t *testing.T) {
 	if err := st.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM poll_votes`).Scan(&votes); err != nil {
 		t.Fatalf("count poll_votes: %v", err)
 	}
-	if votes != len(ds.PollVotes) {
-		t.Errorf("poll_votes = %d, want %d", votes, len(ds.PollVotes))
+	// Votes on polls whose ends_at already passed are skipped by Apply
+	// (pollStore.Vote rejects them), so the expected count excludes them.
+	expectedVotes := 0
+	for _, v := range ds.PollVotes {
+		if v.PostIdx < 0 || v.PostIdx >= len(ds.Posts) {
+			continue
+		}
+		pollIdx := ds.Posts[v.PostIdx].PollIdx
+		if pollIdx < 0 || pollIdx >= len(ds.Polls) {
+			continue
+		}
+		if ends := ds.Polls[pollIdx].EndsAt; ends != nil && time.Now().After(*ends) {
+			continue
+		}
+		expectedVotes++
+	}
+	if votes != expectedVotes {
+		t.Errorf("poll_votes = %d, want %d", votes, expectedVotes)
 	}
 
 	// Engagement rows match the dataset counts.
