@@ -92,9 +92,9 @@ export default function GoogleSignInButton({ mode = "signin" }: { mode?: "signin
     };
   }, [config]);
 
-  // Initialize and render GIS button when ready
+  // Initialize GIS when ready (no visible Google-rendered button — we use our own styled button)
   useEffect(() => {
-    if (!gsiReady || !config?.client_id || !window.google || !gsiContainerRef.current) return;
+    if (!gsiReady || !config?.client_id || !window.google) return;
     try {
       window.google.accounts.id.initialize({
         client_id: config.client_id,
@@ -102,18 +102,10 @@ export default function GoogleSignInButton({ mode = "signin" }: { mode?: "signin
           void handleCredential(resp.credential);
         },
       });
-      gsiContainerRef.current.innerHTML = "";
-      window.google.accounts.id.renderButton(gsiContainerRef.current, {
-        theme: "outline",
-        size: "large",
-        width: 320,
-        text: mode === "signup" ? "signup_with" : "signin_with",
-        shape: "rectangular",
-      });
     } catch {
-      // GIS render failed; fall back to redirect button
+      // GIS init failed; fallback to redirect flow
     }
-  }, [gsiReady, config, mode, handleCredential]);
+  }, [gsiReady, config, handleCredential]);
 
   if (config === null) {
     return (
@@ -124,33 +116,30 @@ export default function GoogleSignInButton({ mode = "signin" }: { mode?: "signin
     return null;
   }
 
-  const handleRedirectLogin = () => {
-    // Code flow: backend builds the Google consent URL and redirects; the
-    // callback will land on /auth/callback with an access_token.
+  const handleGoogleClick = () => {
+    // Prefer GIS credential flow (works with just JS origin whitelisted).
+    // Fallback to code flow if GIS not ready (requires redirect URI whitelisted).
+    if (gsiReady && window.google?.accounts?.id) {
+      try {
+        window.google.accounts.id.prompt();
+        return;
+      } catch {
+        // fall through to redirect
+      }
+    }
     const base = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "/api/v1";
-    // VITE_API_BASE_URL may be "/api/v1" (same-origin proxied); we need an absolute for redirect.
-    // When it's relative, the browser will resolve it against the current origin, which is correct.
     window.location.href = `${base}/auth/google/login`;
   };
 
   return (
     <div className="space-y-3">
-      {/* GIS rendered button (when script loads) */}
-      <div ref={gsiContainerRef} className="flex justify-center" />
-      {/* Always show a fallback redirect button for the code flow; GIS hides via overlay if it rendered */}
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">Or</span>
-        </div>
-      </div>
+      {/* hidden GIS anchor — keep for init but not rendered */}
+      <div ref={gsiContainerRef} className="hidden" aria-hidden="true" />
       <Button
         type="button"
         variant="outline"
         className="w-full"
-        onClick={handleRedirectLogin}
+        onClick={handleGoogleClick}
         disabled={mutation.isPending}
       >
         <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
