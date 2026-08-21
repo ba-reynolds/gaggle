@@ -2,6 +2,11 @@
 
 Running log of agent-branch merges into main. Newest on top.
 
+## 2026-08-20 — agent/instant-tabs (worktree removal — already merged)
+
+- Status: **clean — already up to date** (branch `agent/instant-tabs` at e2fb5f8 is ancestor of HEAD via merge `2ac37af` on 2026-08-20; `git merge --no-edit agent/instant-tabs` reports Already up to date, no new changes)
+- `git -C ./agent-branch/instant-tabs status` clean (no uncommitted changes), worktree removed, preview torn down. Original merge was logged on 2026-08-20 as conflicted (SUMMARY.md clobber restored) — no duplicate MERGE_LOG entry needed beyond this removal note.
+
 ## 2026-08-20 — agent/fix-feed-middle-click
 
 - Status: **clean** (fast-forward from 26a2b17 → e641064; no conflicts)
