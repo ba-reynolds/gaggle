@@ -46,9 +46,15 @@ const UserHoverCard: React.FC<UserHoverCardProps> = ({
   return (
     <HoverCard>
       <HoverCardTrigger asChild>
-        <a href={profileUrl} className="min-w-0 cursor-pointer">
+        <Link
+          to={profileUrl}
+          className="min-w-0 cursor-pointer"
+          onClick={(e) => e.stopPropagation()}
+          onAuxClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => { if (e.button === 1) e.stopPropagation(); }}
+        >
           {children}
-        </a>
+        </Link>
       </HoverCardTrigger>
       <HoverCardContent className="w-80 border border-muted">
         <div className="flex flex-col space-y-4">

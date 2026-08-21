@@ -258,6 +258,12 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
   };
 
   const handlePostClick = (event: React.MouseEvent) => {
+    // If the click originated from an inner interactive element (profile
+    // link, hashtag/mention, button, etc.) the inner handler already
+    // handled the navigation/action and called stopPropagation. This guard
+    // is defense-in-depth for any future inner anchor that forgets to stop.
+    const target = event.target as HTMLElement;
+    if (target.closest("a, button")) return;
     // Ctrl/Cmd+click (left button with modifier) should open in a new tab.
     // Middle-click is handled via onAuxClick; some browsers also deliver it here
     // on older engines, so keep the button===1 guard.
@@ -275,6 +281,8 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
   };
 
   const handleAuxClick = (event: React.MouseEvent) => {
+    const target = event.target as HTMLElement;
+    if (target.closest("a, button")) return;
     if (event.button === 1) {
       event.preventDefault();
       window.open(`/post/${id}`, "_blank", "noopener");
