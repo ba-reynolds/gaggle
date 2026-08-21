@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log/slog"
+	"regexp"
 	"strings"
 
 	"github.com/ba-reynolds/gaggle/internal/apperrors"
@@ -38,6 +40,11 @@ func (s *AuthService) Login(ctx context.Context, identifier string, password str
 	// Couldn't find user with given identifier
 	if err != nil {
 		return nil, nil, apperrors.NotFoundError("user not found", err)
+	}
+
+	// OAuth-only accounts have no password; nudge the user to use Google.
+	if user.Password == "" {
+		return nil, nil, apperrors.UnauthorizedError("this account uses Google sign-in; please continue with Google", nil)
 	}
 
 	// Password is incorrect
@@ -465,6 +472,173 @@ func (s *AuthService) Register(ctx context.Context, username string, email strin
 	)
 
 	return user, accessToken, refreshToken, nil
+}
+
+// GoogleAuth authenticates or creates a user from a verified Google ID token.
+// clientID is used to validate aud; allowUnverified controls whether unverified
+// Google emails are accepted. Returns user, accessToken, refreshToken, isNewUser.
+func (s *AuthService) GoogleAuth(ctx context.Context, idToken string, clientID string, allowUnverified bool, language string, ipAddress string, userAgent string) (*models.User, *models.Token, *models.Token, bool, error) {
+	info, err := auth.VerifyGoogleIDToken(ctx, idToken, clientID)
+	if err != nil {
+		return nil, nil, nil, false, err
+	}
+	if !info.EmailVerified && !allowUnverified {
+		return nil, nil, nil, false, apperrors.UnauthorizedError("google email not verified", nil)
+	}
+	// 1) Existing google_id linkage
+	if user, err := s.store.Users.GetByGoogleID(ctx, info.Sub); err == nil {
+		accessToken, refreshToken, err := s.issueTokensForUser(ctx, user.ID, ipAddress, userAgent)
+		if err != nil {
+			return nil, nil, nil, false, err
+		}
+		s.logger.Info("google login (existing google_id)", "userID", user.ID, "google_sub", info.Sub)
+		return user, accessToken, refreshToken, false, nil
+	}
+	// 2) Link by email if local account exists
+	if existing, err := s.store.Users.GetByEmail(ctx, info.Email); err == nil {
+		// Link the google_id if not already set
+		if existing.GoogleID == nil || *existing.GoogleID == "" {
+			if err := s.store.Users.LinkGoogleID(ctx, existing.ID, info.Sub); err != nil {
+				// If linking fails due to uniqueness, maybe another user already has it; fall through
+				s.logger.Warn("failed to link google_id to existing email account", "userID", existing.ID, "google_sub", info.Sub, "error", err)
+			} else {
+				existing.GoogleID = &info.Sub
+			}
+		} else if *existing.GoogleID != info.Sub {
+			return nil, nil, nil, false, apperrors.UnauthorizedError("this email is already linked to a different Google account", nil)
+		}
+		accessToken, refreshToken, err := s.issueTokensForUser(ctx, existing.ID, ipAddress, userAgent)
+		if err != nil {
+			return nil, nil, nil, false, err
+		}
+		s.logger.Info("google login (linked existing email)", "userID", existing.ID, "google_sub", info.Sub)
+		return existing, accessToken, refreshToken, false, nil
+	}
+	// 3) Create new user
+	username := deriveUsername(info)
+	// Ensure username is valid: 3-16, alphanumeric + underscore; fallback if needed
+	username = sanitizeUsername(username)
+	if len(username) < 3 {
+		username = fmt.Sprintf("user_%s", info.Sub[:6])
+		username = sanitizeUsername(username)
+	}
+	// Try base username, then suffixed variants
+	var created *models.User
+	var isNew bool
+	for attempt := 0; attempt < 5; attempt++ {
+		trial := username
+		if attempt > 0 {
+			suffix := fmt.Sprintf("%d", attempt)
+			// keep within 16 chars
+			maxBase := 16 - len(suffix)
+			if len(trial) > maxBase {
+				trial = trial[:maxBase]
+			}
+			trial = trial + suffix
+		}
+		user := &models.User{
+			Username:     trial,
+			Email:        info.Email,
+			Password:     "", // oauth-only, no password
+			GoogleID:     &info.Sub,
+			AuthProvider: "google",
+		}
+		tx, err := s.store.DB.BeginTx(ctx, nil)
+		if err != nil {
+			return nil, nil, nil, false, apperrors.InternalServerError(err)
+		}
+		err = s.store.Users.Create(ctx, tx, user)
+		if err != nil {
+			tx.Rollback()
+			if apperr, ok := err.(*apperrors.AppError); ok && apperr.Code == apperrors.AlreadyExists {
+				continue
+			}
+			return nil, nil, nil, false, err
+		}
+		settings := defaultSettings(language)
+		if err := s.store.Users.CreateSettings(ctx, tx, user.ID, settings); err != nil {
+			tx.Rollback()
+			return nil, nil, nil, false, err
+		}
+		// Set display name from Google name if available
+		displayName := info.Name
+		if displayName == "" {
+			displayName = trial
+		}
+		if len(displayName) > 50 {
+			displayName = displayName[:50]
+		}
+		// Update profile display_name (create already seeded it as username)
+		if _, err := tx.ExecContext(ctx, `UPDATE user_profiles SET display_name = $1 WHERE user_id = $2`, displayName, user.ID); err != nil {
+			// non-fatal; profile already exists with username
+			s.logger.Warn("failed to set google display_name", "userID", user.ID, "displayName", displayName, "error", err)
+		}
+		if err := tx.Commit(); err != nil {
+			return nil, nil, nil, false, apperrors.InternalServerError(err)
+		}
+		created = user
+		isNew = true
+		break
+	}
+	if created == nil {
+		return nil, nil, nil, false, apperrors.InternalServerError(fmt.Errorf("failed to create google user after retries"))
+	}
+	accessToken, refreshToken, err := s.issueTokensForUser(ctx, created.ID, ipAddress, userAgent)
+	if err != nil {
+		return nil, nil, nil, false, err
+	}
+	s.logger.Info("google signup (new user)", "userID", created.ID, "username", created.Username, "google_sub", info.Sub)
+	return created, accessToken, refreshToken, isNew, nil
+}
+
+func (s *AuthService) issueTokensForUser(ctx context.Context, userID int, ipAddress string, userAgent string) (*models.Token, *models.Token, error) {
+	refreshToken, err := s.CreateRefreshToken(ctx, userID, ipAddress, userAgent)
+	if err != nil {
+		return nil, nil, err
+	}
+	accessToken, err := s.authenticator.GenerateAccessToken(userID)
+	if err != nil {
+		s.logger.Error("failed to generate access token for google user", "userID", userID, "error", err)
+		return nil, nil, apperrors.InternalServerError(err)
+	}
+	return accessToken, refreshToken, nil
+}
+
+var usernameSanitizer = regexp.MustCompile(`[^a-zA-Z0-9_]`)
+
+func sanitizeUsername(s string) string {
+	s = usernameSanitizer.ReplaceAllString(s, "_")
+	if len(s) > 16 {
+		s = s[:16]
+	}
+	return s
+}
+
+func deriveUsername(info *models.GoogleUserInfo) string {
+	// Prefer email local part
+	if info.Email != "" {
+		if idx := strings.Index(info.Email, "@"); idx > 0 {
+			candidate := info.Email[:idx]
+			candidate = strings.ToLower(candidate)
+			if len(candidate) >= 3 {
+				return candidate
+			}
+		}
+	}
+	if info.GivenName != "" {
+		return strings.ToLower(info.GivenName)
+	}
+	if info.Name != "" {
+		parts := strings.Fields(info.Name)
+		if len(parts) > 0 {
+			return strings.ToLower(parts[0])
+		}
+	}
+	// fallback
+	if len(info.Sub) >= 8 {
+		return "user_" + info.Sub[:6]
+	}
+	return "user"
 }
 
 // defaultSettings returns the user_settings JSONB defaults (mirroring the

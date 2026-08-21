@@ -75,6 +75,13 @@ services:
       JWT_REFRESH_TOKEN_EXPIRATION_TIME: 1296000
       COOKIE_SECURE: "false"
       INVITATION_DURATION: 86400
+      # Google OAuth (optional; when unset the /auth/google endpoints return 501 and the frontend hides the button)
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URL: ${GOOGLE_REDIRECT_URL:-}
+      GOOGLE_FRONTEND_REDIRECT_URL: ${GOOGLE_FRONTEND_REDIRECT_URL:-http://localhost:5173}
+      GOOGLE_ALLOW_UNVERIFIED_EMAIL: ${GOOGLE_ALLOW_UNVERIFIED_EMAIL:-false}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
       # Used by the entrypoint to apply migrations on first start.
       POSTGRES_URL: postgres://${DB_USER:-white}:${DB_PASSWORD:-teeth}@db:5432/${DB_NAME:-social}?sslmode=disable
       MIGRATE_ON_START: "true"

@@ -1,0 +1,5 @@
+DROP INDEX IF EXISTS unique_google_id;
+DROP INDEX IF EXISTS idx_users_google_id;
+ALTER TABLE users ALTER COLUMN password SET NOT NULL;
+ALTER TABLE users DROP COLUMN IF EXISTS auth_provider;
+ALTER TABLE users DROP COLUMN IF EXISTS google_id;

@@ -11,6 +11,8 @@ type User struct {
 	Username      string     `json:"username"`
 	Email         string     `json:"-"`
 	Password      string     `json:"-"`
+	GoogleID      *string    `json:"-"`
+	AuthProvider  string     `json:"-"`
 	IsAdmin       bool       `json:"-"`
 	IsPrivate     bool       `json:"-"`
 	SoftDeleted   bool       `json:"-"`

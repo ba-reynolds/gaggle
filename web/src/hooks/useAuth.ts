@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { login, logout, register } from "@/api/auth";
+import { login, logout, register, googleAuth } from "@/api/auth";
 import type { Envelope, LoginPayload, LoginResponse, RegisterPayload, RegisterResponse } from "@/types/api";
+import type { GoogleAuthPayload, GoogleAuthResponse } from "@/api/auth";
 import { useUser } from "@/contexts/UserContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -49,6 +50,18 @@ export const useLogoutMutation = () => {
                 profilePictureUUID: "",
             });
             navigate("/login");
+        },
+    });
+};
+
+export const useGoogleAuthMutation = () => {
+    const queryClient = useQueryClient();
+    const { setToken } = useAuth();
+    return useMutation<Envelope<GoogleAuthResponse>, Error, GoogleAuthPayload>({
+        mutationFn: googleAuth,
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ["auth"] });
+            setToken(data.data.access_token);
         },
     });
 };

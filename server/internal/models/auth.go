@@ -61,3 +61,25 @@ type RegisterResponse struct {
 	User        *User  `json:"user"`
 	AccessToken string `json:"access_token"`
 }
+
+type GoogleAuthRequest struct {
+	IdToken   string `json:"id_token" validate:"required"`
+	Credential string `json:"credential"`
+	// Frontend may send either field; we coalesce them. At least one must be present.
+	Language string `json:"language" validate:"omitempty,oneof=en es fr de"`
+}
+
+type GoogleAuthResponse struct {
+	AccessToken string `json:"access_token"`
+	IsNewUser   bool   `json:"is_new_user,omitempty"`
+}
+
+type GoogleUserInfo struct {
+	Sub           string `json:"sub"`
+	Email         string `json:"email"`
+	EmailVerified bool   `json:"email_verified"`
+	Name          string `json:"name"`
+	GivenName     string `json:"given_name"`
+	FamilyName    string `json:"family_name"`
+	Picture       string `json:"picture"`
+}

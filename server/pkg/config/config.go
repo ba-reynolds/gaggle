@@ -18,6 +18,7 @@ type AllConfigs struct {
 	AuthConfig    AuthConfig
 	RedisConfig   RedisConfig
 	MetricsConfig MetricsConfig
+	GoogleConfig  GoogleOAuthConfig
 }
 
 type DBConfig struct {
@@ -58,6 +59,15 @@ type AuthConfig struct {
 	// plain-HTTP local development (browsers refuse to store Secure cookies
 	// over http://localhost), and true behind TLS in production.
 	CookieSecure bool
+}
+
+type GoogleOAuthConfig struct {
+	ClientID               string
+	ClientSecret           string
+	RedirectURL            string
+	FrontendRedirectURL    string
+	Enabled                bool
+	AllowUnverifiedEmail   bool
 }
 
 type RedisConfig struct {
@@ -122,6 +132,30 @@ func LoadConfig() (AllConfigs, error) {
 		CookieSecure:                  getEnv("COOKIE_SECURE", "false") == "true",
 	}
 
+	googleConfig := GoogleOAuthConfig{
+		ClientID:             getEnv("GOOGLE_CLIENT_ID", ""),
+		ClientSecret:         getEnv("GOOGLE_CLIENT_SECRET", ""),
+		RedirectURL:          getEnv("GOOGLE_REDIRECT_URL", ""),
+		FrontendRedirectURL:  getEnv("GOOGLE_FRONTEND_REDIRECT_URL", getEnv("FRONTEND_URL", "http://localhost:5173")),
+		AllowUnverifiedEmail: getEnv("GOOGLE_ALLOW_UNVERIFIED_EMAIL", "false") == "true",
+	}
+	googleConfig.Enabled = googleConfig.ClientID != "" && googleConfig.ClientSecret != ""
+	// Default redirect URL: api base + callback path. ServerAddr may be ":2021" — fall back to localhost:2021.
+	if googleConfig.RedirectURL == "" && googleConfig.Enabled {
+		addr := serverConfig.ServerAddr
+		if addr == "" {
+			addr = "localhost:2021"
+		}
+		if addr[0] == ':' {
+			addr = "localhost" + addr
+		}
+		if getEnv("SERVER_ADDR", "") == "" {
+			// server defaults to localhost:8080 in some envs; prefer explicit API port
+			addr = "localhost:2021"
+		}
+		googleConfig.RedirectURL = fmt.Sprintf("http://%s/api/v1/auth/google/callback", addr)
+	}
+
 	redisConfig := RedisConfig{
 		Address:              getEnv("REDIS_ADDRESS", "localhost:6379"),
 		Password:             getEnv("REDIS_PASSWORD", ""),
@@ -154,6 +188,7 @@ func LoadConfig() (AllConfigs, error) {
 		AuthConfig:    authConfig,
 		RedisConfig:   redisConfig,
 		MetricsConfig: metricsConfig,
+		GoogleConfig:  googleConfig,
 	}, nil
 
 }

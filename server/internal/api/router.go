@@ -14,6 +14,7 @@ import (
 	"github.com/ba-reynolds/gaggle/internal/handlers"
 	mid "github.com/ba-reynolds/gaggle/internal/middleware"
 	"github.com/ba-reynolds/gaggle/internal/service"
+	"github.com/ba-reynolds/gaggle/pkg/config"
 )
 
 // NewRouter creates a new chi router
@@ -24,6 +25,19 @@ func NewRouter(
 	rateLimitMaxRequests int,
 	rateLimitWindow time.Duration,
 	cookieSecure bool,
+) http.Handler {
+	return NewRouterWithGoogle(service, logger, rdb, rateLimitMaxRequests, rateLimitWindow, cookieSecure, config.GoogleOAuthConfig{})
+}
+
+// NewRouterWithGoogle is the google-aware variant; the plain NewRouter delegates to it for backward compatibility.
+func NewRouterWithGoogle(
+	service *service.Service,
+	logger *slog.Logger,
+	rdb *cache.Client,
+	rateLimitMaxRequests int,
+	rateLimitWindow time.Duration,
+	cookieSecure bool,
+	googleConfig config.GoogleOAuthConfig,
 ) http.Handler {
 	router := chi.NewRouter()
 
@@ -41,7 +55,12 @@ func NewRouter(
 		swagger.DomID("swagger-ui"),
 	))
 
-	authHandler := handlers.NewAuthHandler(service, logger, cookieSecure)
+	var authHandler *handlers.AuthHandler
+	if googleConfig.Enabled {
+		authHandler = handlers.NewAuthHandlerWithGoogle(service, logger, cookieSecure, googleConfig)
+	} else {
+		authHandler = handlers.NewAuthHandler(service, logger, cookieSecure)
+	}
 	mediaHandler := handlers.NewMediaHandler(service, logger)
 	userHandler := handlers.NewUserHandler(service, logger)
 	postHandler := handlers.NewPostHandler(service, logger, rdb)
@@ -66,9 +85,26 @@ func NewRouter(
 				limited.Use(mid.RateLimitMiddleware(rdb, rateLimitMaxRequests, rateLimitWindow))
 				limited.Post("/register", authHandler.Register)
 				limited.Post("/login", authHandler.Login)
+				limited.Post("/google", authHandler.GoogleAuth)
 			})
 			r.Post("/refresh-token", authHandler.RefreshToken)
 			r.Post("/logout", authHandler.Logout)
+			r.Get("/google/login", authHandler.GoogleOAuthLogin)
+			r.Get("/google/callback", authHandler.GoogleOAuthCallback)
+			r.Get("/google/config", func(w http.ResponseWriter, r *http.Request) {
+				// Frontend probes this to decide whether to show the Google button and which client_id to use.
+				w.Header().Set("Content-Type", "application/json")
+				enabled := googleConfig.Enabled
+				clientID := ""
+				if enabled {
+					clientID = googleConfig.ClientID
+				}
+				enabledStr := "false"
+				if enabled {
+					enabledStr = "true"
+				}
+				_, _ = w.Write([]byte(`{"enabled":` + enabledStr + `,"client_id":"` + clientID + `"}`))
+			})
 		})
 		r.Get("/stream", realtimeHandler.Stream)
 

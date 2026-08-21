@@ -12,6 +12,7 @@ import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { toast } from "sonner";
 import * as z from 'zod';
+import GoogleSignInButton from '@/components/GoogleSignInButton';
 
 // Main Login Component
 const LoginPage: React.FC = () => {
@@ -123,6 +124,7 @@ const LoginPage: React.FC = () => {
       <StepFlow
         footer={
           <div className="space-y-3 border-t pt-6">
+            <GoogleSignInButton mode="signin" />
             <Button
               type="button"
               variant="secondary"

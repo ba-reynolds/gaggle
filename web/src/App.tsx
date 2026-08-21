@@ -30,6 +30,7 @@ const ListsPage = lazy(() => import('./pages/ListsPage'));
 const ListPage = lazy(() => import('./pages/ListPage'));
 const MessagesPage = lazy(() => import('./pages/MessagesPage'));
 const ConversationPage = lazy(() => import('./pages/ConversationPage'));
+const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage'));
 const LoginLabPage = lazy(() =>
   import('./pages/login-lab/LoginLabPage').then((m) => ({ default: m.LoginLabPage })),
 );
@@ -77,6 +78,7 @@ function App() {
                     <Route path="/login" element={<Suspense fallback={<AppSplash />}><LoginPage /></Suspense>} />
                     <Route path="/login-lab" element={<Suspense fallback={<AppSplash />}><LoginLabPage /></Suspense>} />
                     <Route path="/signup" element={<Suspense fallback={<AppSplash />}><SignupPage /></Suspense>} />
+                    <Route path="/auth/callback" element={<Suspense fallback={<AppSplash />}><AuthCallbackPage /></Suspense>} />
                     <Route path="/profile/:username" element={<SocialMediaLayout><Suspense fallback={<RouteFallback />}><ProfilePage /></Suspense></SocialMediaLayout>} />
                     <Route path="/profile/:username/followers" element={<SocialMediaLayout><Suspense fallback={<RouteFallback />}><FollowListPage listType="followers" /></Suspense></SocialMediaLayout>} />
                     <Route path="/profile/:username/following" element={<SocialMediaLayout><Suspense fallback={<RouteFallback />}><FollowListPage listType="following" /></Suspense></SocialMediaLayout>} />

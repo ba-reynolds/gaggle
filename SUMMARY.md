@@ -1,3 +1,57 @@
+# google-oauth — Google OAuth login (GIS + code flow) for Gaggle
+
+## What changed
+- **Backend — config** (`server/pkg/config/config.go`): new `GoogleOAuthConfig` with `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URL` (defaults to `http://localhost:2021/api/v1/auth/google/callback`), `GOOGLE_FRONTEND_REDIRECT_URL`/`FRONTEND_URL`, and `GOOGLE_ALLOW_UNVERIFIED_EMAIL`. `Enabled` is true only when client ID + secret are set; otherwise all `/auth/google/*` endpoints return 501/401 and the frontend hides the button. Production fail-fast still only checks `JWT_SECRET`/`DB_PASSWORD`.
+- **DB — migration `000025_add-google-oauth`**: adds `users.google_id VARCHAR(255)` (partial unique index `unique_google_id WHERE google_id IS NOT NULL`), `users.auth_provider VARCHAR(20) DEFAULT 'local'`, and makes `users.password` nullable (OAuth-only accounts have no password). Up/Down are idempotent (`IF NOT EXISTS`/`IF EXISTS`).
+- **Model** (`server/internal/models/user.go:9`, `auth.go:60`): `User` now carries `GoogleID *string` and `AuthProvider string`; `GoogleAuthRequest`/`GoogleAuthResponse`/`GoogleUserInfo` added. Password may be empty for OAuth users.
+- **Store** (`server/internal/store/user_store.go`, `store.go`): `GetByID/GetByEmail/GetByUsername/GetUserProfileByUsername` now scan `google_id`/`auth_provider` and handle `sql.NullString` for nullable password. `GetByEmail`/`GetByUsername` now use `LOWER()` for case-insensitive lookup (previously case-sensitive). `Create` now inserts `google_id`/`auth_provider` (NULL password when empty) and supports OAuth creation. New methods `GetByGoogleID` and `LinkGoogleID`.
+- **Auth helpers** (`server/internal/auth/google.go`, new): `VerifyGoogleIDToken` (calls `https://oauth2.googleapis.com/tokeninfo`, validates `aud`/`iss`/`sub`/`email`), `ExchangeGoogleCode`, `FetchGoogleUserInfo`, `BuildGoogleAuthURL`. All with 5-10s timeouts.
+- **Service** (`server/internal/service/auth_service.go`, `service.go`): `Login` now rejects OAuth-only accounts with a friendly "use Google" error. New `GoogleAuth(ctx, idToken, clientID, allowUnverified, language, ip, ua)` implements: (1) check existing `google_id`, (2) link by verified email if local account exists, (3) create new user with derived username (`email local-part` sanitized to `^[a-zA-Z0-9_]+`, 16-char cap, 5-attempt suffix loop), seeded `user_settings` and `display_name` from Google `name`, then mints access+refresh tokens. Helper `issueTokensForUser`, `sanitizeUsername`, `deriveUsername`.
+- **Handlers** (`server/internal/handlers/auth_handler.go`): `AuthHandler` now holds `googleConfig`; `NewAuthHandlerWithGoogle` added (old `NewAuthHandler` kept for compat). Three new handlers: `GoogleAuth` (POST /auth/google — GIS credential flow, sets refresh cookie, returns `{access_token, is_new_user}`), `GoogleOAuthLogin` (GET /auth/google/login — sets `oauth_state` cookie + redirects to Google), `GoogleOAuthCallback` (GET /auth/google/callback — validates state, exchanges code, verifies ID token or falls back to userinfo, calls `GoogleAuth`, sets cookie, redirects to `FRONTEND_URL/auth/callback?access_token=…`). `randomState` + `redirectToFrontend` helpers.
+- **Router** (`server/internal/api/router.go`): `NewRouter` now delegates to `NewRouterWithGoogle` (backward compat). New public routes: `POST /auth/google` (rate-limited), `GET /auth/google/login`, `GET /auth/google/callback`, `GET /auth/google/config` (returns `{enabled, client_id}` for frontend feature-flag). `cmd/api/main.go` now calls `NewRouterWithGoogle` with `cfg.GoogleConfig`.
+- **Frontend — API** (`web/src/api/auth.ts`, `web/src/types/api.ts`): `googleAuth`, `getGoogleConfig`, `GoogleAuthPayload/Response/ConfigResponse` types.
+- **Frontend — hooks** (`web/src/hooks/useAuth.ts`): `useGoogleAuthMutation` (sets token on success).
+- **Frontend — components** (`web/src/components/GoogleSignInButton.tsx`, new): fetches `GET /auth/google/config`; when `enabled` shows (1) GIS button (loads `https://accounts.google.com/gsi/client`, `google.accounts.id.initialize`/`renderButton`, callback calls `googleAuth` then hydrates `/users/me` and navigates) and (2) fallback "Continue with Google" button that does `window.location.href = /api/v1/auth/google/login` code-flow. Handles `signin` vs `signup` modes. Gracefully returns `null` when OAuth disabled.
+- **Frontend — callback** (`web/src/pages/AuthCallbackPage.tsx`, new): reads `?access_token&is_new_user` from backend redirect, calls `setToken`, hydrates `/users/me`, toasts, navigates to `/`. Shows error UI if token missing.
+- **Frontend — pages** (`web/src/pages/LoginPage.tsx:14`, `SignupPage.tsx:17`): inject `GoogleSignInButton` into footers (login: above test-sign-in; signup: between form and "already have account" with Or divider).
+- **Frontend — routing** (`web/src/App.tsx:34`): lazy `AuthCallbackPage` and route `/auth/callback`.
+- **Infra** (`compose.yaml:72`, `.env.example:31`): `api` env adds `GOOGLE_CLIENT_ID/SECRET/REDIRECT_URL/FRONTEND_REDIRECT_URL/ALLOW_UNVERIFIED_EMAIL/FRONTEND_URL`; `.env.example` documents how to create a Google OAuth client (console.cloud.google.com, redirect URI, JS origin).
+
+## Why
+Users currently must create a username/email/password. Google OAuth gives one-click sign-in, lowers friction, and is the expected "all that jazz" around modern auth (GIS One-Tap + classic code flow both supported). Existing accounts with the same verified email are linked instead of duplicated, and OAuth-only accounts cannot be password-logged-into (clear error message).
+
+## Files touched
+- `server/pkg/config/config.go`
+- `server/cmd/migrate/migrations/000025_add-google-oauth.{up,down}.sql`
+- `server/internal/models/user.go`, `server/internal/models/auth.go`
+- `server/internal/store/user_store.go`, `server/internal/store/store.go`
+- `server/internal/auth/google.go` (new), `server/internal/auth/jwt.go`/`crypto.go` (unchanged)
+- `server/internal/service/auth_service.go`, `server/internal/service/service.go`
+- `server/internal/handlers/auth_handler.go`
+- `server/internal/api/router.go`
+- `server/cmd/api/main.go`
+- `compose.yaml`, `.env.example`
+- `web/src/api/auth.ts`, `web/src/hooks/useAuth.ts`, `web/src/components/GoogleSignInButton.tsx` (new), `web/src/pages/AuthCallbackPage.tsx` (new), `web/src/pages/LoginPage.tsx`, `web/src/pages/SignupPage.tsx`, `web/src/App.tsx`
+
+## Verification
+- `nix shell nixpkgs#go nixpkgs#gcc --command "go vet ./... && go build ./..."` passes in `server/` (no output = success).
+- Frontend `web/src/components/GoogleSignInButton.tsx` handles disabled config (returns null), missing GSI script (falls back to redirect button), and pending state.
+- Backend probe `GET /api/v1/auth/google/config` returns `{enabled:false, client_id:""}` when env unset (frontend hides button) and `{enabled:true, client_id:"…"}` when set.
+- Manual flow (when env set): GIS One-Tap → `POST /auth/google` → cookie + `{access_token}` → hydrate `/users/me`; or "Continue with Google" → `GET /auth/google/login` → Google consent → `GET /auth/google/callback` → `303` to `/auth/callback?access_token=…` → hydrate.
+
+## Reviewer double-check
+- **Env wiring**: set `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` in `.env` (or on the box via GitHub secrets / `/srv/gaggle/.env`). If only one is set, `Enabled` stays false and handlers return 501 — verify both are present.
+- **Redirect URIs**: Google Cloud Console must list **exactly** `GOOGLE_REDIRECT_URL` (default `http://localhost:2021/api/v1/auth/google/callback` locally, `https://<domain>/api/v1/auth/google/callback` in prod) and JS origin `http://localhost:5173` (or prod domain). Mismatch yields `redirect_uri_mismatch`.
+- **Cookie Secure**: code-flow state cookie respects `COOKIE_SECURE` + `X-Forwarded-Proto` (same pattern as refresh cookie); test both http and https frontends.
+- **Username collision**: Google email local-parts are sanitized (`[^a-zA-Z0-9_]`→`_`); if `alice@example.com` exists and Google `alice2@gmail.com` tries `alice`, suffix loop (`alice1` …) is used — verify truncated 16-char edge (`verylongemailprefix@`).
+- **Linking**: if a local account with `bob@example.com` exists and Google login uses the same verified email, it links `google_id` and returns the existing user (not a duplicate). If `google_id` already linked to a different user, the second email match returns 401. Confirm `email_verified` gate: unverified Google emails are rejected unless `GOOGLE_ALLOW_UNVERIFIED_EMAIL=true`.
+- **Password-less login**: local `Login` now returns "use Google" for accounts with empty password — verify `alice@example.com`/`password123` still works and a Google-created account cannot log in via password form.
+- **Frontend flag**: `getGoogleConfig` is called on every mount of `GoogleSignInButton`; consider caching if needed.
+- **Token handling**: `GoogleAuth` reuses `issueTokensForUser` (same refresh-cookie rotation logic as normal login/register); verify `/auth/refresh-token` still rotates correctly for Google sessions.
+- **Migrations**: `000025` is the next free number (prev max `000024`) — watch parallel branches minting the same number; `down` drops index then columns and restores `password NOT NULL` (will fail if OAuth users exist with NULL passwords — expected).
+
+---
+
 # fix-feed-middle-click — Middle-click from the feed now actually opens a post + keyboard Enter + profile back-nav fix
 
 ## What changed

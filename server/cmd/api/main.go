@@ -74,7 +74,7 @@ func main() {
 	sampler := metrics.NewSampler(svc.Metrics, log, cfg.MetricsConfig.HostSampleInterval, time.Duration(cfg.MetricsConfig.RetentionDays)*24*time.Hour)
 	go sampler.Run(samplerCtx)
 
-	router := api.NewRouter(svc, log, rdb, cfg.RedisConfig.RateLimitMaxRequests, cfg.RedisConfig.RateLimitWindow, cfg.AuthConfig.CookieSecure)
+	router := api.NewRouterWithGoogle(svc, log, rdb, cfg.RedisConfig.RateLimitMaxRequests, cfg.RedisConfig.RateLimitWindow, cfg.AuthConfig.CookieSecure, cfg.GoogleConfig)
 
 	server := &http.Server{
 		Addr:         cfg.ServerConfig.ServerAddr,

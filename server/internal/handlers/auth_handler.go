@@ -1,13 +1,19 @@
 package handlers
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"log/slog"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/ba-reynolds/gaggle/internal/apperrors"
+	"github.com/ba-reynolds/gaggle/internal/auth"
 	"github.com/ba-reynolds/gaggle/internal/models"
 	"github.com/ba-reynolds/gaggle/internal/service"
 	"github.com/ba-reynolds/gaggle/internal/util"
+	"github.com/ba-reynolds/gaggle/pkg/config"
 )
 
 // AuthHandler handles HTTP requests for authentication
@@ -15,6 +21,7 @@ type AuthHandler struct {
 	service      *service.Service
 	logger       *slog.Logger
 	cookieSecure bool
+	googleConfig config.GoogleOAuthConfig
 }
 
 func NewAuthHandler(service *service.Service, logger *slog.Logger, cookieSecure bool) *AuthHandler {
@@ -22,6 +29,15 @@ func NewAuthHandler(service *service.Service, logger *slog.Logger, cookieSecure 
 		service:      service,
 		logger:       logger,
 		cookieSecure: cookieSecure,
+	}
+}
+
+func NewAuthHandlerWithGoogle(service *service.Service, logger *slog.Logger, cookieSecure bool, googleConfig config.GoogleOAuthConfig) *AuthHandler {
+	return &AuthHandler{
+		service:      service,
+		logger:       logger,
+		cookieSecure: cookieSecure,
+		googleConfig: googleConfig,
 	}
 }
 
@@ -300,4 +316,201 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		util.RespondWithAppError(w, apperrors.InternalServerError(err))
 		return
 	}
+}
+
+// GoogleAuth godoc
+//
+//	@Summary		Google OAuth login
+//	@Description	Verify a Google ID token (from GIS) and sign the user in or create an account
+//	@Tags			auth
+//	@Accept			json
+//	@Param			payload	body	models.GoogleAuthRequest	true	"Google credential"
+//	@Success		200		{object}	models.GoogleAuthResponse
+//	@Failure		400		{object}	models.Envelope{data=nil,error=apperrors.AppError}
+//	@Failure		401		{object}	models.Envelope{data=nil,error=apperrors.AppError}
+//	@Failure		500		{object}	models.Envelope{data=nil,error=apperrors.AppError}
+//	@Router			/auth/google [post]
+func (h *AuthHandler) GoogleAuth(w http.ResponseWriter, r *http.Request) {
+	if !h.googleConfig.Enabled {
+		util.RespondWithAppError(w, apperrors.InternalServerError(nil))
+		return
+	}
+	var payload models.GoogleAuthRequest
+	if err := util.ReadJSON(r, &payload); err != nil {
+		h.logger.Warn("invalid JSON payload in google auth", "error", err)
+		util.RespondWithAppError(w, apperrors.PayloadValidationError(err))
+		return
+	}
+	// Accept either id_token or credential (GIS uses credential)
+	idToken := payload.IdToken
+	if idToken == "" {
+		idToken = payload.Credential
+	}
+	if idToken == "" {
+		util.RespondWithAppError(w, apperrors.PayloadValidationError(nil))
+		return
+	}
+	user, accessToken, refreshToken, isNew, err := h.service.Auth.GoogleAuth(r.Context(), idToken, h.googleConfig.ClientID, h.googleConfig.AllowUnverifiedEmail, payload.Language, r.RemoteAddr, r.UserAgent())
+	if err != nil {
+		if appErr, ok := err.(*apperrors.AppError); ok {
+			util.RespondWithAppError(w, appErr)
+			return
+		}
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+	h.setRefreshTokenCookie(w, r, refreshToken.TokenString)
+	_ = user
+	resp := models.GoogleAuthResponse{
+		AccessToken: accessToken.TokenString,
+		IsNewUser:   isNew,
+	}
+	if err := util.RespondWithJson(w, http.StatusOK, resp); err != nil {
+		h.logger.Error("failed to write google auth response", "error", err)
+		util.RespondWithAppError(w, apperrors.InternalServerError(err))
+		return
+	}
+}
+
+// GoogleOAuthLogin godoc
+//
+//	@Summary		Start Google OAuth code flow
+//	@Description	Redirects the user to Google's consent screen
+//	@Tags			auth
+//	@Success		302
+//	@Router			/auth/google/login [get]
+func (h *AuthHandler) GoogleOAuthLogin(w http.ResponseWriter, r *http.Request) {
+	if !h.googleConfig.Enabled {
+		http.Error(w, "Google OAuth not configured", http.StatusNotImplemented)
+		return
+	}
+	state := randomState()
+	// Store state in short-lived cookie for CSRF protection
+	http.SetCookie(w, &http.Cookie{
+		Name:     "oauth_state",
+		Value:    state,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   h.cookieSecure && r.Header.Get("X-Forwarded-Proto") != "http",
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   600,
+	})
+	authURL := auth.BuildGoogleAuthURL(h.googleConfig.ClientID, h.googleConfig.RedirectURL, state)
+	http.Redirect(w, r, authURL, http.StatusFound)
+}
+
+// GoogleOAuthCallback godoc
+//
+//	@Summary		Google OAuth callback
+//	@Description	Handles the redirect from Google, creates/links the user, and redirects to the frontend with an access token
+//	@Tags			auth
+//	@Success		302
+//	@Router			/auth/google/callback [get]
+func (h *AuthHandler) GoogleOAuthCallback(w http.ResponseWriter, r *http.Request) {
+	if !h.googleConfig.Enabled {
+		http.Error(w, "Google OAuth not configured", http.StatusNotImplemented)
+		return
+	}
+	// Validate state
+	stateCookie, err := r.Cookie("oauth_state")
+	if err != nil {
+		h.logger.Warn("missing oauth_state cookie")
+		http.Error(w, "invalid state", http.StatusBadRequest)
+		return
+	}
+	queryState := r.URL.Query().Get("state")
+	if queryState == "" || queryState != stateCookie.Value {
+		h.logger.Warn("oauth state mismatch", "cookie", stateCookie.Value, "query", queryState)
+		http.Error(w, "invalid state", http.StatusBadRequest)
+		return
+	}
+	// Clear state cookie
+	http.SetCookie(w, &http.Cookie{Name: "oauth_state", Value: "", Path: "/", MaxAge: -1})
+
+	if errMsg := r.URL.Query().Get("error"); errMsg != "" {
+		h.logger.Warn("google oauth error", "error", errMsg)
+		http.Error(w, "google oauth: "+errMsg, http.StatusUnauthorized)
+		return
+	}
+	code := r.URL.Query().Get("code")
+	if code == "" {
+		http.Error(w, "missing code", http.StatusBadRequest)
+		return
+	}
+	// Exchange code for tokens
+	tokenResp, err := auth.ExchangeGoogleCode(r.Context(), h.googleConfig.ClientID, h.googleConfig.ClientSecret, h.googleConfig.RedirectURL, code)
+	if err != nil {
+		h.logger.Error("google code exchange failed", "error", err)
+		if appErr, ok := err.(*apperrors.AppError); ok {
+			util.RespondWithAppError(w, appErr)
+			return
+		}
+		http.Error(w, "code exchange failed", http.StatusUnauthorized)
+		return
+	}
+	var googleInfo *models.GoogleUserInfo
+	if tokenResp.IDToken != "" {
+		googleInfo, err = auth.VerifyGoogleIDToken(r.Context(), tokenResp.IDToken, h.googleConfig.ClientID)
+		if err != nil {
+			h.logger.Error("failed to verify id_token from code exchange", "error", err)
+			// fall back to userinfo via access token
+			googleInfo = nil
+		}
+	}
+	if googleInfo == nil && tokenResp.AccessToken != "" {
+		googleInfo, err = auth.FetchGoogleUserInfo(r.Context(), tokenResp.AccessToken)
+		if err != nil {
+			h.logger.Error("failed to fetch google userinfo", "error", err)
+			http.Error(w, "failed to fetch userinfo", http.StatusUnauthorized)
+			return
+		}
+		if !googleInfo.EmailVerified && !h.googleConfig.AllowUnverifiedEmail {
+			http.Error(w, "email not verified", http.StatusUnauthorized)
+			return
+		}
+	}
+	if googleInfo == nil {
+		http.Error(w, "failed to obtain google identity", http.StatusUnauthorized)
+		return
+	}
+	// Prefer the verified ID token path (re-uses the same service logic as the GIS credential flow).
+	// In practice Google always returns an id_token when scope includes openid.
+	if tokenResp.IDToken == "" {
+		http.Error(w, "missing id_token from google", http.StatusUnauthorized)
+		return
+	}
+	_, accessToken, refreshToken, isNew, err := h.service.Auth.GoogleAuth(r.Context(), tokenResp.IDToken, h.googleConfig.ClientID, h.googleConfig.AllowUnverifiedEmail, "", r.RemoteAddr, r.UserAgent())
+	if err != nil {
+		h.logger.Error("google callback auth failed", "error", err)
+		if appErr, ok := err.(*apperrors.AppError); ok {
+			util.RespondWithAppError(w, appErr)
+			return
+		}
+		http.Error(w, "auth failed", http.StatusUnauthorized)
+		return
+	}
+	h.setRefreshTokenCookie(w, r, refreshToken.TokenString)
+	h.redirectToFrontend(w, r, accessToken.TokenString, isNew)
+}
+
+func (h *AuthHandler) redirectToFrontend(w http.ResponseWriter, r *http.Request, accessToken string, isNew bool) {
+	base := h.googleConfig.FrontendRedirectURL
+	if base == "" {
+		base = "/"
+	}
+	// Ensure we don't double-slash
+	base = strings.TrimRight(base, "/")
+	frontendURL := base + "/auth/callback?access_token=" + url.QueryEscape(accessToken)
+	if isNew {
+		frontendURL += "&is_new_user=1"
+	}
+	http.Redirect(w, r, frontendURL, http.StatusFound)
+}
+
+func randomState() string {
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		return hex.EncodeToString([]byte("fallback-state-1234"))
+	}
+	return hex.EncodeToString(b)
 }

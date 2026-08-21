@@ -31,6 +31,8 @@ type Store struct {
 		GetByID(context.Context, int) (*models.User, error)
 		GetByEmail(context.Context, string) (*models.User, error)
 		GetByUsername(context.Context, string) (*models.User, error)
+		GetByGoogleID(context.Context, string) (*models.User, error)
+		LinkGoogleID(ctx context.Context, userID int, googleID string) error
 		GetUserProfileByUsername(ctx context.Context, username string) (*models.UserWithProfile, error)
 		UpdateUserProfile(ctx context.Context, tx *sql.Tx, user *models.UserWithProfile) error
 		GetSettings(ctx context.Context, userID int) (*models.UserSettings, error)

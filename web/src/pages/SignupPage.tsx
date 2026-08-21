@@ -16,6 +16,7 @@ import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 import * as z from 'zod';
+import GoogleSignInButton from '@/components/GoogleSignInButton';
 
 const SignupPage: React.FC = () => {
   const { t } = useI18n();
@@ -164,6 +165,17 @@ const SignupPage: React.FC = () => {
               >
                 {registerMutation.isPending ? t("auth.creatingAccount") : t("auth.signUp")}
               </Button>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">Or</span>
+                </div>
+              </div>
+
+              <GoogleSignInButton mode="signup" />
 
               <div className="text-center">
                 <p className="text-sm text-muted-foreground">

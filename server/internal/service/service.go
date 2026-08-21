@@ -25,6 +25,7 @@ type Service struct {
 	Auth     interface {
 		Login(ctx context.Context, identifier string, password string, ipAddress string, userAgent string) (*models.Token, *models.Token, error)
 		Register(ctx context.Context, username string, email string, password string, language string, ipAddress string, userAgent string) (*models.User, *models.Token, *models.Token, error)
+		GoogleAuth(ctx context.Context, idToken string, clientID string, allowUnverified bool, language string, ipAddress string, userAgent string) (*models.User, *models.Token, *models.Token, bool, error)
 		RefreshToken(ctx context.Context, refreshTokenString string, ipAddress string, userAgent string) (*models.Token, *models.Token, error)
 		Logout(ctx context.Context, tokenHash string) error
 		ValidateToken(tokenString string, tokenType auth.TokenType) (*jwt.Token, error)

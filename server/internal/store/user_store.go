@@ -22,17 +22,22 @@ type userStore struct {
 
 func (store *userStore) GetByID(ctx context.Context, id int) (*models.User, error) {
 	query := `
-		SELECT user_id, username, email, password, soft_deleted, soft_deleted_at, created_at, updated_at, is_admin, is_private
+		SELECT user_id, username, email, password, google_id, auth_provider, soft_deleted, soft_deleted_at, created_at, updated_at, is_admin, is_private
 		FROM users
 		WHERE user_id = $1
 	`
 
 	var user models.User
+	var pwd sql.NullString
+	var gid sql.NullString
+	var provider sql.NullString
 	err := store.db.QueryRowContext(ctx, query, id).Scan(
 		&user.ID,
 		&user.Username,
 		&user.Email,
-		&user.Password,
+		&pwd,
+		&gid,
+		&provider,
 		&user.SoftDeleted,
 		&user.SoftDeletedAt,
 		&user.CreatedAt,
@@ -40,6 +45,20 @@ func (store *userStore) GetByID(ctx context.Context, id int) (*models.User, erro
 		&user.IsAdmin,
 		&user.IsPrivate,
 	)
+	if err == nil {
+		if pwd.Valid {
+			user.Password = pwd.String
+		}
+		if gid.Valid {
+			user.GoogleID = &gid.String
+		}
+		if provider.Valid {
+			user.AuthProvider = provider.String
+		} else {
+			user.AuthProvider = "local"
+		}
+		return &user, nil
+	}
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, apperrors.NotFoundError(fmt.Sprintf("user with id %d not found", id), err)
@@ -58,17 +77,22 @@ func (store *userStore) GetByID(ctx context.Context, id int) (*models.User, erro
 
 func (store *userStore) GetByEmail(ctx context.Context, email string) (*models.User, error) {
 	query := `
-		SELECT user_id, username, email, password, soft_deleted, soft_deleted_at, created_at, updated_at, is_admin, is_private
+		SELECT user_id, username, email, password, google_id, auth_provider, soft_deleted, soft_deleted_at, created_at, updated_at, is_admin, is_private
 		FROM users
-		WHERE email = $1
+		WHERE LOWER(email) = LOWER($1)
 	`
 
 	var user models.User
+	var pwd sql.NullString
+	var gid sql.NullString
+	var provider sql.NullString
 	err := store.db.QueryRowContext(ctx, query, email).Scan(
 		&user.ID,
 		&user.Username,
 		&user.Email,
-		&user.Password,
+		&pwd,
+		&gid,
+		&provider,
 		&user.SoftDeleted,
 		&user.SoftDeletedAt,
 		&user.CreatedAt,
@@ -76,6 +100,20 @@ func (store *userStore) GetByEmail(ctx context.Context, email string) (*models.U
 		&user.IsAdmin,
 		&user.IsPrivate,
 	)
+	if err == nil {
+		if pwd.Valid {
+			user.Password = pwd.String
+		}
+		if gid.Valid {
+			user.GoogleID = &gid.String
+		}
+		if provider.Valid {
+			user.AuthProvider = provider.String
+		} else {
+			user.AuthProvider = "local"
+		}
+		return &user, nil
+	}
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, apperrors.NotFoundError(fmt.Sprintf("user with email %s not found", email), err)
@@ -94,17 +132,22 @@ func (store *userStore) GetByEmail(ctx context.Context, email string) (*models.U
 
 func (store *userStore) GetByUsername(ctx context.Context, username string) (*models.User, error) {
 	query := `
-		SELECT user_id, username, email, password, soft_deleted, soft_deleted_at, created_at, updated_at, is_admin, is_private
+		SELECT user_id, username, email, password, google_id, auth_provider, soft_deleted, soft_deleted_at, created_at, updated_at, is_admin, is_private
 		FROM users
-		WHERE username = $1
+		WHERE LOWER(username) = LOWER($1)
 	`
 
 	var user models.User
+	var pwd sql.NullString
+	var gid sql.NullString
+	var provider sql.NullString
 	err := store.db.QueryRowContext(ctx, query, username).Scan(
 		&user.ID,
 		&user.Username,
 		&user.Email,
-		&user.Password,
+		&pwd,
+		&gid,
+		&provider,
 		&user.SoftDeleted,
 		&user.SoftDeletedAt,
 		&user.CreatedAt,
@@ -112,6 +155,20 @@ func (store *userStore) GetByUsername(ctx context.Context, username string) (*mo
 		&user.IsAdmin,
 		&user.IsPrivate,
 	)
+	if err == nil {
+		if pwd.Valid {
+			user.Password = pwd.String
+		}
+		if gid.Valid {
+			user.GoogleID = &gid.String
+		}
+		if provider.Valid {
+			user.AuthProvider = provider.String
+		} else {
+			user.AuthProvider = "local"
+		}
+		return &user, nil
+	}
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, apperrors.NotFoundError(fmt.Sprintf("user with username %s not found", username), err)
@@ -128,15 +185,87 @@ func (store *userStore) GetByUsername(ctx context.Context, username string) (*mo
 	return &user, nil
 }
 
+func (store *userStore) GetByGoogleID(ctx context.Context, googleID string) (*models.User, error) {
+	query := `
+		SELECT user_id, username, email, password, google_id, auth_provider, soft_deleted, soft_deleted_at, created_at, updated_at, is_admin, is_private
+		FROM users
+		WHERE google_id = $1
+	`
+	var user models.User
+	var pwd sql.NullString
+	var gid sql.NullString
+	var provider sql.NullString
+	err := store.db.QueryRowContext(ctx, query, googleID).Scan(
+		&user.ID, &user.Username, &user.Email, &pwd, &gid, &provider,
+		&user.SoftDeleted, &user.SoftDeletedAt, &user.CreatedAt, &user.UpdatedAt,
+		&user.IsAdmin, &user.IsPrivate,
+	)
+	if err == nil {
+		if pwd.Valid {
+			user.Password = pwd.String
+		}
+		if gid.Valid {
+			user.GoogleID = &gid.String
+		}
+		if provider.Valid {
+			user.AuthProvider = provider.String
+		}
+		return &user, nil
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, apperrors.NotFoundError(fmt.Sprintf("user with google_id %s not found", googleID), err)
+	}
+	store.logger.Error("database query failed", "operation", "get_user_by_google_id", "googleID", googleID, "error", err)
+	return nil, apperrors.InternalServerError(err)
+}
+
+func (store *userStore) LinkGoogleID(ctx context.Context, userID int, googleID string) error {
+	query := `UPDATE users SET google_id = $1, auth_provider = CASE WHEN auth_provider = 'local' THEN 'local' ELSE auth_provider END WHERE user_id = $2 AND (google_id IS NULL OR google_id = $1)`
+	res, err := store.db.ExecContext(ctx, query, googleID, userID)
+	if err != nil {
+		errStr := err.Error()
+		if strings.Contains(errStr, "unique_google_id") || strings.Contains(errStr, "duplicate key") {
+			return apperrors.AlreadyExistsError("google account already linked", err)
+		}
+		store.logger.Error("database update failed", "operation", "link_google_id", "userID", userID, "error", err)
+		return apperrors.InternalServerError(err)
+	}
+	rows, _ := res.RowsAffected()
+	if rows == 0 {
+		// check if already linked to same id or user not found — treat as success if user exists
+		if _, err := store.GetByID(ctx, userID); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (store *userStore) Create(ctx context.Context, tx *sql.Tx, user *models.User) error {
+	// Support both legacy (username/email/password) and Google OAuth (google_id, optional password).
+	// If google_id is set, auth_provider becomes 'google' automatically.
+	provider := user.AuthProvider
+	if provider == "" && user.GoogleID != nil && *user.GoogleID != "" {
+		provider = "google"
+	}
+	if provider == "" {
+		provider = "local"
+	}
+	var passwordAny any = user.Password
+	if passwordAny == "" {
+		passwordAny = nil
+	}
+	var googleIDAny any
+	if user.GoogleID != nil && *user.GoogleID != "" {
+		googleIDAny = *user.GoogleID
+	}
 	queryCreateUser := `
-		INSERT INTO users (username, email, password)
-		VALUES ($1, $2, $3)
+		INSERT INTO users (username, email, password, google_id, auth_provider)
+		VALUES ($1, $2, $3, $4, $5)
 		RETURNING user_id
 	`
 
 	var id int
-	err := tx.QueryRowContext(ctx, queryCreateUser, user.Username, user.Email, user.Password).Scan(&id)
+	err := tx.QueryRowContext(ctx, queryCreateUser, user.Username, user.Email, passwordAny, googleIDAny, provider).Scan(&id)
 	if err != nil {
 		// Check if it's a unique constraint violation by searching the error string
 		errStr := err.Error()
@@ -194,7 +323,7 @@ func (store *userStore) Create(ctx context.Context, tx *sql.Tx, user *models.Use
 
 func (store *userStore) GetUserProfileByUsername(ctx context.Context, username string) (*models.UserWithProfile, error) {
 	query := `
-		SELECT u.user_id, u.username, u.email, u.password, u.soft_deleted, u.soft_deleted_at, u.created_at, u.updated_at, u.is_admin, u.is_private,
+		SELECT u.user_id, u.username, u.email, u.password, u.google_id, u.auth_provider, u.soft_deleted, u.soft_deleted_at, u.created_at, u.updated_at, u.is_admin, u.is_private,
 			   up.display_name, up.bio, up.profile_picture_uuid, up.banner_uuid, up.birth_date, up.location, up.website,
 			   up.followers_count, up.following_count
 		FROM users u
@@ -203,11 +332,16 @@ func (store *userStore) GetUserProfileByUsername(ctx context.Context, username s
 	`
 
 	var user models.UserWithProfile
+	var pwd sql.NullString
+	var gid sql.NullString
+	var provider sql.NullString
 	err := store.db.QueryRowContext(ctx, query, username).Scan(
 		&user.ID,
 		&user.Username,
 		&user.Email,
-		&user.Password,
+		&pwd,
+		&gid,
+		&provider,
 		&user.SoftDeleted,
 		&user.SoftDeletedAt,
 		&user.CreatedAt,
@@ -224,6 +358,18 @@ func (store *userStore) GetUserProfileByUsername(ctx context.Context, username s
 		&user.Profile.FollowersCount,
 		&user.Profile.FollowingCount,
 	)
+	if err == nil {
+		if pwd.Valid {
+			user.Password = pwd.String
+		}
+		if gid.Valid {
+			user.GoogleID = &gid.String
+		}
+		if provider.Valid {
+			user.AuthProvider = provider.String
+		}
+		return &user, nil
+	}
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, apperrors.NotFoundError(fmt.Sprintf("user profile for username %s not found", username), err)
