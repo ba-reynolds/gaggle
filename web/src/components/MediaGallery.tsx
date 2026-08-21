@@ -215,6 +215,8 @@ const SingleImage: React.FC<{
         alt={item.altText || "Media content"} 
         className={`w-full object-cover ${heightClass} ${clickable ? "cursor-pointer" : ""}`}
         onClick={onClick}
+        onAuxClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => { if (e.button === 1) e.stopPropagation(); }}
       />
       
       {editable && (

@@ -1,3 +1,37 @@
+# fix-feed-middle-click — Middle-click from the feed now actually opens a post
+
+## What changed
+- **Feed cards now handle middle-click correctly.** The `link-click-middle-open` branch added `onAuxClick => window.open` to `FeedPost`, but the feed still felt unresponsive: middle-clicking a card showed the browser's autoscroll overlay and no new tab opened, while the same action on the single-post page (where the page is shorter) sometimes appeared to work. Root fix: `FeedPost` Card now (1) prevents the autoscroll default on `mousedown` button 1, (2) handles `auxclick` (middle) in a dedicated `handleAuxClick` that `preventDefault()`s and `window.open(..., "_blank", "noopener")`, and (3) also handles `Ctrl/Cmd+click` via the left-click path so power users get a new-tab open. The old code routed both `onClick` and `onAuxClick` to the same handler without preventing the native middle-click scroll, which swallowed the event on long scrollable surfaces like the feed's infinite list.
+- **Inner controls no longer bubble middle-clicks to the card.** Every interactive child that already did `stopPropagation()` on `click` now also does it on `auxclick`/`mousedown` for button 1: the card's overflow menu, Reply/Repost/Like/Bookmark/Share actions, the quoted-post link, the "Replying to" link, the edited-history toggle, and image taps in `MediaGallery`. Middle-clicking a Like button therefore likes (if it ever would) without also opening the post in a new tab; middle-clicking a hashtag/mention/URL still opens that link, not the post — `ContentLinks` already stopped both `click` and `auxclick`.
+- **`MediaGallery` images stop middle-click propagation.** A `SingleImage` `<img>` now has `onAuxClick`/`onMouseDown` stops so a middle-click on an attached photo does not open the post underneath the viewer overlay.
+- No API/server changes.
+
+## Why
+Middle-click on a post is expected to behave like a browser link (open in new tab). The previous implementation only added a `window.open` in the click handler but did not suppress the browser's native middle-button autoscroll, which on a tall scrollable feed steals the gesture. The post page, being a shorter non-scrolling surface, masked the bug — users reported it "only works after you've opened the post". Ctrl/Cmd+click is the same expectation and was also not handled.
+
+## Files touched
+- `web/src/components/FeedPost.tsx` — split `handlePostClick` / `handleAuxClick` + `handleMouseDown` (autoscroll suppression + `noopener` + Ctrl/Meta), `onAuxClick={handleAuxClick}` + `onMouseDown={handleMouseDown}` on the Card, and `onAuxClick`/`onMouseDown` stops on all inner controls that already stopped `click`.
+- `web/src/components/MediaGallery.tsx` — `SingleImage` `<img>` gets `onAuxClick`/`onMouseDown` stops for button 1.
+- `web/src/components/ContentLinks.tsx` — unchanged logic (already correct); verified it stops both `click` and `auxclick` on hashtag/mention/url links so the card handler does not also fire.
+
+## Verification
+- `npm run build` (tsc + vite) passes; `npm run lint` 0 errors (only pre-existing 17 react-refresh warnings).
+- Playwright (host Chrome) against the isolated preview (`gaggle-fix-feed-middle-click`, Frontend http://localhost:5385):
+  - Feed `auxclick` button 1 on the card → `window.open('/post/72', '_blank')` called (previously swallowed by autoscroll).
+  - `mousedown` button 1 on the card → `preventDefault()` true (autoscroll suppressed).
+  - Ctrl+click on the card → new-tab open as well.
+  - Like/overflow/Reply/Share buttons `auxclick` does NOT open the post (stopped).
+  - Single post page `auxclick` also opens the correct `/post/:id` in a new tab.
+  - Left-click without modifiers still `navigate('/post/:id')` in-place (feed → post page).
+
+## Reviewer checks
+- Middle-click the empty card area on the feed and on `/post/:id` / profile / search / hashtag surfaces — all use the same `FeedPost` and should now open a new tab.
+- Middle-click a hashtag/mention/URL inside a post still opens that link, not the post.
+- Middle-click Like/Repost/Bookmark/Share does not open the post; nor does middle-clicking an attached image.
+- Check autoscroll: middle-click+drag on a feed card no longer shows the scroll compass.
+
+---
+
 # link-click-middle-open — Summary
 
 ## What changed

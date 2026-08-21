@@ -258,12 +258,36 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
   };
 
   const handlePostClick = (event: React.MouseEvent) => {
-    // Middle-click (button 1) opens in a new tab; let the browser handle it
+    // Ctrl/Cmd+click (left button with modifier) should open in a new tab.
+    // Middle-click is handled via onAuxClick; some browsers also deliver it here
+    // on older engines, so keep the button===1 guard.
     if (event.button === 1) {
-      window.open(`/post/${id}`, "_blank");
+      event.preventDefault();
+      window.open(`/post/${id}`, "_blank", "noopener");
+      return;
+    }
+    if (event.ctrlKey || event.metaKey) {
+      event.preventDefault();
+      window.open(`/post/${id}`, "_blank", "noopener");
       return;
     }
     navigate(`/post/${id}`);
+  };
+
+  const handleAuxClick = (event: React.MouseEvent) => {
+    if (event.button === 1) {
+      event.preventDefault();
+      window.open(`/post/${id}`, "_blank", "noopener");
+    }
+  };
+
+  const handleMouseDown = (event: React.MouseEvent) => {
+    // Prevent the browser's autoscroll on middle-click (the scroll-wheel
+    // "grab to scroll" overlay) which can swallow the subsequent auxclick
+    // and makes the card feel unresponsive in the feed.
+    if (event.button === 1) {
+      event.preventDefault();
+    }
   };
 
   useEffect(() => {
@@ -283,7 +307,8 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
       <Card
         className="w-full max-w-xl border border-border rounded-lg overflow-hidden mb-2 cursor-pointer transition-colors hover:bg-accent py-2 gap-2"
         onClick={handlePostClick}
-        onAuxClick={handlePostClick}
+        onAuxClick={handleAuxClick}
+        onMouseDown={handleMouseDown}
         tabIndex={0}
         role="link"
         aria-label={`Post by ${author.display_name}: ${content}`}
@@ -362,6 +387,8 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                       size="icon"
                       className="h-8 w-8 border border-transparent hover:border-border hover:bg-accent"
                       onClick={(e) => e.stopPropagation()}
+                      onAuxClick={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => { if (e.button === 1) e.stopPropagation(); }}
                     >
                       <MoreHorizontal className="h-4 w-4 text-primary" />
                     </Button>
@@ -419,6 +446,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                       <Link
                         to={`/post/${post.parent.id}`}
                         onClick={(e) => e.stopPropagation()}
+                        onAuxClick={(e) => e.stopPropagation()}
                         className="text-blue-500 hover:underline"
                       >
                         @{post.parent.author.username}
@@ -433,7 +461,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
               <p className="mt-2 whitespace-pre-wrap text-sm text-primary"><ContentLinks content={content} /></p>
               {post.poll && <PollCard poll={post.poll} postId={id} />}
               {post.news && <NewsCard news={post.news} />}
-{isOwnPost && post.edited_at && <button className="mt-2 text-xs text-muted-foreground hover:underline" onClick={(event) => { event.stopPropagation(); setHistoryOpen((open) => !open); }}>
+{isOwnPost && post.edited_at && <button className="mt-2 text-xs text-muted-foreground hover:underline" onClick={(event) => { event.stopPropagation(); setHistoryOpen((open) => !open); }} onAuxClick={(e) => e.stopPropagation()}>
                 {historyOpen ? t("post.hideEditHistory") : t("post.viewEditHistory")}
               </button>}
               {historyOpen && edits.data?.data.items.map((edit) => <div key={edit.id} className="mt-1 rounded border border-border p-2 text-xs text-muted-foreground">{edit.content_before}</div>)}
@@ -442,6 +470,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                 <Link
                   to={`/post/${post.quoted_post_id}`}
                   onClick={(e) => e.stopPropagation()}
+                  onAuxClick={(e) => e.stopPropagation()}
                   className="block"
                 >
                   <div className="mt-2 border border-border rounded-lg p-3 hover:bg-accent transition-colors">
@@ -471,6 +500,8 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                 e.stopPropagation();
                 setReplyDialogOpen(true);
               }}
+              onAuxClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => { if (e.button === 1) e.stopPropagation(); }}
             >
               <MessageCircle className="h-4 w-4" />
               <span className="hidden md:inline text-xs">{engagement.reply_count}</span>
@@ -488,6 +519,8 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                       : 'text-muted-foreground hover:text-green-500 hover:bg-green-50 hover:border-green-400'
                   }`}
                   onClick={(e) => e.stopPropagation()}
+                  onAuxClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => { if (e.button === 1) e.stopPropagation(); }}
                 >
                   <Repeat2 className="h-4 w-4" />
                   <span className="hidden md:inline text-xs">{formatCount(engagement.repost_count)}</span>
@@ -518,6 +551,8 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                 e.stopPropagation();
                 handleLike();
               }}
+              onAuxClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => { if (e.button === 1) e.stopPropagation(); }}
             >
               <Heart className="h-4 w-4" fill={engagement.is_liked ? "currentColor" : "none"} />
               <span className="hidden md:inline text-xs">{formatCount(engagement.like_count)}</span>
@@ -543,6 +578,8 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                       : 'text-muted-foreground hover:text-blue-500 hover:bg-blue-50 hover:border-blue-400'
                   }`}
                   onClick={handleBookmark}
+                  onAuxClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => { if (e.button === 1) e.stopPropagation(); }}
                 >
                   <Bookmark className="h-4 w-4" fill={engagement.is_bookmarked ? "currentColor" : "none"} />
                   <span className="hidden md:inline text-xs">{formatCount(engagement.bookmark_count)}</span>
@@ -554,6 +591,7 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                 side="bottom"
                 sideOffset={5}
                 onClick={(e) => e.stopPropagation()}
+                onAuxClick={(e) => e.stopPropagation()}
               >
                 {engagement.is_bookmarked && (
                   <>
@@ -626,6 +664,8 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
                 e.stopPropagation();
                 handleShare();
               }}
+              onAuxClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => { if (e.button === 1) e.stopPropagation(); }}
             >
               {isShared ? <Check className="h-4 w-4" /> : <Share className="h-4 w-4" />}
             </Button>
