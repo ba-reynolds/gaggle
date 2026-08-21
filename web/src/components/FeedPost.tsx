@@ -290,6 +290,15 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
     }
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "Enter") return;
+    // Only activate when the card itself is focused — an inner button/link
+    // already handles its own Enter/Space, and we must not navigate away.
+    if (event.target !== event.currentTarget) return;
+    event.preventDefault();
+    navigate(`/post/${id}`);
+  };
+
   useEffect(() => {
     return () => {
       if (shareTimeoutRef.current) {
@@ -305,10 +314,11 @@ const FeedPost: React.FC<PostProps> = ({ post }) => {
   return (
     <>
       <Card
-        className="w-full max-w-xl border border-border rounded-lg overflow-hidden mb-2 cursor-pointer transition-colors hover:bg-accent py-2 gap-2"
+        className="w-full max-w-xl border border-border rounded-lg overflow-hidden mb-2 cursor-pointer transition-colors hover:bg-accent py-2 gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         onClick={handlePostClick}
         onAuxClick={handleAuxClick}
         onMouseDown={handleMouseDown}
+        onKeyDown={handleKeyDown}
         tabIndex={0}
         role="link"
         aria-label={`Post by ${author.display_name}: ${content}`}
