@@ -2,6 +2,14 @@
 
 Running log of agent-branch merges into main. Newest on top.
 
+## 2026-08-21 — agent/google-oauth
+
+- Status: **clean** (fast-forward from 890d4be → 89cfefd; no conflicts)
+- Files merged: Google OAuth end-to-end — backend (`server/pkg/config/config.go` GoogleOAuthConfig, migration `000025_add-google-oauth.{up,down}.sql`, `server/internal/auth/google.go` tokeninfo/code-exchange/userinfo helpers, `auth_service.go` GoogleAuth find-or-link-or-create + random username fallback, `auth_handler.go` GIS credential + code-flow handlers, `router.go` /auth/google/* routes incl. config feature-flag), frontend (`GoogleSignInButton.tsx` proxy-click hidden GIS button, `AuthCallbackPage.tsx`, LoginPage/SignupPage buttons, i18n keys en/es/fr/de for the whole login flow), infra (`compose.yaml` GOOGLE_* env passthrough, `.env.example` docs)
+- `SUMMARY.md` auto-merged cleanly (google-oauth section prepended on branch; main had not moved since 890d4be). Migration duplicate check clean: 000025 is unique (prev max 000024). No other parallel branch minted it.
+- Live-tested on isolated preview gaggle-google-oauth (:5210/:2110): real Google signup created user `bautistaalvarezr` via GIS credential flow; refresh rotation verified.
+- Worktree removed, preview torn down after merge.
+
 ## 2026-08-20 — agent/link-click-middle-open (worktree removal — already merged)
 
 - Status: **clean — already up to date** (branch `agent/link-click-middle-open` at 9b536cf is ancestor of HEAD via merge `24ebb35` on 2026-08-20; `git merge --no-edit agent/link-click-middle-open` reports Already up to date, no new changes)
