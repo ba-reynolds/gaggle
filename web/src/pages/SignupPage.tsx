@@ -175,7 +175,7 @@ const SignupPage: React.FC = () => {
                 </div>
               </div>
 
-              <GoogleSignInButton mode="signup" />
+              <GoogleSignInButton />
 
               <div className="text-center">
                 <p className="text-sm text-muted-foreground">

@@ -1,32 +1,10 @@
-import { useEffect, useState, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
-import api from "@/lib/api";
+import { useEffect, useState } from "react";
 import { getGoogleConfig } from "@/api/auth";
-import { useGoogleAuthMutation } from "@/hooks/useAuth";
-import { useUser } from "@/contexts/UserContext";
 import { useI18n } from "@/contexts/I18nContext";
-import { detectBrowserLanguage } from "@/i18n";
-import type { Envelope, UserProfileResponse } from "@/types/api";
 import { Button } from "@/components/ui/button";
 
-// Minimal typing for Google Identity Services injected global
-declare global {
-  interface Window {
-    google?: {
-      accounts: {
-        id: {
-          initialize: (opts: { client_id: string; callback: (resp: { credential: string }) => void; auto_select?: boolean; cancel_on_tap_outside?: boolean }) => void;
-          renderButton: (el: HTMLElement, opts: Record<string, unknown>) => void;
-          prompt: () => void;
-        };
-      };
-    };
-  }
-}
-
 function useGoogleConfig() {
-  const [config, setConfig] = useState<{ enabled: boolean; client_id: string } | null>(null);
+  const [config, setConfig] = useState<{ enabled: boolean } | null>(null);
   useEffect(() => {
     let cancelled = false;
     getGoogleConfig()
@@ -34,7 +12,7 @@ function useGoogleConfig() {
         if (!cancelled) setConfig(c);
       })
       .catch(() => {
-        if (!cancelled) setConfig({ enabled: false, client_id: "" });
+        if (!cancelled) setConfig({ enabled: false });
       });
     return () => {
       cancelled = true;
@@ -43,79 +21,9 @@ function useGoogleConfig() {
   return config;
 }
 
-export default function GoogleSignInButton({ mode = "signin" }: { mode?: "signin" | "signup" }) {
+export default function GoogleSignInButton() {
   const config = useGoogleConfig();
-  const navigate = useNavigate();
-  const { setUser } = useUser();
   const { t } = useI18n();
-  const mutation = useGoogleAuthMutation();
-  const gsiContainerRef = useRef<HTMLDivElement>(null);
-  const [gsiReady, setGsiReady] = useState(false);
-
-  const handleCredential = useCallback(
-    async (credential: string) => {
-      try {
-        const res = await mutation.mutateAsync({ credential, language: detectBrowserLanguage() });
-        const me = await api.get<Envelope<UserProfileResponse>>("/users/me", {
-          headers: { Authorization: `Bearer ${res.data.access_token}` },
-        });
-        setUser({
-          username: me.data.data.username,
-          displayName: me.data.data.display_name,
-          profilePictureUUID: me.data.data.profile_picture_uuid ?? "",
-          isAdmin: me.data.data.is_admin ?? false,
-        });
-        const isNew = (res.data as unknown as { is_new_user?: boolean }).is_new_user;
-        toast.success(isNew ? t("auth.accountCreatedWithGoogle") : t("auth.signedInWithGoogle"));
-        navigate("/");
-      } catch {
-        toast.error(t("auth.googleSignInFailed"));
-      }
-    },
-    [mutation, navigate, setUser],
-  );
-
-  // Load GSI script when config indicates Google is enabled
-  useEffect(() => {
-    if (!config?.enabled || !config.client_id) return;
-    if (window.google?.accounts?.id) {
-      setGsiReady(true);
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.defer = true;
-    script.onload = () => setGsiReady(true);
-    script.onerror = () => setGsiReady(false);
-    document.head.appendChild(script);
-    return () => {
-      // keep script for future mounts
-    };
-  }, [config]);
-
-  // Initialize GIS and render a hidden Google button — our styled button will proxy-click it
-  useEffect(() => {
-    if (!gsiReady || !config?.client_id || !window.google || !gsiContainerRef.current) return;
-    try {
-      window.google.accounts.id.initialize({
-        client_id: config.client_id,
-        callback: (resp: { credential: string }) => {
-          void handleCredential(resp.credential);
-        },
-      });
-      gsiContainerRef.current.innerHTML = "";
-      window.google.accounts.id.renderButton(gsiContainerRef.current, {
-        theme: "outline",
-        size: "large",
-        width: 320,
-        text: mode === "signup" ? "signup_with" : "signin_with",
-        shape: "rectangular",
-      });
-    } catch {
-      // GIS init/render failed; fallback to redirect flow
-    }
-  }, [gsiReady, config, mode, handleCredential]);
 
   if (config === null) {
     return (
@@ -127,47 +35,17 @@ export default function GoogleSignInButton({ mode = "signin" }: { mode?: "signin
   }
 
   const handleGoogleClick = () => {
-    // Proxy click to the hidden GIS button — keeps our custom styling but uses Google's credential flow.
-    // Falls back to code-flow redirect if GIS not ready (requires redirect URI whitelisted).
-    if (gsiContainerRef.current) {
-      const googleBtn = gsiContainerRef.current.querySelector<HTMLElement>('div[role="button"]');
-      if (googleBtn) {
-        googleBtn.click();
-        return;
-      }
-      // Some GIS versions render an iframe; try the container itself
-      const fallback = gsiContainerRef.current.firstElementChild as HTMLElement | null;
-      if (fallback) {
-        (fallback as HTMLElement).click();
-        return;
-      }
-    }
-    if (gsiReady && window.google?.accounts?.id) {
-      try {
-        window.google.accounts.id.prompt();
-        return;
-      } catch {
-        // fall through
-      }
-    }
     const base = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "/api/v1";
     window.location.href = `${base}/auth/google/login`;
   };
 
   return (
     <div className="space-y-3">
-      {/* hidden GIS button — off-screen but still rendered so we can proxy-click it */}
-      <div
-        ref={gsiContainerRef}
-        className="absolute left-[-9999px] top-0 h-0 w-[320px] overflow-hidden opacity-0 pointer-events-none"
-        aria-hidden="true"
-      />
       <Button
         type="button"
         variant="outline"
         className="w-full"
         onClick={handleGoogleClick}
-        disabled={mutation.isPending}
       >
         <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -177,7 +55,6 @@ export default function GoogleSignInButton({ mode = "signin" }: { mode?: "signin
         </svg>
         {t("auth.continueWithGoogle")}
       </Button>
-      {mutation.isPending && <p className="text-center text-xs text-muted-foreground">{t("auth.verifyingWithGoogle")}</p>}
     </div>
   );
 }

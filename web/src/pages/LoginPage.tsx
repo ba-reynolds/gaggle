@@ -124,7 +124,7 @@ const LoginPage: React.FC = () => {
       <StepFlow
         footer={
           <div className="space-y-3 border-t pt-6">
-            <GoogleSignInButton mode="signin" />
+            <GoogleSignInButton />
             <Button
               type="button"
               variant="secondary"
