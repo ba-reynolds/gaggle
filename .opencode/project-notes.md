@@ -1,3 +1,32 @@
+## Domain + HTTPS + OAuth launch (main session)
+- **Box IP is now the Elastic IP `54.86.19.223`** (was auto-assigned
+  100.31.118.41; `aws_eip.gaggle` in infra/main.tf). DEPLOY_HOST GitHub secret
+  must be updated to the new IP or every deploy SSHes into a dead address.
+- **deploy.yml printf must list EVERY secret explicitly** — step env vars do
+  NOT cross plain `ssh bash -s < apply.sh`; only what's written into
+  /tmp/gaggle-env reaches the box. The four GAGGLE_GOOGLE_* vars were exported
+  but never shipped → prod OAuth silently disabled (fixed).
+- **`up -d --force-recreate api web` SKIPS certbot entirely** — its entrypoint
+  bakes HTTPS_DOMAIN at create time, so a new domain never reached it. apply.sh
+  now recreates certbot too (post-issuance recreate = renew path, harmless;
+  pre-issuance retry on DNS-propagation flake = desired).
+- **web healthcheck MUST probe https with --no-check-certificate** now that
+  port 80 force-redirects: busybox wget exits non-zero on 301 → http probes
+  made every healthy container permanently unhealthy → all deploys die at
+  `up --wait`. Verified flag works against live box via `docker run busybox`.
+- Force-HTTPS nginx pattern verified behaviorally (stub-cert container): :80 =
+  ACME-only + `return 301 https://$host$request_uri`; HSTS needs REPEATING
+  inside any location that declares its own add_header (/assets/, image cache)
+  — server-level add_header doesn't inherit there, and without `always` it's
+  dropped from 4xx/5xx responses.
+- Testing prod nginx.conf standalone: mount it as `/etc/nginx/conf.d/
+  default.conf` (Dockerfile replaces the stock one), else stock default.conf
+  steals Host:localhost traffic and you test the wrong config.
+- Terraform on NixOS: `NIXPKGS_ALLOW_UNFREE=1 nix shell --impure
+  nixpkgs#terraform` (BSL license). EIP association changed user_data hash in
+  plan — pre-existing bootstrap drift, updates in-place, no reboot.
+
+---
 ## Message pages: don't depend on the layout column for height (agent/message-page-fixes)
 - The main column is `min-h-screen self-start` (settings-page-bg-split fix) — a
   child `h-full` there resolves to AUTO (indefinite height), so a long DM thread

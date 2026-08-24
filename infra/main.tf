@@ -88,6 +88,19 @@ resource "aws_instance" "gaggle" {
   }
 }
 
+# Elastic IP so the box's public address survives stop/start — a DNS A record
+# (e.g. gaggle.land) would silently break every restart without it.
+# Associating it REPLACES the auto-assigned public IP exactly once, at apply
+# time; from then on the address is permanent for the instance's lifetime.
+resource "aws_eip" "gaggle" {
+  instance = aws_instance.gaggle.id
+  domain   = "vpc"
+
+  tags = {
+    Name = "gaggle-web"
+  }
+}
+
 resource "aws_ebs_volume" "data" {
   availability_zone = aws_instance.gaggle.availability_zone
   size              = var.data_volume_size

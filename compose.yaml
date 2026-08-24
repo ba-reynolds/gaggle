@@ -138,12 +138,12 @@ services:
       # sailing through to the deploy's own gate.
       # TLS itself is guaranteed: the entrypoint either mounts a real cert or
       # generates the self-signed fallback before nginx boots, so nginx
-      # refusing to start is caught here via HTTP.
+      # refusing to start is caught here via HTTPS.
       # Use 127.0.0.1, not localhost: nginx binds IPv4 only and "localhost"
       # resolves to ::1 inside the container (Docker /etc/hosts), which busybox
       # wget can't reach → a false-unhealthy check. busybox wget exits non-zero
       # on HTTP errors (403/404), which is what flips the health state.
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/swagger/doc.json >/dev/null 2>&1 && wget -qO- http://127.0.0.1/favicon.ico >/dev/null 2>&1 && wget -qO- http://127.0.0.1/gaggle-goose.png >/dev/null 2>&1"]
+      test: ["CMD-SHELL", "wget -qO- --no-check-certificate https://127.0.0.1/swagger/doc.json >/dev/null 2>&1 && wget -qO- --no-check-certificate https://127.0.0.1/favicon.ico >/dev/null 2>&1 && wget -qO- --no-check-certificate https://127.0.0.1/gaggle-goose.png >/dev/null 2>&1"]
       interval: 5s
       timeout: 5s
       retries: 20

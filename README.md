@@ -192,7 +192,11 @@ missing (check the run's log for `DEPLOY_HOST secret not set`).
 | `GAGGLE_DB_USER` | e.g. `gaggle` |
 | `GAGGLE_DB_PASSWORD` | Long random string |
 | `GAGGLE_DEPLOY_KEY` | Private half of a **GitHub repo deploy key** (Settings → Deploy keys, read-only) registered on `ba-reynolds/gaggle` — the box checks the repo out with it. Its public half is NOT the `deploy_public_key` baked into the box's bootstrap; that keypair is only for GitHub Actions SSHing in as `deploy@` |
-| `GAGGLE_HTTPS_DOMAIN` (optional) | Domain pointing at the box's public IP; enables the certbot service to provision a real Let's Encrypt cert on 443. Omit/empty to keep the self-signed fallback. |
+| `GAGGLE_HTTPS_DOMAIN` (optional) | Domain pointing at the box's public IP (e.g. `gaggle.land`); enables the certbot service to provision a real Let's Encrypt cert on 443. Omit/empty to keep the self-signed fallback. |
+| `GAGGLE_GOOGLE_CLIENT_ID` (optional) | Google OAuth client ID — enables "Continue with Google". See "Google OAuth setup" below. |
+| `GAGGLE_GOOGLE_CLIENT_SECRET` (optional) | Matching client secret. Both must be set or the button stays hidden (`googleConfig.Enabled`). |
+| `GAGGLE_GOOGLE_REDIRECT_URL` (optional) | `https://<domain>/api/v1/auth/google/callback` — must match the redirect URI whitelisted in Google Console. |
+| `GAGGLE_FRONTEND_URL` (optional) | `https://<domain>` — where `/auth/google/callback` sends the finished user. Defaults to `https://$GAGGLE_HTTPS_DOMAIN`. |
 
 **First deploy + smoke test:** trigger `workflow_dispatch` on the Deploy
 workflow, then verify: `ssh deploy@<ip> docker compose -f /srv/gaggle/compose.yaml -f /srv/gaggle/compose.prod.yaml ps` shows db/redis/api/web up; browse `http://<ip>`; sign up a test user; post with media; `docker compose restart` and confirm posts + media persist (EBS-backed). HTTPS on 443 is live (self-signed cert) from the start. The deploy itself now rebuilds the images uncached and health-checks the fixed-name public assets (`/favicon.ico`, `/gaggle-goose.png`) so a stale/corrupt `web` layer can't silently 403 the favicon + sidebar logo again.
@@ -212,23 +216,26 @@ running container), recreate the web container explicitly:
 **Current state:** the app is served over TLS. The box serves **HTTPS on
 port 443** (already open in the security group + host firewall) using a
 self-signed certificate by default, so `https://<public-ip>` works from any
-browser (it will show one warning until you accept the cert). Plain **HTTP
-on port 80** still works, which the ACME (Let's Encrypt) HTTP-01 validation
-uses, and keeps the box reachable while no domain exists.
+browser (it will show one warning until you accept the cert). **Port 80 is
+force-HTTPS now**: everything except the ACME (`/.well-known/acme-challenge/`)
+validation path 301-redirects to https, so plain `http://<host>` no longer
+serves the app directly. The box's public IP is an **Elastic IP**
+(`aws_eip.gaggle` in `infra/main.tf`) — it survives stop/start, which a DNS A
+record requires.
 
-**Buying a domain → real cert (minimal changes):**
+**Buying a domain → real cert (what was done for gaggle.land):**
 
-1. Point a DNS **A record** at the box's public IP (any registrar — no extra
-   AWS setup needed).
-2. Set the `GAGGLE_HTTPS_DOMAIN` GitHub secret to your domain (e.g.
-   `gaggle.example.com`) and deploy. Alternatively run the certbot image once
-   on the box directly (see below). The compose `certbot` service auto-runs
-   `certbot certonly --webroot` on start and renews on a 12h loop.
-3. Once the cert is issued, nginx serves the real cert on 443 (the
-   self-signed fallback is only used when no cert exists yet).
-4. Optional but recommended: switch health checks / traffic to HTTPS only and
-   add an HTTP→HTTPS redirect in `web/nginx.conf` (out of scope to keep HTTP
-   working during the no-domain pilot).
+1. `terraform apply` in `infra/` attached an Elastic IP (one-time IP change;
+   update the `DEPLOY_HOST` GitHub secret if the address moved).
+2. At the registrar (Namecheap): Advanced DNS → delete parking records, add
+   an **A Record** `@` → the Elastic IP (TTL Automatic). Verify with
+   `dig +short gaggle.land` BEFORE deploying — Let's Encrypt resolves the
+   domain at issuance time.
+3. Set the `GAGGLE_HTTPS_DOMAIN` GitHub secret to your domain and deploy. The
+   deploy recreates the `certbot` container with the new domain; its
+   entrypoint runs `certbot certonly --webroot` (HTTP-01 through nginx's port
+   80) and then renews on a 12h loop. Once issued, nginx serves the real cert
+   on 443 (the self-signed fallback is only used when no cert exists yet).
 
 Manual one-shot issuance on the box (if you skipped the GitHub secret):
 
@@ -237,12 +244,28 @@ ssh deploy@<ip>
 cd /srv/gaggle
 docker compose run --rm certbot \
   certbot certonly --cert-name gaggle --webroot -w /var/www/certbot \
-  -d gaggle.example.com --non-interactive --agree-tos -m you@example.com
+  -d gaggle.land --non-interactive --agree-tos -m you@example.com
 docker compose restart web certbot
 ```
 
 Renewals run automatically on the 12h loop; after a renewal the `web`
 container needs a reload to serve the new cert, e.g.
 `docker compose restart web` (also applied on every deploy).
+
+**Google OAuth setup ("Continue with Google"):**
+
+1. <https://console.cloud.google.com> → create/select a project → **APIs &
+   Services → OAuth consent screen**: External, fill app name + support
+   email. Staying in "Testing" is fine — add your Google account as a test
+   user.
+2. **Credentials → Create credentials → OAuth client ID → Web application**:
+   - Authorized JavaScript origins: `https://gaggle.land` (the GIS button
+     flow in `GoogleSignInButton.tsx` needs this)
+   - Authorized redirect URIs: `https://gaggle.land/api/v1/auth/google/callback`
+     (the code-flow fallback: `/auth/google/login` → `/auth/google/callback`)
+3. Set the four `GAGGLE_GOOGLE_*` / `GAGGLE_FRONTEND_URL` GitHub secrets from
+   the table above and redeploy. OAuth turns on when client ID + secret are
+   both present (`config.go`: `googleConfig.Enabled`); the login/signup pages
+   hide the button until then.
 
 db/redis are not exposed outside the box.

@@ -130,7 +130,17 @@ deploy() {
   # The web healthcheck now also probes the static assets, so a broken dist is
   # caught here (container stays unhealthy → up --wait fails) rather than at
   # the gate after the new container is already live.
-  docker compose -f compose.yaml -f compose.prod.yaml up -d --wait --wait-timeout 300 --force-recreate api web
+  #
+  # certbot MUST be recreated too: its entrypoint bakes HTTPS_DOMAIN in as
+  # container env at create time, and `up` only recreates services whose
+  # config hash changed when named explicitly... but scoping to specific
+  # services SKIPS everything else entirely. Without this, setting/changing
+  # GAGGLE_HTTPS_DOMAIN would never reach a sleeping certbot container.
+  # Recreating is safe after first issuance: live/gaggle becomes a symlink,
+  # so the entrypoint takes the renew-on-12h-loop path (no-op until expiry);
+  # before issuance it (re)attempts certonly — which is exactly the retry
+  # we want when a previous attempt failed on not-yet-propagated DNS.
+  docker compose -f compose.yaml -f compose.prod.yaml up -d --wait --wait-timeout 300 --force-recreate api web certbot
 }
 
 health_check() {
@@ -141,18 +151,20 @@ health_check() {
   # TLS is self-signed until a real cert is issued, so curl skips
   # verification for the HTTPS probes.
   curl -kfsS https://localhost/swagger/doc.json > /dev/null || return 1
-  # Fixed-name public assets must actually be served on BOTH listeners: users
-  # browse plain http://<ip> (and the deploy gateway curls https). The SPA
-  # fallback would return 200 for a MISSING file, so assert the real HTTP
-  # status via -f (fails on >= 400 — catches the nginx 403 this box keeps
-  # serving).
-  for proto in http https; do
-    for p in /favicon.ico /gaggle-goose.png; do
-      if ! curl -kfsS -o /dev/null "$proto://localhost$p"; then
-        echo ">> static asset $p is not being served over $proto (nginx 403/404?)" >&2
-        return 1
-      fi
-    done
+  # Force-HTTPS policy: everything is served on HTTPS (curl -k tolerates the
+  # self-signed fallback), and port 80 must 301-redirect. The SPA fallback
+  # would return 200 for a MISSING file, so assert the real HTTP status via
+  # -f (fails on >= 400 — catches the nginx 403 this box kept serving).
+  for p in /favicon.ico /gaggle-goose.png; do
+    if ! curl -kfsS -o /dev/null "https://localhost$p"; then
+      echo ">> static asset $p is not being served over https (nginx 403/404?)" >&2
+      return 1
+    fi
+    code=$(curl -ksS -o /dev/null -w '%{http_code}' "http://localhost$p" || true)
+    if [ "$code" != "301" ]; then
+      echo ">> http://localhost$p expected 301 redirect, got ${code:-none}" >&2
+      return 1
+    fi
   done
 }
 

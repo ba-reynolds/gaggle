@@ -1,6 +1,6 @@
 output "public_ip" {
-  description = "Public IP of the gaggle box (set as the DEPLOY_HOST secret)"
-  value       = aws_instance.gaggle.public_ip
+  description = "Public IP of the gaggle box (set as the DEPLOY_HOST secret). This is the Elastic IP: stable across stop/start."
+  value       = aws_eip.gaggle.public_ip
 }
 
 output "instance_id" {
