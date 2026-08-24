@@ -66,6 +66,10 @@ services:
             echo "Real cert found, skipping issuance"
           else
             echo "No real cert (or self-signed fallback), issuing..."
+            # Remove the self-signed fallback so certbot doesn't bail with
+            # "live directory exists for gaggle" — it sees the directory
+            # created by the web entrypoint and assumes it's already managed.
+            rm -rf /etc/letsencrypt/live/gaggle /etc/letsencrypt/archive/gaggle /etc/letsencrypt/renewal/gaggle.conf
             certbot certonly --cert-name gaggle --webroot -w /var/www/certbot -d "$HTTPS_DOMAIN" --non-interactive --agree-tos --force-renewal || true
           fi
           while :; do
