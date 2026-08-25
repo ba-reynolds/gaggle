@@ -1,3 +1,12 @@
+# Build env quirks
+- Docker image builds (`web` stage) run as root and leave root-owned
+  `web/node_modules/.tmp/` + `web/dist/assets/` behind — a later local
+  `npm run build` dies with EACCES (tsc buildinfo / vite emptyOutDir). Fix
+  without sudo: `docker run --rm -v <dir>:/f alpine chown -R "$(id -u):$(id -g)" /f`.
+- Host has no `make`, `go`, or `npm` on PATH: use `nix shell nixpkgs#go`,
+  `nix shell nixpkgs#nodejs`; backend tests via the Makefile's route:
+  `docker compose --profile tools run --rm tools go test ./...`.
+
 # Link previews / OG tags (og-preview)
 - WhatsApp/X/Slack crawlers do NOT run JS — the Vite SPA's `index.html` head is
   all they see. Static OG tags live in `web/index.html`; `web/public/og-image.png`
