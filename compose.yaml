@@ -75,6 +75,10 @@ services:
       JWT_REFRESH_TOKEN_EXPIRATION_TIME: 1296000
       COOKIE_SECURE: "false"
       INVITATION_DURATION: 86400
+      # Mail intake shared secret (x-orchid-secret). Must match the Cloudflare
+      # Email Worker's INTAKE_SECRET and orchid's ORCHID_MAIL_SINK_TOKEN.
+      # Empty in the api config = all intake requests rejected (fail closed).
+      INTAKE_SECRET: ${INTAKE_SECRET:-dev-mail-intake-secret}
       # Google OAuth (optional; when unset the /auth/google endpoints return 501 and the frontend hides the button)
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}

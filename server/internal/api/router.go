@@ -73,6 +73,19 @@ func NewRouterWithGoogle(
 	adminHandler := handlers.NewAdminHandler(service, logger)
 	listHandler := handlers.NewListHandler(service, logger)
 	dmHandler := handlers.NewDmHandler(service, logger)
+	mailHandler := handlers.NewMailHandler(service, logger)
+
+	// Mail intake (external contract, NOT under /api/v1): the Cloudflare Email
+	// Worker POSTs raw MIME here and orchid's mail MCP reads it back. Gated on
+	// the shared x-orchid-secret header, not user auth. Kept off the /api/v1
+	// tree so the public SPA surface and this machine-to-machine contract stay
+	// independent.
+	router.Group(func(mail chi.Router) {
+		mail.Use(mid.OrchidSecretMiddleware(service.Config.MailIntakeSecret))
+		mail.Post("/mail/inbound", mailHandler.Inbound)
+		mail.Get("/mails", mailHandler.ListMails)
+		mail.Get("/mails/{mailID}", mailHandler.GetMail)
+	})
 
 	// API v1 routes
 	router.Route("/api/v1", func(r chi.Router) {

@@ -1,3 +1,89 @@
+# mail-intake-api — external mail intake contract for orchid (Cloudflare Email Worker → API)
+
+## What changed
+Implements the gaggle.land mail-intake contract so orchid's mail MCP
+(`coordinator/mail_mcp.py`) can read real inbound mail. Same routes/response
+shapes as the local dev sink (`mailsink.py`), plus `x-orchid-secret` auth.
+
+- **Routes** (top-level, deliberately NOT under `/api/v1`; mounted in
+  `server/internal/api/router.go` behind new `OrchidSecretMiddleware`):
+  - `POST /mail/inbound` — raw MIME (`content-type: message/rfc822`) from the
+    Cloudflare Email Worker. Prefers envelope recipient from `x-orig-to`
+    header over the MIME `To:`; parses subject/from/body; dedupes on
+    Message-ID via unique index. ALWAYS answers 2xx — even garbage or
+    oversized bodies get `200 {"received":false,...}` because any non-2xx
+    makes Cloudflare BOUNCE the original sender's mail.
+  - `GET /mails?to=<substring>&limit=<n>` — plain (non-envelope) JSON
+    `{"mails":[{id,ts,from_addr,to_addr,subject}]}`, newest-first by ts,
+    limit default 20 / max 200, case-insensitive substring match with
+    LIKE-escaping. Body is intentionally excluded from list view.
+  - `GET /mails/{mailID}` — full record incl. body; unknown id → 404.
+  Error responses are plain `{"error":"..."}` (no `{data,error}` envelope) —
+  this is an external machine contract, not SPA surface.
+- **MIME parsing** (`server/internal/handlers/mail_handler.go`, new):
+  RFC-2047 encoded headers/addresses, multipart walk to FIRST non-attachment
+  `text/plain` part (nested multiparts included), quoted-printable/base64
+  transfer decoding at top level (multipart parts decoded by the reader),
+  charset→UTF-8 conversion via `x/text/ianaindex` (unknown charsets fall back
+  to raw bytes instead of dropping the mail). Trailing CRLF/LF trimmed so
+  bodies are uniform across encoding paths. 12-hex-char ids from crypto/rand;
+  ts = fixed-width ISO-8601 UTC millis (lexicographic == chronological).
+- **Auth** (`server/internal/middleware/mail_secret.go`, new): constant-time
+  compare of `x-orchid-secret`. FAILS CLOSED when unconfigured (empty secret →
+  every request 401). Secret never logged or echoed.
+- **DB** — migration `000026_add_mail_intake.{up,down}.sql`: table
+  `mail_messages (id TEXT PK, ts TEXT NOT NULL, from_addr, to_addr, subject,
+  body, message_id)` mirroring `logs/mail/mail.db`; UNIQUE index on
+  `message_id` (Postgres allows multiple NULLs, so mails without a
+  Message-ID never collide). Store/service follow the existing sub-store
+  pattern (`store.Mail`, `service.Mail`).
+- **Config**: `AppConfig.MailIntakeSecret` ← env `INTAKE_SECRET`
+  (`server/pkg/config/config.go`). compose.yaml passes
+  `INTAKE_SECRET: ${INTAKE_SECRET:-dev-mail-intake-secret}`.
+- **nginx** (`web/nginx.conf`): new `location /mail/` + `location /mails`
+  proxy blocks on BOTH vhosts' 443 server (the :80 vhost stays force-301 —
+  production traffic is HTTPS). `client_max_body_size 2m` sits above the
+  api's own ~1 MB cap so an oversized body reaches the handler (200) instead
+  of nginx 413 (which would bounce). SPA fallback untouched.
+- **Deploy plumbing**: `deploy.yml` ships new GitHub secret
+  `GAGGLE_INTAKE_SECRET` through the printf → `/tmp/gaggle-env` channel;
+  `apply.sh` REQUIRES it (`:?` check — a missing secret would 401 every
+  delivery and Cloudflare turns that into hard bounces of real mail) and
+  writes `INTAKE_SECRET=` into `/srv/gaggle/.env`. `.env.example` documents
+  the dev default.
+
+## Why
+Another app (orchid agents) needs to read real inbound mail for
+account-verification flows against `*@gaggle.land` addresses. This repo owns
+the receiving backend; the Cloudflare Email Worker + MX are provisioned
+separately and POST here.
+
+## Verification
+- New integration tests `server/internal/handlers/mail_handler_test.go`
+  (auth gate incl. fail-closed, store+dedupe, filter/limit/order, garbage &
+  oversize still 200, RFC2047/latin-1-QP/base64/multipart/attachment-skip/
+  To-fallback/LIKE-metachar escaping). Full suite green: `go test ./...`,
+  `go vet ./...` clean; web image build ran tsc+vite (no JS changes).
+- Live E2E on the isolated preview stack through BOTH layers: direct API
+  (:2147) and nginx 443 vhost (in-container, mirrors prod path) — 401s,
+  delivery, redelivery dedupe (`duplicate:true`), exact list shape without
+  body, full record with decoded text/plain, 404, garbage→200 all confirmed.
+
+## Reviewer notes / action items
+- **GitHub secret required after merge**: add `GAGGLE_INTAKE_SECRET` to the
+  repo's Actions secrets BEFORE deploying this, or apply.sh fails fast
+  (intentional). It must equal the Worker's `INTAKE_SECRET` and orchid's
+  `ORCHID_MAIL_SINK_TOKEN`.
+- `golang.org/x/text` moved from indirect → direct dependency (go.mod/go.sum).
+- Retention/cleanup job (drop rows older than N days) intentionally NOT built
+  yet — spec lists it as a later add. Stored bodies are verification-code
+  sensitive; table is not exposed anywhere else in the app.
+- Envelope MAIL FROM isn't sent by today's Worker (only `x-orig-to`), so
+  `from_addr` falls back to the MIME `From:` header address. If the Worker
+  later adds e.g. `x-orig-from`, prefer it where `FromAddr` is set in
+  `parseInboundMail`.
+
+---
 # google-oauth — Google OAuth login (GIS + code flow) for Gaggle
 
 ## What changed

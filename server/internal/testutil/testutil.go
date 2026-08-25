@@ -1,10 +1,12 @@
 package testutil
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -148,6 +150,7 @@ func NewAppWithCookieSecure(t *testing.T, db *sql.DB, cookieSecure bool) *App {
 			MediaDir:               t.TempDir(),
 			DefaultPaginationLimit: 20,
 			MaxPaginationLimit:     100,
+			MailIntakeSecret:       "test-intake-secret",
 		},
 		AuthConfig: config.AuthConfig{
 			JWTSecret:                     "test-secret",
@@ -169,6 +172,7 @@ type Request struct {
 	Path    string
 	Token   string
 	Body    any
+	RawBody []byte // sent verbatim (e.g. raw MIME); overrides Body
 	Cookies []*http.Cookie
 	Headers map[string]string
 	UA      string
@@ -177,15 +181,15 @@ type Request struct {
 // Do performs the request and returns the recorder.
 func (a *App) Do(t *testing.T, req Request) *httptest.ResponseRecorder {
 	t.Helper()
-	var body *strings.Reader
-	if req.Body != nil {
+	var body io.Reader = strings.NewReader("")
+	if req.RawBody != nil {
+		body = bytes.NewReader(req.RawBody)
+	} else if req.Body != nil {
 		data, err := json.Marshal(req.Body)
 		if err != nil {
 			t.Fatalf("marshal request body: %v", err)
 		}
 		body = strings.NewReader(string(data))
-	} else {
-		body = strings.NewReader("")
 	}
 
 	httpReq := httptest.NewRequest(req.Method, req.Path, body)

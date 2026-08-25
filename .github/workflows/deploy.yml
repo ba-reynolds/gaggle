@@ -34,6 +34,10 @@ jobs:
           GAGGLE_GOOGLE_CLIENT_SECRET: ${{ secrets.GAGGLE_GOOGLE_CLIENT_SECRET }}
           GAGGLE_GOOGLE_REDIRECT_URL: ${{ secrets.GAGGLE_GOOGLE_REDIRECT_URL }}
           GAGGLE_FRONTEND_URL: ${{ secrets.GAGGLE_FRONTEND_URL }}
+          # Mail intake shared secret (x-orchid-secret). Required by apply.sh:
+          # an unset secret makes the intake 401 everything, and Cloudflare
+          # treats failed deliveries as bounces of the original senders' mail.
+          GAGGLE_INTAKE_SECRET: ${{ secrets.GAGGLE_INTAKE_SECRET }}
           TARGET_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
@@ -50,8 +54,8 @@ jobs:
           # apply.sh `source`s it (apply.sh base64 -d's it back when writing).
           # Every var listed here must also be written by that printf — env
           # vars exported in this step do NOT travel over plain `ssh bash -s`.
-          printf 'GAGGLE_JWT_SECRET=%s\nGAGGLE_DB_USER=%s\nGAGGLE_DB_PASSWORD=%s\nGAGGLE_DEPLOY_KEY=%s\nGAGGLE_HTTPS_DOMAIN=%s\nGAGGLE_GOOGLE_CLIENT_ID=%s\nGAGGLE_GOOGLE_CLIENT_SECRET=%s\nGAGGLE_GOOGLE_REDIRECT_URL=%s\nGAGGLE_FRONTEND_URL=%s\nTARGET_SHA=%s\n' \
-            "$GAGGLE_JWT_SECRET" "$GAGGLE_DB_USER" "$GAGGLE_DB_PASSWORD" "$(printf '%s' "$GAGGLE_DEPLOY_KEY" | base64 -w0)" "${GAGGLE_HTTPS_DOMAIN:-}" "${GAGGLE_GOOGLE_CLIENT_ID:-}" "${GAGGLE_GOOGLE_CLIENT_SECRET:-}" "${GAGGLE_GOOGLE_REDIRECT_URL:-}" "${GAGGLE_FRONTEND_URL:-}" "$TARGET_SHA" |
+          printf 'GAGGLE_JWT_SECRET=%s\nGAGGLE_DB_USER=%s\nGAGGLE_DB_PASSWORD=%s\nGAGGLE_DEPLOY_KEY=%s\nGAGGLE_HTTPS_DOMAIN=%s\nGAGGLE_GOOGLE_CLIENT_ID=%s\nGAGGLE_GOOGLE_CLIENT_SECRET=%s\nGAGGLE_GOOGLE_REDIRECT_URL=%s\nGAGGLE_FRONTEND_URL=%s\nGAGGLE_INTAKE_SECRET=%s\nTARGET_SHA=%s\n' \
+            "$GAGGLE_JWT_SECRET" "$GAGGLE_DB_USER" "$GAGGLE_DB_PASSWORD" "$(printf '%s' "$GAGGLE_DEPLOY_KEY" | base64 -w0)" "${GAGGLE_HTTPS_DOMAIN:-}" "${GAGGLE_GOOGLE_CLIENT_ID:-}" "${GAGGLE_GOOGLE_CLIENT_SECRET:-}" "${GAGGLE_GOOGLE_REDIRECT_URL:-}" "${GAGGLE_FRONTEND_URL:-}" "${GAGGLE_INTAKE_SECRET:-}" "$TARGET_SHA" |
             ssh -i /tmp/gaggle_deploy_key -o StrictHostKeyChecking=accept-new "deploy@$DEPLOY_HOST" \
               'umask 077; cat > /tmp/gaggle-env'
 
