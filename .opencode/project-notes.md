@@ -1,3 +1,18 @@
+# Link previews / OG tags (og-preview)
+- WhatsApp/X/Slack crawlers do NOT run JS — the Vite SPA's `index.html` head is
+  all they see. Static OG tags live in `web/index.html`; `web/public/og-image.png`
+  (1200×630, brand orange `#F06303`, ~137KB, goose anchored flush to bottom edge)
+  is the preview art. og:image MUST be an absolute URL; WhatsApp min ~300×200,
+  soft limit ~300KB. The 80×80 gaggle-goose.png is NOT usable as og:image.
+- WhatsApp caches scrapes hard — after changing tags, share the URL WITH a
+  throwaway query string (`?v=2`) once to force a re-scrape.
+- `magick ... \( -size 1200x630 xc:color \) -composite out.png` silently drops
+  the canvas (writes only the source image, 1-color) — build the canvas as a
+  separate file and composite in a second command.
+- Regenerate og-image: `magick grok_cutout.png -crop 3171x3726+925+370 +repage
+  -resize x560 goose.png` then composite onto 1200×630 `xc:#F06303` with
+  `-gravity center -geometry +0+35` (y+35 = flush bottom bleed).
+
 ## Domain + HTTPS + OAuth launch (main session)
 - **Box IP is now the Elastic IP `54.86.19.223`** (was auto-assigned
   100.31.118.41; `aws_eip.gaggle` in infra/main.tf). DEPLOY_HOST GitHub secret
