@@ -929,3 +929,24 @@
   a live highlight via a mirror `<div>` behind a transparent-caret textarea; the
   `.hashtag-composer` CSS in `index.css` keeps the placeholder visible while the
   text fill is transparent.
+
+## Mail intake API (agent/mail-intake-api)
+- `POST /mail/inbound`, `GET /mails[/{id}]` live at TOP LEVEL (not /api/v1) —
+  machine contract for orchid's mail MCP + Cloudflare Email Worker, gated by
+  `OrchidSecretMiddleware` on `x-orchid-secret` (env `INTAKE_SECRET`,
+  fail-closed when empty). nginx needs BOTH `location /mail/` AND
+  `location /mails` blocks (prefix `/mail/` does NOT match `/mails`) with
+  `client_max_body_size 2m` so oversized bodies reach the handler — any
+  non-2xx (incl. nginx 413) makes Cloudflare BOUNCE the sender.
+- The intake handler must ALWAYS return 200-ish even for garbage/oversized
+  bodies (`{"received":false}`); parse errors degrade to storing what was
+  parsed. Don't "clean this up" into a 4xx later.
+- Running compose against an existing proj-up stack from a shell: plain
+  `. ~/.local/state/gaggle-proj/<proj>.env` is NOT enough — sourced vars are
+  not exported; use `set -a; . file; set +a` or compose re-interpolates
+  DB_PORT=6969 and recreates/kills the db container. Tests via:
+  `set -a; . envfile; docker compose -p gaggle-<slug> --profile tools run --rm tools go test ./...`
+- Preview :80 vhost force-301s to https — curl-testing worktree previews over
+  http://localhost:<webport> hits that redirect; test API direct (:API_PORT)
+  or in-container `wget --no-check-certificate https://127.0.0.1/...`
+  (healthcheck pattern).

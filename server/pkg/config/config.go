@@ -48,6 +48,10 @@ type AppConfig struct {
 	SwaggerURL             string
 	DefaultPaginationLimit int
 	MaxPaginationLimit     int
+	// MailIntakeSecret is the x-orchid-secret shared with the Cloudflare Email
+	// Worker and orchid (INTAKE_SECRET / ORCHID_MAIL_SINK_TOKEN). Empty means
+	// every intake request is rejected (fail closed).
+	MailIntakeSecret string
 }
 
 type AuthConfig struct {
@@ -122,6 +126,7 @@ func LoadConfig() (AllConfigs, error) {
 		SwaggerURL:             fmt.Sprintf("%s/swagger/doc.json", serverConfig.ServerAddr),
 		DefaultPaginationLimit: getEnvInt("PAGINATION_DEFAULT_LIMIT", 20),
 		MaxPaginationLimit:     getEnvInt("PAGINATION_MAX_LIMIT", 100),
+		MailIntakeSecret:       getEnv("INTAKE_SECRET", ""),
 	}
 
 	authConfig := AuthConfig{

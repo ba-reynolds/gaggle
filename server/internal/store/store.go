@@ -174,6 +174,12 @@ type Store struct {
 		PrunePageViews(ctx context.Context, cutoff time.Time) error
 		PruneHostSamples(ctx context.Context, cutoff time.Time) error
 	}
+	Mail interface {
+		// Insert reports whether the row was stored; false = duplicate Message-ID.
+		Insert(ctx context.Context, m *models.MailMessage) (bool, error)
+		List(ctx context.Context, to string, limit int) ([]models.MailSummary, error)
+		GetByID(ctx context.Context, id string) (*models.MailMessage, error)
+	}
 }
 
 func NewStore(db *sql.DB, logger *slog.Logger, mediaDir string) *Store {
@@ -194,6 +200,7 @@ func NewStore(db *sql.DB, logger *slog.Logger, mediaDir string) *Store {
 		Lists:             &listStore{db: db, logger: logger},
 		DMs:               &dmStore{db: db, logger: logger},
 		Metrics:           &metricsStore{db: db, logger: logger},
+		Mail:              &mailStore{db: db, logger: logger},
 	}
 }
 

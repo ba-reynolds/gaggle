@@ -158,6 +158,12 @@ type Service struct {
 		PrunePageViews(ctx context.Context, cutoff time.Time) error
 		PruneHostSamples(ctx context.Context, cutoff time.Time) error
 	}
+	Mail interface {
+		// Insert reports whether the row was stored; false = duplicate Message-ID.
+		Insert(ctx context.Context, m *models.MailMessage) (bool, error)
+		List(ctx context.Context, to string, limit int) ([]models.MailSummary, error)
+		GetByID(ctx context.Context, id string) (*models.MailMessage, error)
+	}
 }
 
 // NewService creates a new service with all required dependencies
@@ -179,5 +185,6 @@ func NewService(store *store.Store, logger *slog.Logger, authenticator *auth.JWT
 		Lists:             NewListService(store, logger),
 		DMs:               NewDmService(store, hub, logger),
 		Metrics:           store.Metrics,
+		Mail:              NewMailService(store, logger),
 	}
 }
