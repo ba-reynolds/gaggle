@@ -2,6 +2,15 @@
 
 Running log of agent-branch merges into main. Newest on top.
 
+## 2026-08-24 — agent/mail-intake-api
+
+- Status: **clean** (merge `git merge --no-edit agent/mail-intake-api` at 0bf91b1 → auto-merged by 'ort', no conflicts)
+- Files merged: external mail intake contract for orchid — `server/internal/handlers/mail_handler.go` (+tests), `mail_secret.go` middleware (fail-closed `x-orchid-secret`), `models/mail.go`, `service/mail_service.go`, `store/mail_store.go`, router mounts `/mail/*` + `/mails*`, migration `000026_add_mail_intake.{up,down}.sql`, nginx `/mail/`+`/mails` proxy blocks, deploy plumbing (`deploy.yml` GAGGLE_INTAKE_SECRET, `apply.sh` hard requirement, `.env.example`, compose.yaml INTAKE_SECRET passthrough)
+- Root had an unrelated uncommitted project-notes.md edit (og-preview findings from a prior session); committed first (`1816a46`) so the merge started from a clean tree — that's why `.opencode/project-notes.md` auto-merged instead of conflicting.
+- Migration duplicate check clean: 000026 unique on merged tree (main prev max 000025; no parallel branch collision).
+- Worktree removed, preview torn down after verification.
+- Post-merge action item: add `GAGGLE_INTAKE_SECRET` GitHub Actions secret before deploying (apply.sh fails fast without it).
+
 ## 2026-08-21 — agent/google-oauth
 
 - Status: **clean** (fast-forward from 890d4be → 89cfefd; no conflicts)
