@@ -21,6 +21,7 @@ import (
 	"github.com/ba-reynolds/gaggle/internal/models"
 	"github.com/ba-reynolds/gaggle/internal/service"
 	"github.com/go-chi/chi/v5"
+	"golang.org/x/net/html"
 	"golang.org/x/text/encoding/ianaindex"
 )
 
@@ -134,21 +135,22 @@ func parseInboundMail(raw []byte, toOverride string) (*models.MailMessage, error
 	return m, nil
 }
 
-// extractTextPlain returns the decoded text of the first text/plain part.
-// It NEVER fails hard: structural trouble is logged and the message is stored
-// with whatever text was recovered (spec: store what you have rather than
-// dropping mail — a bounce is worse than a partial row).
+// extractTextPlain returns the decoded text of the first text/plain part,
+// falling back to the first text/html part (stripped to text) when a message
+// is HTML-only. It NEVER fails hard: structural trouble is logged and the
+// message is stored with whatever text was recovered (spec: store what you
+// have rather than dropping mail — a bounce is worse than a partial row).
 func extractTextPlain(header mail.Header, body io.Reader) string {
 	contentType := header.Get("Content-Type")
 	mediaType, params, err := mime.ParseMediaType(contentType)
 	if err == nil && strings.HasPrefix(mediaType, "multipart/") {
-		text, werr := walkPartsForTextPlain(multipart.NewReader(body, params["boundary"]))
+		plain, htmlPart, werr := walkPartsForText(multipart.NewReader(body, params["boundary"]))
 		if werr != nil {
 			slog.Warn("mail inbound: multipart walk failed", "error", werr)
 		}
-		return strings.TrimRight(text, "\r\n")
+		return strings.TrimRight(preferText(plain, htmlPart), "\r\n")
 	}
-	if err == nil && mediaType != "" && mediaType != "text/plain" {
+	if err == nil && mediaType != "" && mediaType != "text/plain" && mediaType != "text/html" {
 		return ""
 	}
 	data, terr := readTransferDecoded(header.Get("Content-Transfer-Encoding"), body)
@@ -163,37 +165,107 @@ func extractTextPlain(header mail.Header, body io.Reader) string {
 		slog.Warn("mail inbound: charset conversion failed, storing raw bytes",
 			"error", cerr, "charset", params["charset"])
 	}
+	if mediaType == "text/html" {
+		return strings.TrimRight(htmlToText(text), "\r\n")
+	}
 	// Trim the message's final line ending so bodies are uniform regardless of
 	// encoding path (verification-code extraction reads this field directly).
 	return strings.TrimRight(text, "\r\n")
 }
 
-func walkPartsForTextPlain(mr *multipart.Reader) (string, error) {
+// preferText picks the extracted text/plain body when present, else falls back
+// to the stripped text of the first text/html part.
+func preferText(plain, htmlPart string) string {
+	if strings.TrimSpace(plain) != "" {
+		return plain
+	}
+	if htmlPart != "" {
+		return htmlToText(htmlPart)
+	}
+	return ""
+}
+
+// walkPartsForText walks a MIME part tree collecting the first inline
+// text/plain part and, as a fallback, the first inline text/html part. It
+// recurses into nested multipart containers (e.g. multipart/alternative).
+func walkPartsForText(mr *multipart.Reader) (plain, htmlPart string, err error) {
 	for {
-		part, err := mr.NextPart()
-		if err == io.EOF {
-			return "", nil
+		part, perr := mr.NextPart()
+		if perr == io.EOF {
+			return plain, htmlPart, nil
 		}
-		if err != nil {
-			return "", err
+		if perr != nil {
+			return plain, htmlPart, perr
 		}
-		ct, params, perr := mime.ParseMediaType(part.Header.Get("Content-Type"))
+		ct, params, cterr := mime.ParseMediaType(part.Header.Get("Content-Type"))
 		disposition := part.Header.Get("Content-Disposition")
 		isAttachment := strings.HasPrefix(strings.ToLower(disposition), "attachment")
-		if perr == nil && ct == "text/plain" && !isAttachment {
+		if cterr != nil || isAttachment {
+			continue
+		}
+		switch {
+		case ct == "text/plain":
 			data, rerr := io.ReadAll(part)
 			if rerr != nil {
-				return "", rerr
+				return plain, htmlPart, rerr
 			}
-			return decodeCharset(params["charset"], data)
-		}
-		if perr == nil && strings.HasPrefix(ct, "multipart/") {
+			text, derr := decodeCharset(params["charset"], data)
+			if derr != nil {
+				slog.Warn("mail inbound: charset conversion failed, storing raw bytes",
+					"error", derr, "charset", params["charset"])
+			}
+			return text, htmlPart, nil
+		case ct == "text/html" && htmlPart == "":
+			data, rerr := io.ReadAll(part)
+			if rerr != nil {
+				return plain, htmlPart, rerr
+			}
+			text, derr := decodeCharset(params["charset"], data)
+			if derr != nil {
+				slog.Warn("mail inbound: charset conversion failed, storing raw bytes",
+					"error", derr, "charset", params["charset"])
+			}
+			htmlPart = text
+		case strings.HasPrefix(ct, "multipart/"):
 			inner := multipart.NewReader(part, params["boundary"])
-			if s, ierr := walkPartsForTextPlain(inner); ierr == nil && s != "" {
-				return s, nil
+			ip, ih, ierr := walkPartsForText(inner)
+			if ierr != nil {
+				return plain, htmlPart, ierr
+			}
+			if strings.TrimSpace(ip) != "" {
+				return ip, htmlPart, nil
+			}
+			if ih != "" && htmlPart == "" {
+				htmlPart = ih
 			}
 		}
 	}
+}
+
+// htmlToText strips HTML markup, returning the visible text with entity
+// references unescaped and whitespace runs collapsed (mirrors the local dev
+// sink's _html_to_text).
+func htmlToText(raw string) string {
+	doc, err := html.Parse(strings.NewReader(raw))
+	if err != nil {
+		return ""
+	}
+	var parts []string
+	var walk func(*html.Node)
+	walk = func(n *html.Node) {
+		if n.Type == html.TextNode {
+			parts = append(parts, n.Data)
+			return
+		}
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			walk(c)
+		}
+	}
+	walk(doc)
+	// Concatenate text nodes directly (no separator) then collapse whitespace,
+	// mirroring the local dev sink: a code split across adjacent tags must not
+	// gain spaces, e.g. <span>12</span><span>345</span> → "12345".
+	return strings.Join(strings.Fields(html.UnescapeString(strings.Join(parts, ""))), " ")
 }
 
 // readTransferDecoded handles the top-level Content-Transfer-Encoding that

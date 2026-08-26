@@ -294,6 +294,26 @@ func TestMailParsingEdgeCases(t *testing.T) {
 		t.Errorf("multipart body: got %q", m["body"])
 	}
 
+	// Single-part HTML-only: text/plain absent, so the HTML is stripped to text.
+	post("hank@gaggle.land", "From: h@x.t\r\nSubject: html-only\r\nMessage-ID: <e6@x>\r\n"+
+		"MIME-Version: 1.0\r\nContent-Type: text/html; charset=utf-8\r\n\r\n"+
+		"<div>Your verification code is <b>987654</b>.</div>\r\n")
+	m = bodyOf("?to=hank%40gaggle.land", 1)
+	if m["body"] != "Your verification code is 987654." {
+		t.Errorf("html-only body: got %q", m["body"])
+	}
+
+	// Multipart/alternative with ONLY an html part: falls back to stripped HTML.
+	post("iris@gaggle.land", "From: i@x.t\r\nSubject: alt-html\r\nMessage-ID: <e7@x>\r\n"+
+		"MIME-Version: 1.0\r\nContent-Type: multipart/alternative; boundary=ALT\r\n\r\n"+
+		"--ALT\r\nContent-Type: text/html; charset=utf-8\r\n\r\n"+
+		"<p>Click to verify: <a href=\"https://x.t/verify?code=abc123\">Verify</a></p>\r\n"+
+		"--ALT--\r\n")
+	m = bodyOf("?to=iris%40gaggle.land", 1)
+	if m["body"] != "Click to verify: Verify" {
+		t.Errorf("multipart html-only body: got %q", m["body"])
+	}
+
 	// Top-level base64 singlepart.
 	post("gina@gaggle.land", "From: b@x.t\r\nSubject: b64\r\nMessage-ID: <e3@x>\r\n"+
 		"Content-Type: text/plain; charset=utf-8\r\nContent-Transfer-Encoding: base64\r\n\r\n"+
