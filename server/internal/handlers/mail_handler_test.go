@@ -116,6 +116,9 @@ func TestMailInboundStoresAndDedupes(t *testing.T) {
 	if _, hasBody := m["body"]; hasBody {
 		t.Errorf("list view must NOT include body")
 	}
+	if _, hasHTML := m["html"]; hasHTML {
+		t.Errorf("list view must NOT include html")
+	}
 
 	// Redelivery of the same Message-ID (at-least-once): still 200, no dup.
 	rec = postInbound(t, app, testIntakeSecret, "alice@gaggle.land", raw)
@@ -138,6 +141,7 @@ func TestMailInboundStoresAndDedupes(t *testing.T) {
 	var got struct {
 		ID     string `json:"id"`
 		Body   string `json:"body"`
+		HTML   string `json:"html"`
 		TS     string `json:"ts"`
 		ToAddr string `json:"to_addr"`
 	}
@@ -146,6 +150,9 @@ func TestMailInboundStoresAndDedupes(t *testing.T) {
 	}
 	if got.Body != "code = 123456" {
 		t.Errorf("body: got %q", got.Body)
+	}
+	if got.HTML != "" {
+		t.Errorf("html: plain-text mail should have empty html, got %q", got.HTML)
 	}
 	if got.ID != id || got.ToAddr != "alice@gaggle.land" || got.TS == "" {
 		t.Errorf("full record fields: %+v", got)
@@ -337,5 +344,113 @@ func TestMailParsingEdgeCases(t *testing.T) {
 	}
 	if mails := listMails(t, app, "?to="); len(mails) < 5 {
 		t.Errorf("empty filter should list everything, got %d", len(mails))
+	}
+}
+
+// TestMailHTMLFieldPreserved verifies that the raw text/html part is stored
+// in the `html` field (hrefs/markup intact) while body stays stripped text.
+func TestMailHTMLFieldPreserved(t *testing.T) {
+	app := testutil.NewApp(t, testutil.Database(t))
+	post := func(origTo, raw string) {
+		t.Helper()
+		if rec := postInbound(t, app, testIntakeSecret, origTo, raw); rec.Code != http.StatusOK {
+			t.Fatalf("inbound: got %d body %s", rec.Code, rec.Body.String())
+		}
+	}
+	bodyOf := func(query string, want int) map[string]any {
+		t.Helper()
+		mails := listMails(t, app, query)
+		if len(mails) != want {
+			t.Fatalf("query %s: expected %d mails, got %d (%+v)", query, want, len(mails), mails)
+		}
+		id, _ := mails[0]["id"].(string)
+		rec := app.Do(t, testutil.Request{
+			Method:  http.MethodGet,
+			Path:    "/mails/" + id,
+			Headers: map[string]string{"x-orchid-secret": testIntakeSecret},
+		})
+		if rec.Code != http.StatusOK {
+			t.Fatalf("GET /mails/%s: status %d body %s", id, rec.Code, rec.Body.String())
+		}
+		var m map[string]any
+		if err := json.Unmarshal(rec.Body.Bytes(), &m); err != nil {
+			t.Fatalf("decode: %v", err)
+		}
+		return m
+	}
+
+	// Multipart/alternative with plain BEFORE html (real-world verification mail).
+	// html must be the raw decoded part (href intact), body = plain text.
+	post("alice@gaggle.land", "From: reddit@reddit.com\r\n"+
+		"Subject: Verify your email\r\n"+
+		"Message-ID: <html-plain@r>\r\n"+
+		"MIME-Version: 1.0\r\n"+
+		"Content-Type: multipart/alternative; boundary=ALT\r\n\r\n"+
+		"--ALT\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n"+
+		"Your verification code is 123456\r\n"+
+		"--ALT\r\nContent-Type: text/html; charset=utf-8\r\n\r\n"+
+		"<p>Click <a href=\"https://reddit.com/verify?code=abc123\">here</a> to verify</p>\r\n"+
+		"--ALT--\r\n")
+	m := bodyOf("?to=alice%40gaggle.land", 1)
+	if m["body"] != "Your verification code is 123456" {
+		t.Errorf("body: expected plain text, got %q", m["body"])
+	}
+	if m["html"] != "<p>Click <a href=\"https://reddit.com/verify?code=abc123\">here</a> to verify</p>" {
+		t.Errorf("html: expected raw hrefs intact, got %q", m["html"])
+	}
+
+	// Single-part HTML-only: body = stripped, html = raw markup.
+	post("bob@gaggle.land", "From: n@x.t\r\n"+
+		"Subject: html-only\r\n"+
+		"Message-ID: <html-only@r>\r\n"+
+		"MIME-Version: 1.0\r\n"+
+		"Content-Type: text/html; charset=utf-8\r\n\r\n"+
+		"<div>Your verification code is <b>987654</b>.</div>\r\n")
+	m = bodyOf("?to=bob%40gaggle.land", 1)
+	if m["body"] != "Your verification code is 987654." {
+		t.Errorf("html-only body: got %q", m["body"])
+	}
+	if m["html"] != "<div>Your verification code is <b>987654</b>.</div>" {
+		t.Errorf("html-only html: got %q", m["html"])
+	}
+
+	// Multipart/mixed with inline text/html and text/plain (html before plain).
+	post("carol@gaggle.land", "From: c@x.t\r\n"+
+		"Subject: mixed\r\n"+
+		"Message-ID: <mixed@r>\r\n"+
+		"MIME-Version: 1.0\r\n"+
+		"Content-Type: multipart/mixed; boundary=B\r\n\r\n"+
+		"--B\r\nContent-Type: text/html; charset=utf-8\r\n\r\n"+
+		"<b>bold</b>\r\n"+
+		"--B\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n"+
+		"plain body\r\n"+
+		"--B\r\nContent-Disposition: attachment; filename=f.txt\r\n"+
+		"Content-Type: text/plain\r\n\r\nskip\r\n"+
+		"--B--\r\n")
+	m = bodyOf("?to=carol%40gaggle.land", 1)
+	if m["body"] != "plain body" {
+		t.Errorf("body: expected plain text, got %q", m["body"])
+	}
+	if m["html"] != "<b>bold</b>" {
+		t.Errorf("html: expected raw html, got %q", m["html"])
+	}
+
+	// Base64-encoded HTML part.
+	post("dave@gaggle.land", "From: d@x.t\r\n"+
+		"Subject: b64-html\r\n"+
+		"Message-ID: <b64-html@r>\r\n"+
+		"MIME-Version: 1.0\r\n"+
+		"Content-Type: multipart/alternative; boundary=ALT\r\n\r\n"+
+		"--ALT\r\nContent-Type: text/plain; charset=utf-8\r\n\r\ncode\r\n"+
+		"--ALT\r\nContent-Type: text/html; charset=utf-8\r\n"+
+		"Content-Transfer-Encoding: base64\r\n\r\n"+
+		"PGEgaHJlZj0iaHR0cHM6Ly94LnQvIj5saW5rPC9hPg==\r\n"+
+		"--ALT--\r\n")
+	m = bodyOf("?to=dave%40gaggle.land", 1)
+	if m["body"] != "code" {
+		t.Errorf("body: got %q", m["body"])
+	}
+	if m["html"] != "<a href=\"https://x.t/\">link</a>" {
+		t.Errorf("html: base64 decoded html, got %q", m["html"])
 	}
 }

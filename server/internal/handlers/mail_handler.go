@@ -14,6 +14,7 @@ import (
 	"mime/quotedprintable"
 	"net/http"
 	"net/mail"
+	"net/textproto"
 	"strings"
 	"time"
 
@@ -131,16 +132,19 @@ func parseInboundMail(raw []byte, toOverride string) (*models.MailMessage, error
 		m.ToAddr = firstAddress(decodeMimeWords(msg.Header.Get("To")))
 	}
 
-	m.Body = extractTextPlain(msg.Header, msg.Body)
+	m.Body, m.HTML = extractParts(msg.Header, msg.Body)
 	return m, nil
 }
 
-// extractTextPlain returns the decoded text of the first text/plain part,
-// falling back to the first text/html part (stripped to text) when a message
-// is HTML-only. It NEVER fails hard: structural trouble is logged and the
-// message is stored with whatever text was recovered (spec: store what you
-// have rather than dropping mail — a bounce is worse than a partial row).
-func extractTextPlain(header mail.Header, body io.Reader) string {
+// extractParts returns the stored body (stripped text) and html (raw, decoded
+// text/html markup) from a MIME message. body is the first text/plain part,
+// falling back to stripped text of the first text/html part when a message is
+// HTML-only; html is the first text/html part verbatim (hrefs intact) so
+// link-based verification flows survive. It NEVER fails hard: structural
+// trouble is logged and the message is stored with whatever was recovered
+// (spec: store what you have rather than dropping mail — a bounce is worse
+// than a partial row).
+func extractParts(header mail.Header, body io.Reader) (bodyText, htmlText string) {
 	contentType := header.Get("Content-Type")
 	mediaType, params, err := mime.ParseMediaType(contentType)
 	if err == nil && strings.HasPrefix(mediaType, "multipart/") {
@@ -148,15 +152,16 @@ func extractTextPlain(header mail.Header, body io.Reader) string {
 		if werr != nil {
 			slog.Warn("mail inbound: multipart walk failed", "error", werr)
 		}
-		return strings.TrimRight(preferText(plain, htmlPart), "\r\n")
+		return strings.TrimRight(preferText(plain, htmlPart), "\r\n"),
+			strings.TrimRight(htmlPart, "\r\n")
 	}
 	if err == nil && mediaType != "" && mediaType != "text/plain" && mediaType != "text/html" {
-		return ""
+		return "", ""
 	}
 	data, terr := readTransferDecoded(header.Get("Content-Transfer-Encoding"), body)
 	if terr != nil {
 		slog.Warn("mail inbound: transfer decoding failed", "error", terr)
-		return ""
+		return "", ""
 	}
 	// Multipart parts are transfer-decoded by the reader above; net/mail only
 	// unwraps quoted-printable at the top level, so base64 is handled here.
@@ -166,11 +171,11 @@ func extractTextPlain(header mail.Header, body io.Reader) string {
 			"error", cerr, "charset", params["charset"])
 	}
 	if mediaType == "text/html" {
-		return strings.TrimRight(htmlToText(text), "\r\n")
+		return strings.TrimRight(htmlToText(text), "\r\n"), strings.TrimRight(text, "\r\n")
 	}
 	// Trim the message's final line ending so bodies are uniform regardless of
 	// encoding path (verification-code extraction reads this field directly).
-	return strings.TrimRight(text, "\r\n")
+	return strings.TrimRight(text, "\r\n"), ""
 }
 
 // preferText picks the extracted text/plain body when present, else falls back
@@ -186,8 +191,9 @@ func preferText(plain, htmlPart string) string {
 }
 
 // walkPartsForText walks a MIME part tree collecting the first inline
-// text/plain part and, as a fallback, the first inline text/html part. It
-// recurses into nested multipart containers (e.g. multipart/alternative).
+// text/plain part and the first inline text/html part (each independently —
+// a verification mail carries both; the HTML holds the links). It recurses
+// into nested multipart containers (e.g. multipart/alternative).
 func walkPartsForText(mr *multipart.Reader) (plain, htmlPart string, err error) {
 	for {
 		part, perr := mr.NextPart()
@@ -204,8 +210,8 @@ func walkPartsForText(mr *multipart.Reader) (plain, htmlPart string, err error) 
 			continue
 		}
 		switch {
-		case ct == "text/plain":
-			data, rerr := io.ReadAll(part)
+		case ct == "text/plain" && plain == "":
+			data, rerr := readPartDecoded(part.Header, part)
 			if rerr != nil {
 				return plain, htmlPart, rerr
 			}
@@ -214,9 +220,9 @@ func walkPartsForText(mr *multipart.Reader) (plain, htmlPart string, err error) 
 				slog.Warn("mail inbound: charset conversion failed, storing raw bytes",
 					"error", derr, "charset", params["charset"])
 			}
-			return text, htmlPart, nil
+			plain = text
 		case ct == "text/html" && htmlPart == "":
-			data, rerr := io.ReadAll(part)
+			data, rerr := readPartDecoded(part.Header, part)
 			if rerr != nil {
 				return plain, htmlPart, rerr
 			}
@@ -232,40 +238,66 @@ func walkPartsForText(mr *multipart.Reader) (plain, htmlPart string, err error) 
 			if ierr != nil {
 				return plain, htmlPart, ierr
 			}
-			if strings.TrimSpace(ip) != "" {
-				return ip, htmlPart, nil
+			if plain == "" {
+				plain = ip
 			}
-			if ih != "" && htmlPart == "" {
+			if htmlPart == "" {
 				htmlPart = ih
 			}
 		}
 	}
 }
 
-// htmlToText strips HTML markup, returning the visible text with entity
-// references unescaped and whitespace runs collapsed (mirrors the local dev
-// sink's _html_to_text).
+// htmlToText strips HTML markup to readable text: block-level elements become
+// line breaks, inline elements concatenate without inserted spaces (a code
+// split across adjacent tags must not gain spaces, e.g.
+// <span>12</span><span>345</span> → "12345"), entities are unescaped, and
+// whitespace is collapsed per line.
 func htmlToText(raw string) string {
 	doc, err := html.Parse(strings.NewReader(raw))
 	if err != nil {
 		return ""
 	}
-	var parts []string
-	var walk func(*html.Node)
-	walk = func(n *html.Node) {
-		if n.Type == html.TextNode {
-			parts = append(parts, n.Data)
-			return
-		}
-		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			walk(c)
+	var b strings.Builder
+	htmlTextWalk(doc, &b)
+	var lines []string
+	for _, line := range strings.Split(b.String(), "\n") {
+		if line = strings.Join(strings.Fields(line), " "); line != "" {
+			lines = append(lines, line)
 		}
 	}
-	walk(doc)
-	// Concatenate text nodes directly (no separator) then collapse whitespace,
-	// mirroring the local dev sink: a code split across adjacent tags must not
-	// gain spaces, e.g. <span>12</span><span>345</span> → "12345".
-	return strings.Join(strings.Fields(html.UnescapeString(strings.Join(parts, ""))), " ")
+	return strings.Join(lines, "\n")
+}
+
+func htmlTextWalk(n *html.Node, b *strings.Builder) {
+	if n.Type == html.ElementNode && blockHTMLTags[n.Data] && b.Len() > 0 {
+		b.WriteByte('\n')
+	}
+	if n.Type == html.TextNode {
+		b.WriteString(html.UnescapeString(n.Data))
+		return
+	}
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		htmlTextWalk(c, b)
+	}
+}
+
+// blockHTMLTags are elements that start a new visual line in rendered email.
+var blockHTMLTags = map[string]bool{
+	"address": true, "article": true, "aside": true, "blockquote": true,
+	"br": true, "dd": true, "div": true, "dl": true, "dt": true,
+	"figcaption": true, "figure": true, "footer": true, "form": true,
+	"h1": true, "h2": true, "h3": true, "h4": true, "h5": true, "h6": true,
+	"header": true, "hr": true, "li": true, "main": true, "nav": true,
+	"ol": true, "p": true, "pre": true, "section": true, "table": true,
+	"tbody": true, "td": true, "th": true, "thead": true, "tr": true, "ul": true,
+}
+
+// readPartDecoded reads a multipart part applying its Content-Transfer-Encoding
+// (multipart.NewReader does not transfer-decode parts itself — it hands the raw
+// bytes back, so a base64 text/html part needs explicit decoding).
+func readPartDecoded(header textproto.MIMEHeader, r io.Reader) ([]byte, error) {
+	return readTransferDecoded(header.Get("Content-Transfer-Encoding"), r)
 }
 
 // readTransferDecoded handles the top-level Content-Transfer-Encoding that

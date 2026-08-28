@@ -22,10 +22,10 @@ type mailStore struct {
 // delivery is at-least-once, so duplicates are normal and dropped silently.
 func (s *mailStore) Insert(ctx context.Context, m *models.MailMessage) (bool, error) {
 	tag, err := s.db.ExecContext(ctx, `
-		INSERT INTO mail_messages (id, ts, from_addr, to_addr, subject, body, message_id)
-		VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, ''))
+		INSERT INTO mail_messages (id, ts, from_addr, to_addr, subject, body, html, message_id)
+		VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, ''), NULLIF($8, ''))
 		ON CONFLICT (message_id) DO NOTHING`,
-		m.ID, m.TS, m.FromAddr, m.ToAddr, m.Subject, m.Body, m.MessageID)
+		m.ID, m.TS, m.FromAddr, m.ToAddr, m.Subject, m.Body, m.HTML, m.MessageID)
 	if err != nil {
 		return false, apperrors.InternalServerError(err)
 	}
@@ -72,9 +72,9 @@ func (s *mailStore) List(ctx context.Context, to string, limit int) ([]models.Ma
 func (s *mailStore) GetByID(ctx context.Context, id string) (*models.MailMessage, error) {
 	var m models.MailMessage
 	err := s.db.QueryRowContext(ctx, `
-		SELECT id, ts, from_addr, to_addr, subject, body
+		SELECT id, ts, from_addr, to_addr, subject, body, COALESCE(html, '')
 		FROM mail_messages WHERE id = $1`, id).
-		Scan(&m.ID, &m.TS, &m.FromAddr, &m.ToAddr, &m.Subject, &m.Body)
+		Scan(&m.ID, &m.TS, &m.FromAddr, &m.ToAddr, &m.Subject, &m.Body, &m.HTML)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, apperrors.NotFoundError("mail not found", err)
